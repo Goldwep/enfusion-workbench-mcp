@@ -1,0 +1,23 @@
+{
+  "id": "spawnpoint",
+  "name": "Spawnpoint",
+  "description": "Player respawn points, AI spawn locations, and waypoints",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs/Systems",
+  "defaultParent": "Prefabs/Systems/SpawnPoints/SpawnPosition.et",
+  "overrideComponents": [
+    {
+      "type": "SCR_SpawnPoint",
+      "properties": { "m_bAutoSpawn": "0" },
+      "comment": "Whether this spawn point activates automatically"
+    }
+  ],
+  "postCreateNotes": [
+    "Configure SCR_SpawnPoint properties (auto-spawn, cooldown, etc)",
+    "Set spawn radius if needed",
+    "Assign to appropriate faction if faction-locked",
+    "Test player/AI spawning behavior",
+    "Verify no spawn blocking geometry"
+  ],
+  "variants": []
+}

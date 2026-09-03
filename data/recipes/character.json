@@ -1,0 +1,58 @@
+{
+  "id": "character",
+  "name": "Character",
+  "description": "Playable and NPC characters, soldiers, civilians, and AI entities",
+  "entityType": "SCR_ChimeraCharacter",
+  "subdirectory": "Prefabs/Characters",
+  "defaultParent": "Prefabs/Characters/Core/Character_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to character skeleton/rig .xob model"
+    },
+    {
+      "type": "CharacterAnimationComponent",
+      "properties": { "m_AnimationScript": "" },
+      "comment": "Path to character animation graph (.agr)"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to skeleton model",
+    "Configure CharacterAnimationComponent with animation graph",
+    "Set up inventory and equipment slots",
+    "Define stamina, health, and damage properties",
+    "Configure AI behavior if NPC (faction, rank, skills)",
+    "Set up voice/audio if applicable",
+    "Define character appearance properties (color, uniform)",
+    "Test animation transitions and locomotion"
+  ],
+  "variants": [
+    {
+      "name": "soldier",
+      "description": "Military personnel with faction, rank, and combat loadout",
+      "defaultParent": "Prefabs/Characters/Core/Soldier_Base.et",
+      "subdirectory": "Prefabs/Characters/Soldiers",
+      "postCreateNotes": [
+        "Set model to military soldier rig",
+        "Configure faction and rank in SCR_CharacterRank",
+        "Set up default loadout (weapon, armor, equipment)",
+        "Configure AI skill level (0.5-1.0 for difficulty)",
+        "Define voice lines if needed"
+      ]
+    },
+    {
+      "name": "civilian",
+      "description": "Non-combatant civilians and support personnel",
+      "defaultParent": "Prefabs/Characters/Core/Civilian_Base.et",
+      "subdirectory": "Prefabs/Characters/Civilians",
+      "postCreateNotes": [
+        "Set model to civilian rig",
+        "Configure minimal equipment (no combat loadout)",
+        "Disable or limit AI combat behavior",
+        "Set up dialogue/interaction if applicable",
+        "Define role (worker, medic, civilian, etc)"
+      ]
+    }
+  ]
+}

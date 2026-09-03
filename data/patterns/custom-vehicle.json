@@ -1,0 +1,29 @@
+{
+  "name": "Custom Vehicle",
+  "description": "New vehicle variant with custom behavior or properties",
+  "tags": ["vehicle", "transport", "driving"],
+  "scripts": [
+    {
+      "className": "{PREFIX}_VehicleController",
+      "scriptType": "component",
+      "parentClass": "ScriptComponent",
+      "methods": [
+        "void OnEngineStart()",
+        "void OnEngineStop()",
+        "void OnSpeedChanged(float speed)"
+      ],
+      "description": "Custom vehicle behavior controller"
+    }
+  ],
+  "prefabs": [
+    {
+      "name": "{PREFIX}_Vehicle",
+      "prefabType": "vehicle",
+      "parentPrefab": "",
+      "components": [],
+      "description": "Custom vehicle prefab"
+    }
+  ],
+  "configs": [],
+  "instructions": "CRITICAL: Use api_search to verify EVERY method you call. Never guess Enfusion API method names — they are non-standard and many obvious-sounding methods don't exist.\n1. Use api_search to look up VehicleControllerComponent, CarControllerComponent, and any vehicle-related classes — verify methods exist before using them\n2. Find a base vehicle prefab to inherit from (e.g., M151A2, UAZ469)\n3. Create your vehicle prefab inheriting from the base — vehicles MUST inherit from a base game vehicle prefab or they won't have physics/driving setup\n4. Modify vehicle properties (speed, armor, fuel capacity) in the prefab\n5. Add the custom VehicleController component for special behavior — only call methods confirmed by api_search\n6. Place the vehicle in a world or use Game Master to spawn it\n7. Test driving, collision, and vehicle entry/exit"
+}

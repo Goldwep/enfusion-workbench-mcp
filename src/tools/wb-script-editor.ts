@@ -1,0 +1,208 @@
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import type { WorkbenchClient } from "../workbench/client.js";
+import { formatConnectionStatus, requireEditMode } from "../workbench/status.js";
+import { isHandlerError, handlerErrorResponse, modeGateResponse } from "../workbench/response.js";
+
+export function registerWbScriptEditor(server: McpServer, client: WorkbenchClient): void {
+  server.registerTool(
+    "wb_script_editor",
+    {
+      description:
+        "Interact with the Workbench Script Editor. Get the current file, read/write individual lines, insert new lines, remove lines, or get the total line count.",
+      inputSchema: {
+        action: z
+          .enum([
+            "getCurrentFile",
+            "getLine",
+            "setLine",
+            "insertLine",
+            "removeLine",
+            "getLinesCount",
+            "openFile",
+          ])
+          .describe(
+            "Action: getCurrentFile (path of open file), getLine (read line N), setLine (overwrite line N), insertLine (insert before line N), removeLine (delete line N), getLinesCount (total lines), openFile (open file by path)",
+          ),
+        line: z
+          .number()
+          .optional()
+          .describe(
+            "Line number (1-based). Required for getLine, setLine, insertLine, removeLine.",
+          ),
+        text: z.string().optional().describe("Text content for setLine and insertLine"),
+        path: z
+          .string()
+          .optional()
+          .describe("File path for openFile action (e.g., 'Scripts/Game/MyScript.c')"),
+      },
+    },
+    async ({ action, line, text, path }) => {
+      try {
+        // Mutating actions require edit mode
+        const MUTATING_ACTIONS = ["setLine", "insertLine", "removeLine"];
+        if (MUTATING_ACTIONS.includes(action)) {
+          const modeErr = requireEditMode(client, `${action} in script editor`);
+          if (modeErr) {
+            return modeGateResponse(modeErr, client);
+          }
+        }
+
+        // Validate required params per action
+        if (
+          (action === "getLine" ||
+            action === "setLine" ||
+            action === "insertLine" ||
+            action === "removeLine") &&
+          line === undefined
+        ) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: \`line\` number is required for the "${action}" action.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        if ((action === "setLine" || action === "insertLine") && text === undefined) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: \`text\` is required for the "${action}" action.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        if (action === "openFile" && !path) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: 'Error: `path` is required for the "openFile" action.',
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const params: Record<string, unknown> = { action };
+        if (line !== undefined) params.line = line;
+        if (text !== undefined) params.text = text;
+        if (path !== undefined) params.path = path;
+
+        const result = await client.call<Record<string, unknown>>("EMCP_WB_ScriptEditor", params);
+
+        if (isHandlerError(result)) {
+          return handlerErrorResponse(result, client, `Error in script editor (${action})`);
+        }
+
+        if (action === "getCurrentFile") {
+          const filePath = result.currentFile || "(no file open)";
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Current Script File:** ${filePath}${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "getLine") {
+          const lineText = result.lineText ?? "";
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Line ${line}:**\n\`\`\`\n${lineText}\n\`\`\`${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "getLinesCount") {
+          const count = result.linesCount ?? "unknown";
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Line Count:** ${count}${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "setLine") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Line ${line} Updated**\n\nNew content:\n\`\`\`\n${text}\n\`\`\`${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "insertLine") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Line Inserted** at position ${line}\n\nContent:\n\`\`\`\n${text}\n\`\`\`${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "removeLine") {
+          const removed = result.lineText;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Line ${line} Removed**${removed ? `\n\nRemoved content:\n\`\`\`\n${removed}\n\`\`\`` : ""}${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        if (action === "openFile") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Opened:** ${path}${formatConnectionStatus(client)}`,
+              },
+            ],
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(result, null, 2) + formatConnectionStatus(client),
+            },
+          ],
+        };
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error in script editor (${action}): ${msg}${formatConnectionStatus(client)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+}

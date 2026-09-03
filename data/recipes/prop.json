@@ -1,0 +1,61 @@
+{
+  "id": "prop",
+  "name": "Prop",
+  "description": "Environmental props, static objects, destructible items, and interactive props",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs/Props",
+  "defaultParent": "Prefabs/Props/Core/Props_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to prop .xob model"
+    },
+    {
+      "type": "RigidBody",
+      "properties": { "m_fMass": "1.0" },
+      "comment": "Mass in kg for physics simulation"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to your prop model",
+    "Configure RigidBody mass and physics properties",
+    "Set up collision shapes if not auto-generated",
+    "Add damage/destruction if applicable",
+    "Configure interaction prompts for interactive props",
+    "Test physics and collision behavior"
+  ],
+  "variants": [
+    {
+      "name": "static",
+      "description": "Static decorative objects with no physics",
+      "defaultParent": "Prefabs/Props/Core/Props_Base.et",
+      "subdirectory": "Prefabs/Props/Static",
+      "overrideComponents": [
+        {
+          "type": "MeshObject",
+          "properties": { "Object": "" },
+          "comment": "Path to prop .xob model"
+        }
+      ],
+      "postCreateNotes": [
+        "Set MeshObject.Object to your prop model",
+        "Static objects don't need RigidBody",
+        "Use for trees, rocks, buildings, street furniture, etc"
+      ]
+    },
+    {
+      "name": "destructible",
+      "description": "Props that can be destroyed or damaged",
+      "defaultParent": "Prefabs/Props/Core/DestructibleEntity_Props_Base.et",
+      "subdirectory": "Prefabs/Props/Destructible",
+      "postCreateNotes": [
+        "Set MeshObject.Object to intact prop model",
+        "Configure health and damage thresholds",
+        "Set up destroyed model or removal effect",
+        "Configure sound effects on destruction",
+        "Define debris spawn if applicable"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "gamemode",
+  "name": "Game Mode",
+  "description": "Game mode controllers and multiplayer/campaign game definitions",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs/GameModes",
+  "defaultParent": "",
+  "overrideComponents": [
+    {
+      "type": "SCR_BaseGameMode",
+      "properties": { "m_aFactions": "" },
+      "comment": "Array of participating factions"
+    },
+    {
+      "type": "SCR_RespawnSystemComponent",
+      "properties": { "m_iRespawnCooldown": "10" },
+      "comment": "Respawn cooldown in seconds"
+    }
+  ],
+  "postCreateNotes": [
+    "Configure SCR_BaseGameMode properties (factions, objectives)",
+    "Set up respawn system (cooldown, wave spawning, etc)",
+    "Configure game rules (friendly fire, round limits, etc)",
+    "Set up victory conditions",
+    "Configure UI and notifications",
+    "Test game flow and objective completion"
+  ],
+  "variants": [
+    {
+      "name": "conflict",
+      "description": "Multiplayer Conflict mode with seizing and supply mechanics",
+      "postCreateNotes": [
+        "Inherit from SCR_MissionHeaderCampaign",
+        "Configure base seizing mechanics",
+        "Set up supply/resource system",
+        "Define map capture zones",
+        "Configure faction spawn tickets"
+      ]
+    },
+    {
+      "name": "coop",
+      "description": "Cooperative scenario with shared objectives",
+      "postCreateNotes": [
+        "Inherit from SCR_MissionHeader (Scenario Framework)",
+        "Set up task system (LayerTask, objectives)",
+        "Configure AI opposition",
+        "Define success/failure conditions",
+        "Set up briefing and debriefing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "scrapedAt": "2026-08-13T16:21:13.297Z",
+  "workbenchPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Arma Reforger Tools",
+  "sources": {
+    "enfusion": {
+      "present": true,
+      "kind": "dir",
+      "mtime": "2026-08-13T12:12:58.132Z"
+    },
+    "arma": {
+      "present": true,
+      "kind": "dir",
+      "mtime": "2026-08-13T12:12:40.019Z"
+    }
+  },
+  "buildBranch": "stable_1_88_80"
+}

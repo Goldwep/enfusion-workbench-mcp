@@ -1,0 +1,17 @@
+{
+  "name": "HUD Widget",
+  "description": "Custom HUD element with UI layout and script logic",
+  "tags": ["hud", "ui", "widget", "overlay"],
+  "scripts": [
+    {
+      "className": "{PREFIX}_HudComponent",
+      "scriptType": "component",
+      "parentClass": "ScriptComponent",
+      "methods": ["void ShowWidget()", "void HideWidget()", "void UpdateDisplay(string text)"],
+      "description": "HUD manager component that controls the custom widget"
+    }
+  ],
+  "prefabs": [],
+  "configs": [],
+  "instructions": "CRITICAL: Use api_search to verify EVERY method you call. Never guess Enfusion API method names — they are non-standard.\n1. Use api_search to look up HUD-related classes and verify available methods before writing code\n2. Create a .layout file using layout_create for the widget visual design\n3. Edit the HudComponent to load and manage the layout\n4. Implement UpdateDisplay to show dynamic content\n5. Attach the component to the player controller prefab\n6. Test by joining a game and verifying the widget appears"
+}

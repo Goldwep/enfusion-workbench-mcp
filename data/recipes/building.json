@@ -1,0 +1,30 @@
+{
+  "id": "building",
+  "name": "Building",
+  "description": "Structures, fortifications, bunkers, and destructible buildings",
+  "entityType": "SCR_DestructibleBuildingEntity",
+  "subdirectory": "Prefabs/Structures",
+  "defaultParent": "Prefabs/Structures/Core/Building_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to building .xob model"
+    },
+    {
+      "type": "DestructionComponent",
+      "properties": { "m_iDestructionStages": "3" },
+      "comment": "Number of destruction stages (damaged, heavily damaged, destroyed)"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to building model",
+    "Configure destruction stages and models",
+    "Set up armor/structural integrity values",
+    "Define spawn points or interior waypoints if applicable",
+    "Configure ambient effects (fire, smoke) on destruction",
+    "Set up cover points for AI if tactical building",
+    "Test destruction physics and debris"
+  ],
+  "variants": []
+}

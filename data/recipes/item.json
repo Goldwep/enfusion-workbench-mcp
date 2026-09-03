@@ -1,0 +1,29 @@
+{
+  "id": "item",
+  "name": "Item",
+  "description": "Inventory items, equipment, consumables, gadgets, medical supplies, and ammunition",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs/Items",
+  "defaultParent": "Prefabs/Items/Core/Item_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to item .xob model"
+    },
+    {
+      "type": "InventoryItemComponent",
+      "properties": { "m_UIName": "" },
+      "comment": "Display name in inventory UI"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to item model",
+    "Configure InventoryItemComponent properties (name, weight, value)",
+    "Define item category (ammo, medical, consumable, etc)",
+    "Set up inventory UI icon path",
+    "Configure usage behavior if consumable",
+    "Test weight and carrying limits"
+  ],
+  "variants": []
+}

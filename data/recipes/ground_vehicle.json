@@ -1,0 +1,82 @@
+{
+  "id": "ground_vehicle",
+  "name": "Ground Vehicle",
+  "description": "Wheeled and tracked vehicles including cars, trucks, APCs, tanks, and buggies",
+  "entityType": "Vehicle",
+  "subdirectory": "Prefabs/Vehicles",
+  "defaultParent": "Prefabs/Vehicles/Core/Wheeled_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to vehicle hull .xob model"
+    },
+    {
+      "type": "VehicleAnimationComponent",
+      "properties": { "m_sAnimationGraph": "" },
+      "comment": "Path to vehicle animation graph (.agr)"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to hull model path",
+    "Configure wheel/track models and suspension IK chains",
+    "Set up VehicleAnimationComponent with animation graph",
+    "Define engine power, max speed, and torque curves",
+    "Configure fuel capacity and consumption",
+    "Set up seat positions (driver, passengers, gunners)",
+    "Test physics and collision bounds"
+  ],
+  "variants": [
+    {
+      "name": "car",
+      "description": "Passenger and light utility vehicles",
+      "defaultParent": "Prefabs/Vehicles/Core/Wheeled_Car_Base.et",
+      "subdirectory": "Prefabs/Vehicles/Cars",
+      "postCreateNotes": [
+        "Set up 4 wheels with suspension",
+        "Configure light armor (if applicable)",
+        "Set engine power: 80-150 kW typical",
+        "Define seating: 2-5 passengers"
+      ]
+    },
+    {
+      "name": "truck",
+      "description": "Cargo trucks, transport, and logistics vehicles",
+      "defaultParent": "Prefabs/Vehicles/Core/Wheeled_Truck_Base.et",
+      "subdirectory": "Prefabs/Vehicles/Trucks",
+      "postCreateNotes": [
+        "Configure cargo/supply storage component",
+        "Set up 4-6 wheels with heavy suspension",
+        "Engine power: 150-300 kW typical",
+        "Define cargo capacity and weight limits"
+      ]
+    },
+    {
+      "name": "apc",
+      "description": "Armored personnel carriers and light armor",
+      "defaultParent": "Prefabs/Vehicles/Core/Wheeled_APC_Base.et",
+      "subdirectory": "Prefabs/Vehicles/APCs",
+      "postCreateNotes": [
+        "Set up 4-6 wheels",
+        "Configure armor plating and protection",
+        "Set up weapon mounts (machine guns, cannons)",
+        "Define seating: 2-12 passengers + gunners",
+        "Configure viewports/periscopes for occupants"
+      ]
+    },
+    {
+      "name": "tracked",
+      "description": "Tanks, tank destroyers, and tracked vehicles",
+      "defaultParent": "Prefabs/Vehicles/Core/TrackedVehicle_Base.et",
+      "subdirectory": "Prefabs/Vehicles/Tracked",
+      "postCreateNotes": [
+        "Configure left/right track models and drive",
+        "Set up turret rotation and gun elevation",
+        "Define heavy armor and protection values",
+        "Configure main gun and coaxial weapon mounts",
+        "Set up smoke grenade launchers if applicable",
+        "Define engine power: 300-750 kW typical"
+      ]
+    }
+  ]
+}

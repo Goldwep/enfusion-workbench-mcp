@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.js.map
+.env
+enfusion-mcp.config.json
+.scraper-cache/
+*.tsbuildinfo
+*.pdf
+.claude/
+CLAUDE.local.md
+nul
+
+# Project-index runtime cache (created by L1 file watcher / scanner)
+.enfusion-mcp/
+*.db
+*.db-shm
+*.db-wal

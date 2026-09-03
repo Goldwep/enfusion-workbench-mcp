@@ -1,0 +1,29 @@
+{
+  "id": "group",
+  "name": "Group",
+  "description": "AI squads, faction groups, playable groups, and team definitions",
+  "entityType": "SCR_AIGroup",
+  "subdirectory": "Prefabs/Groups",
+  "defaultParent": "Prefabs/Groups/PlayableGroup.et",
+  "overrideComponents": [
+    {
+      "type": "SCR_AIGroup",
+      "properties": { "m_sFactionKey": "" },
+      "comment": "Faction key (US, USSR, FIA, or custom)"
+    },
+    {
+      "type": "SCR_GroupIdentity",
+      "properties": { "m_sCallsign": "" },
+      "comment": "Group callsign/name"
+    }
+  ],
+  "postCreateNotes": [
+    "Set faction key in SCR_AIGroup.m_sFactionKey",
+    "Configure group callsign and unit type",
+    "Set up group composition (squad leader + members)",
+    "Define AI behavior and skill levels",
+    "Configure loadouts for each member",
+    "Set formation and movement preferences if applicable"
+  ],
+  "variants": []
+}

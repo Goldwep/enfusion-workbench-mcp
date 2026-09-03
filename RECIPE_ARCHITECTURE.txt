@@ -1,0 +1,188 @@
+ENFUSION MCP - RECIPE SYSTEM ARCHITECTURE
+=========================================
+
+DATA FLOW: User Request → Prefab Creation
+==========================================
+
+User: "Create a handgun called MyPistol"
+  ↓
+Tool: prefab(action=create, name="MyPistol", prefabType="firearm", variant="handgun")
+  ↓
+RecipeLoader.getRecipe("firearm", "handgun")
+  → Reads: data/recipes/firearm.json
+  → Applies: handgun variant overrides
+  → Returns recipe with:
+    • defaultParent = "Prefabs/Weapons/Core/Handgun_Base.et"
+    • subdirectory = "Prefabs/Weapons/Handguns"
+    • overrideComponents = [MeshObject, WeaponSoundComponent]
+    • postCreateNotes = [5-item checklist]
+  ↓
+Ancestry Resolution: walkChain("Prefabs/Weapons/Core/Handgun_Base.et")
+  → Resolves parent chain: Weapon_Base → Handgun_Base
+  → Extracts ~25 inherited components with GUIDs
+  → Returns: [ComponentDef] with preserved GUIDs
+  ↓
+generatePrefab(options)
+  → Merge: ancestor GUIDs (wins) + recipe overrides + user components
+  → Create entity tree: GenericEntity with inheritance
+  → Components:
+    - WeaponComponent {inherited GUID}
+    - MuzzleComponent {inherited GUID}
+    - ... (inherited)
+    - MeshObject {new GUID} (recipe override)
+    - WeaponSoundComponent {new GUID} (recipe override)
+  ↓
+Serialize to Enfusion text format
+  ↓
+Write: {projectPath}/Prefabs/Weapons/Handguns/MyPistol.et
+  ↓
+Response:
+  ✓ Prefab created: Prefabs/Weapons/Handguns/MyPistol.et
+  Type: firearm (variant: handgun)
+  Ancestry: 2 levels, 25 inherited components
+
+  Required follow-up:
+  [ ] Set MeshObject.Object to your weapon model path (.xob)
+  [ ] Configure WeaponSoundComponent with fire/reload sound files
+  [ ] Set up fire modes in MuzzleComponent
+  [ ] Configure SightsComponent ADS camera
+  [ ] Verify magazine/ammo compatibility
+
+
+ARCHITECTURE LAYERS
+===================
+
+1. USER LAYER
+   - Claude Code / LLM interprets user intent
+   - Calls: prefab(action, prefabType, variant, name, ...)
+
+2. MCP TOOL LAYER (src/tools/prefab.ts)
+   - Validates inputs
+   - Loads recipe
+   - Resolves ancestry
+   - Calls generatePrefab()
+   - Formats response with checklists
+   - Writes to disk
+
+3. RECIPE LAYER (src/templates/recipe*.ts + data/recipes/*.json)
+   - RecipeLoader: Lazy-loads, validates, caches recipes
+   - Recipe schema: TypeScript interfaces (RecipeOverrideComponent, etc)
+   - Recipe data: 12 JSON files (firearm, attachment, vehicle, character, etc)
+   - Variant merging: Applies specializations (handgun, rifle, etc)
+
+4. INTEGRATION LAYER
+   - Ancestry Resolver: Walks parent chains, extracts components with GUIDs
+   - Prefab Generator: Merges components, creates entity tree
+   - Serializer: Converts tree to .et format
+
+5. OUTPUT LAYER
+   - Writes to disk
+   - Returns response with guidance checklist
+
+
+RECIPE CATEGORIES (12 Total)
+=============================
+
+firearm          GenericEntity      Handgun, Rifle, Launcher, Machinegun
+attachment       GenericEntity      Suppressor, Optic, Muzzle Device
+ground_vehicle   Vehicle            Car, Truck, APC, Tracked
+air_vehicle      Vehicle            (Single variant)
+character        SCR_ChimeraCharacter Soldier, Civilian
+prop             GenericEntity      Static, Destructible
+building         SCR_DestructibleBuildingEntity
+item             GenericEntity
+group            SCR_AIGroup
+spawnpoint       GenericEntity
+gamemode         GenericEntity      Conflict, Coop
+generic          GenericEntity
+
+
+FILE STATISTICS
+================
+
+Schema:       recipe.ts              55 lines
+Loader:       recipe-loader.ts       182 lines
+Data:         12 recipe JSON files   514 lines
+Template:     prefab.ts              142 lines
+Tool:         prefab.ts (tool)       332 lines
+---
+Total:        5 core files + 12 data = 1,225 lines
+
+
+KEY DESIGN PRINCIPLES
+======================
+
+1. THIN RECIPES
+   - Point to correct parent
+   - Ancestry resolver fills in inherited components
+   - No duplication (inheritance is automatic)
+   - Maintainable (data, not code)
+
+2. SEPARATED CONCERNS
+   - Recipe schema: Interfaces (src/templates/recipe.ts)
+   - Recipe data: JSON (data/recipes/*.json)
+   - Recipe loader: Loading/validation (recipe-loader.ts)
+   - Prefab tool: MCP interface (tools/prefab.ts)
+
+3. GUIDANCE OVER DEFAULTS
+   - Post-creation checklists
+   - Override components with comments
+   - Variant-specific guidance
+   - Reduces friction ("What do I do next?")
+
+4. VARIANT SPECIALIZATION
+   - Handgun ≠ Rifle ≠ Launcher
+   - Different parents, subdirectories, checklists
+   - Data-driven, not code
+   - Discoverable
+
+5. SEAMLESS INTEGRATION
+   - Works with existing ancestry resolver
+   - Workbench tools unchanged
+   - Patterns library compatible
+   - Scripts can pair with recipe-generated prefabs
+
+
+COMPONENT MERGING STRATEGY
+===========================
+
+Input: ancestorComponents + recipeComponents + userComponents
+
+Merge order (earlier wins):
+1. ancestorComponents (from parent chain) → GUIDs preserved
+2. recipeComponents (not in ancestry) → fills gaps
+3. userComponents (explicit) → user overrides
+
+Example:
+  ancestor: [WeaponComponent{GUID1}, MuzzleComponent{GUID2}, ...]
+  recipe:   [MeshObject, WeaponSoundComponent]
+  result:   [WeaponComponent{GUID1}, MuzzleComponent{GUID2}, ...,
+             MeshObject{newGUID}, WeaponSoundComponent{newGUID}]
+
+Benefit: Users get all inherited components + recipe guidance
+
+
+TESTING & VALIDATION
+=====================
+
+Tests passing:
+  ✓ 17 prefab tests (all 12 categories + variants)
+  ✓ 136+ template tests (no regressions)
+  ✓ TypeScript compiles without errors
+
+Validation:
+  ✓ Schema validated at recipe load time
+  ✓ Ancestry resolution tested with real chains
+  ✓ All tool entry points tested
+
+
+FUTURE ENHANCEMENTS
+====================
+
+1. Recipe verification tool → validate parent paths
+2. Dynamic parent discovery → asset search suggests parents
+3. Smart placeholder population → auto-suggest model/sound paths
+4. Version-tagged recipes → track game compatibility
+5. Custom recipes in mods → users define own recipes
+6. Recipe inheritance → "special_rifle" extends "rifle"
+7. Batch creation → create multiple variants at once

@@ -1,0 +1,8 @@
+GameProject {
+ ID "SampleProject"
+ GUID "11AA22BB33CC44DD"
+ TITLE "Sample Project for Tests"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "air_vehicle",
+  "name": "Air Vehicle",
+  "description": "Helicopters, planes, and rotorcraft",
+  "entityType": "Vehicle",
+  "subdirectory": "Prefabs/Vehicles/Air",
+  "defaultParent": "Prefabs/Vehicles/Core/Helicopter_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to fuselage/hull .xob model"
+    },
+    {
+      "type": "RotorComponent",
+      "properties": { "m_sRotorModel": "" },
+      "comment": "Path to rotor blade .xob model (helicopter only)"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to fuselage model",
+    "Configure rotor/propeller models and rotation speed",
+    "Set up engine thrust and fuel consumption",
+    "Define max altitude and airspeed",
+    "Configure lift and drag coefficients",
+    "Set up weapon hardpoints if applicable",
+    "Configure camera/targeting systems",
+    "Test flight physics and handling"
+  ],
+  "variants": []
+}

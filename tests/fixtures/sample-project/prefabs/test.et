@@ -1,0 +1,9 @@
+GenericEntity : "{A9806AF617972E97}Prefabs/Base.et" {
+ ID "55AA11BB22CC33DD"
+ components {
+  ItemComponent ItemComponent "{66AA11BB22CC33DD}" {
+   m_sDisplayName "Sample Item"
+   m_iWeight 5
+  }
+ }
+}

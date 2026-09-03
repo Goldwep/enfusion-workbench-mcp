@@ -1,0 +1,66 @@
+{
+  "id": "firearm",
+  "name": "Firearm",
+  "description": "Rifles, handguns, machine guns, launchers, and shotguns",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs/Weapons",
+  "defaultParent": "Prefabs/Weapons/Core/Weapon_Base.et",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to your weapon .xob model"
+    },
+    {
+      "type": "WeaponSoundComponent",
+      "properties": { "Filenames": "" },
+      "comment": "Path(s) to .acp sound configuration files"
+    }
+  ],
+  "postCreateNotes": [
+    "Set MeshObject.Object to your weapon model path (.xob)",
+    "Configure WeaponSoundComponent with fire/reload sound files",
+    "Set up fire modes in MuzzleComponent (default: Safe + Single, 500 RPM)",
+    "Configure SightsComponent ADS camera (PivotID: 'eye')",
+    "Verify magazine/ammo compatibility in WeaponComponent properties"
+  ],
+  "variants": [
+    {
+      "name": "handgun",
+      "description": "Pistols and revolvers",
+      "defaultParent": "Prefabs/Weapons/Core/Handgun_Base.et",
+      "subdirectory": "Prefabs/Weapons/Handguns"
+    },
+    {
+      "name": "rifle",
+      "description": "Assault rifles and designated marksman rifles",
+      "defaultParent": "Prefabs/Weapons/Core/Rifle_Base.et",
+      "subdirectory": "Prefabs/Weapons/Rifles"
+    },
+    {
+      "name": "launcher",
+      "description": "Missile, rocket, and grenade launchers",
+      "defaultParent": "Prefabs/Weapons/Core/Launcher_Base.et",
+      "subdirectory": "Prefabs/Weapons/Launchers",
+      "postCreateNotes": [
+        "Set MeshObject.Object to launcher model",
+        "Configure ammo type (missiles/grenades/rockets)",
+        "Set targeting/guidance if applicable",
+        "Configure reload time and capacity"
+      ]
+    },
+    {
+      "name": "machinegun",
+      "description": "Light and heavy machine guns",
+      "defaultParent": "Prefabs/Weapons/Core/MachineGun_Base.et",
+      "subdirectory": "Prefabs/Weapons/MachineGuns",
+      "postCreateNotes": [
+        "Set MeshObject.Object to gun model",
+        "Configure WeaponSoundComponent with gun sounds",
+        "Set fire rate (typically 600-1200 RPM)",
+        "Configure ammo belt/box type",
+        "Set up tripod/mounted configuration if applicable"
+      ]
+    }
+  ]
+}

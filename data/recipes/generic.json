@@ -1,0 +1,23 @@
+{
+  "id": "generic",
+  "name": "Generic Entity",
+  "description": "Fully custom standalone entities with no base game parent",
+  "entityType": "GenericEntity",
+  "subdirectory": "Prefabs",
+  "defaultParent": "",
+  "overrideComponents": [
+    {
+      "type": "MeshObject",
+      "properties": { "Object": "" },
+      "comment": "Path to entity model (optional)"
+    }
+  ],
+  "postCreateNotes": [
+    "This is a blank slate — add whatever components you need",
+    "Set MeshObject.Object if you need a visual representation",
+    "Configure colliders and physics if needed",
+    "Add any custom or script components required",
+    "Define inheritance if this should extend another entity"
+  ],
+  "variants": []
+}
