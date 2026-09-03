@@ -231,3 +231,21 @@ All 20 EMCP handlers were rewritten in the fix phase (see `docs/CODE-REVIEW-2026
 | H4 `saveAs` refusal, H2 component index/class mismatch, H15 multi-word menu paths, ScriptEditor/Localization readbacks, Layers readbacks | **PENDING new build** — the old TS in the running server doesn't send the new wire forms (`saveAs` param, component payload keys), so these need the MCP server restarted on the new `dist/` plus a second live pass. Handler-side logic is in place and compiles |
 
 World state after the gate: net-zero (one rotate + restore; no entities created — the create call was refused by design under the old TS wire form). Handlers left installed in `Test1_sandbox`.
+
+### Second live pass — new build, Workbench 1.8.0.13 (2026-09-03, Test1_sandbox)
+
+The MCP server was restarted on the fixed `dist/` and the game/Tools updated to hotfix 1.8.0.13 (same Doxygen branch; six paks repacked — reader unaffected, suite 1,448 pass with corpus tests on).
+
+| Check | Verdict |
+|---|---|
+| Launch under 1.8.0.13 with the new handler set | **PASS** — one `wb_launch`, handlers compiled, world auto-opened |
+| M9 / H3 `wb_entity_create` end-to-end on the new wire form (`"x y z"`) | **PASS** — created at the requested position; response renders `entityName`/`entityClass`/`position` |
+| H2 component index/class mismatch | **PASS** — `remove MeshObject index 1` refused: "Component at index 1 is 'Persistence', not 'MeshObject'"; nothing deleted |
+| H4 `saveAs` (`wb_save path=…`) | **PASS** — explicit error "saveAs not supported by the public WorldEditor API"; current world untouched, no stray file |
+| H3 `wb_layers list` key alignment | **PASS-with-quirk** — renders `layerID` + entity counts; one list entry arrives without a layer id and prints `?` |
+| `wb_component list` rendering | **QUIRK (new, chip filed)** — two rows per component (alternating "Unknown"), so displayed row numbers ≠ handler indexes (handler index 1 = Persistence, shown at row 3) |
+| H3 `wb_projects list` wire key | **RESOLVED** — built-in `GetLoadedProjects` returns `{"Loaded Projects": [...]}` (`["ArmaReforger","Test1_sandbox"]` live); TS now renders that key (was rendering the raw payload as a fallback) |
+| H3 `wb_terrain getBounds` key alignment | **PASS** — `boundsMin`/`boundsMax` rendered with derived sizes (0 -163 0 → 4096 148.375 4096) |
+| Cleanup | test entity deleted (verified), world saved — net-zero; handlers left installed in `Test1_sandbox` |
+
+Still pending live confirmation (need either a known-existing menu path or a longer session): H15 multi-word `wb_execute_action` (refusal-on-false verified, trim fix only by reading), a real `wb_build_data` run (`-wbModule` flag + `-noPause` tolerance), `wb_prefabs createTemplate` bare-relative `GetAbsolutePath` behaviour, ScriptEditor/Localization/Layers readback paths. Not carried by 1.8.0.13: no API renames (all 20 handlers respond), no re-GUIDing (`find_broken_refs` baseline unchanged — note the tool has no `project` filter, a pre-existing gap).

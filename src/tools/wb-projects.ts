@@ -12,14 +12,19 @@ import { openResourceFailed } from "./wb-editor.js";
 /**
  * Render the `list` response. The shape returned by the built-in
  * `GetLoadedProjects` NET API function is not verified against a live
- * Workbench (LIVE): render `projects` / `addons` arrays when present, otherwise
+ * Workbench (LIVE): render `Loaded Projects` / `projects` / `addons` arrays when present, otherwise
  * dump whatever keys arrived instead of claiming nothing is loaded.
  */
 export function formatLoadedProjects(result: Record<string, unknown>): string {
-  const list = Array.isArray(result.projects)
-    ? result.projects
-    : Array.isArray(result.addons)
-      ? result.addons
+  // Live-verified 2026-09-03: the built-in GetLoadedProjects returns
+  // { "Loaded Projects": ["ArmaReforger", "Test1_sandbox"] }.
+  const loaded = (result as Record<string, unknown>)["Loaded Projects"];
+  const list = Array.isArray(loaded)
+    ? loaded
+    : Array.isArray(result.projects)
+      ? result.projects
+      : Array.isArray(result.addons)
+        ? result.addons
       : null;
 
   if (list === null) {

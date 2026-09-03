@@ -79,3 +79,28 @@ No new factions, vehicles, or maps. Equipment-level additions (deployable razorw
 M203 smoke rounds, FIA camo netting, SVD bayonet), new gesture/loiter animations.
 Gameplay headlines for context: Far Hide, grass/camo occluding AI vision, specialist
 role speed bonuses, rank-point death penalty, admin camera tools.
+
+---
+
+## Hotfix 1.8.0.13 (released 2026-09-03)
+
+Hotfix-scale; same Doxygen build branch (`stable_1_88_80`). Modding-relevant items from the
+official changelog (https://reforger.armaplatform.com/news/update-september-3-2026):
+
+- **`SCR_AnalyticsApplication` world system is now enabled** (plus a new Analytics opt-in in
+  Gameplay settings) — mods that stubbed or assumed it inactive may behave differently.
+- **Group-creation rules tightened server-side:** a new-group request joins an existing group
+  with matching name/description/privacy (or reconfigures it); no new group if your solo group
+  already matches; private groups only when the request auto-joins the creator; no groups that
+  would survive the last player leaving; privacy changes only where the group allows them.
+  Mods overriding the group-creation flow should re-test.
+- Fixes touching script behavior: `HitZone::SetHealthScaled` inside damage handling no longer
+  yields a wrong damage state; `IOP.Reset` now covered by the lock (MT safety); persistence
+  script rules are invoked again; `SCR_CampaignBuildingTransformingEditorComponent` server VME.
+- Workbench: TDR crash prevention when generating the Shore map; building-editor null pointer
+  and map-scale division-by-zero VMEs fixed.
+- RCON: crash using vanilla scripted commands on a modded server fixed; client logs server
+  id/name on join; better commander logging.
+- No API additions/deprecations/renames, no content re-GUIDing, no pak/packaging or Workshop
+  changes. Six paks were repacked (data007, data010, worlds, worlds001, worlds002,
+  shaders-dx12) — the reader's dual-generation logic handles them unchanged.
