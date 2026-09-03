@@ -10,7 +10,9 @@ import type { RunOptions, RunResult } from "../../src/workbench/cli-runner.js";
 // Mock only the spawn side; finishRun / tailLines stay real.
 vi.mock("../../src/workbench/cli-runner.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/workbench/cli-runner.js")>();
-  return { ...actual, runWorkbench: vi.fn() };
+  // headlessSpawnBlocker consults tasklist for a real Workbench; a dev box may
+  // legitimately have one open, so neutralise the guard for these unit tests.
+  return { ...actual, runWorkbench: vi.fn(), headlessSpawnBlocker: () => null };
 });
 vi.mock("../../src/workbench/wb-deps.js", () => ({
   checkWorkbenchVisibleDeps: () => ({
@@ -264,7 +266,9 @@ describe("wb_build_data: input guards", () => {
     const { call } = captureTool();
     expect((await call({ gproj_path: "-wbModule=x", out_dir: root })).isError).toBe(true);
     expect((await call({ gproj_path: gproj, out_dir: 'a"b' })).isError).toBe(true);
-    expect((await call({ gproj_path: join(root, "nope.gproj"), out_dir: root })).isError).toBe(true);
+    expect((await call({ gproj_path: join(root, "nope.gproj"), out_dir: root })).isError).toBe(
+      true,
+    );
     expect(mockedRun).not.toHaveBeenCalled();
   });
 });

@@ -9,7 +9,9 @@ import type { RunResult } from "../../src/workbench/cli-runner.js";
 
 vi.mock("../../src/workbench/cli-runner.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/workbench/cli-runner.js")>();
-  return { ...actual, runWorkbench: vi.fn() };
+  // Neutralise the running-Workbench guard so the unit tests don't depend on
+  // whether a real Workbench happens to be open on the dev box.
+  return { ...actual, runWorkbench: vi.fn(), headlessSpawnBlocker: () => null };
 });
 vi.mock("../../src/workbench/wb-deps.js", () => ({
   checkWorkbenchVisibleDeps: () => ({
@@ -124,7 +126,9 @@ describe("wb_cli_run: target validation (L3)", () => {
       "-noPause",
     ]);
     expect(planFor("buildScripts", gproj, "HEADLESS")).toContain("-config=HEADLESS");
-    expect(planFor("openProject", gproj, "PC").some((a) => a.startsWith("-wbProjectPath="))).toBe(false);
+    expect(planFor("openProject", gproj, "PC").some((a) => a.startsWith("-wbProjectPath="))).toBe(
+      false,
+    );
   });
 });
 
@@ -203,7 +207,9 @@ describe("wb_cli_run: handler", () => {
     expect(DEFAULT_CLI_TIMEOUT_S).toBeLessThanOrEqual(110);
     mockedRun.mockResolvedValue(baseResult());
     const { schema, call } = captureTool();
-    expect(schema.parse({ command: "openProject", target: "x" }).timeout_seconds).toBe(DEFAULT_CLI_TIMEOUT_S);
+    expect(schema.parse({ command: "openProject", target: "x" }).timeout_seconds).toBe(
+      DEFAULT_CLI_TIMEOUT_S,
+    );
     await call({ command: "navmeshGenerate", target: "worlds/w.ent", timeout_seconds: 900 });
     expect(mockedRun.mock.calls[0][0].timeoutMs).toBe(900_000);
   });

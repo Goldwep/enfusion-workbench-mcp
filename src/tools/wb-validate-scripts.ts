@@ -48,12 +48,10 @@ import {
   runWorkbench,
   tailLines,
   validateArgs,
+  headlessSpawnBlocker,
 } from "../workbench/cli-runner.js";
 import { LaunchWatchdog } from "../workbench/launch-watchdog.js";
-import {
-  inspectProcessWindows,
-  nudgeEnfusionLauncher,
-} from "../workbench/launcher-nudge.js";
+import { inspectProcessWindows, nudgeEnfusionLauncher } from "../workbench/launcher-nudge.js";
 import {
   WorkbenchLaunchTracker,
   findNewSessionDir,
@@ -136,9 +134,7 @@ function dedupeLogLines(lines: string[]): string[] {
 
 export function extractErrorLines(text: string): string[] {
   return dedupeLogLines(
-    text
-      .split(/\r?\n/)
-      .filter((l) => /\(E\)|^error|: error\b/i.test(l) && !/0 errors/i.test(l)),
+    text.split(/\r?\n/).filter((l) => /\(E\)|^error|: error\b/i.test(l) && !/0 errors/i.test(l)),
   );
 }
 
@@ -222,9 +218,7 @@ export function registerWbValidateScripts(server: McpServer, config: Config): vo
         const fullPath = resolve(gproj_path);
         if (!existsSync(fullPath)) {
           return {
-            content: [
-              { type: "text" as const, text: `.gproj not found: ${fullPath}` },
-            ],
+            content: [{ type: "text" as const, text: `.gproj not found: ${fullPath}` }],
             isError: true,
           };
         }
@@ -256,6 +250,12 @@ export function registerWbValidateScripts(server: McpServer, config: Config): vo
           });
         }
 
+        const blocker = headlessSpawnBlocker();
+
+        if (blocker) {
+          return { content: [{ type: "text" as const, text: blocker }], isError: true };
+        }
+
         const result = await runWorkbench({
           workbenchPath: config.workbenchPath,
           args,
@@ -267,7 +267,10 @@ export function registerWbValidateScripts(server: McpServer, config: Config): vo
         const consoleTail = tailLines(tracker.readConsoleLog(), 15);
 
         // Launcher-stuck verdicts replace the normal output entirely.
-        if (result.earlySignal === "stuck:launcher-picker" || result.earlySignal === "stuck:missing-deps") {
+        if (
+          result.earlySignal === "stuck:launcher-picker" ||
+          result.earlySignal === "stuck:missing-deps"
+        ) {
           return {
             content: [
               {
@@ -340,7 +343,10 @@ export function registerWbValidateScripts(server: McpServer, config: Config): vo
           );
         }
         const preflightNote = buildPreflightNote(depCheck);
-        if (preflightNote && (result.earlySignal === "successful" || result.earlySignal === "failed")) {
+        if (
+          preflightNote &&
+          (result.earlySignal === "successful" || result.earlySignal === "failed")
+        ) {
           lines.push(preflightNote);
         }
         lines.push(

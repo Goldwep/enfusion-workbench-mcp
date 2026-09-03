@@ -31,16 +31,11 @@ import {
   finishRun,
   runWorkbench,
   tailLines,
+  headlessSpawnBlocker,
 } from "../workbench/cli-runner.js";
 import { LaunchWatchdog } from "../workbench/launch-watchdog.js";
-import {
-  inspectProcessWindows,
-  nudgeEnfusionLauncher,
-} from "../workbench/launcher-nudge.js";
-import {
-  WorkbenchLaunchTracker,
-  snapshotSessionDirs,
-} from "../workbench/launch-tracker.js";
+import { inspectProcessWindows, nudgeEnfusionLauncher } from "../workbench/launcher-nudge.js";
+import { WorkbenchLaunchTracker, snapshotSessionDirs } from "../workbench/launch-tracker.js";
 import {
   buildPreflightNote,
   buildStuckReport,
@@ -49,12 +44,7 @@ import {
 import { checkWorkbenchVisibleDeps, type WbDepsCheck } from "../workbench/wb-deps.js";
 import { ValidateRunTracker } from "./wb-validate-scripts.js";
 
-const COMMANDS = [
-  "openProject",
-  "navmeshGenerate",
-  "buildScripts",
-  "forceSaveAll",
-] as const;
+const COMMANDS = ["openProject", "navmeshGenerate", "buildScripts", "forceSaveAll"] as const;
 type Command = (typeof COMMANDS)[number];
 
 const COMMAND_DESCRIPTIONS: Record<Command, string> = {
@@ -112,13 +102,7 @@ export function planFor(cmd: Command, target: string, platformConfig: string): s
     case "openProject":
       return ["-wbProjectPath", target, "-noPause"];
     case "navmeshGenerate":
-      return [
-        "-wbModule=NavmeshGeneratorMain",
-        "-run",
-        "-autogenerate",
-        target,
-        "-noPause",
-      ];
+      return ["-wbModule=NavmeshGeneratorMain", "-run", "-autogenerate", target, "-noPause"];
     case "buildScripts":
       return [
         "-wbModule=ScriptEditor",
@@ -129,14 +113,7 @@ export function planFor(cmd: Command, target: string, platformConfig: string): s
         "-noPause",
       ];
     case "forceSaveAll":
-      return [
-        "-wbModule=WorldEditor",
-        "-run",
-        "-load",
-        target,
-        "-forceSaveAll",
-        "-noPause",
-      ];
+      return ["-wbModule=WorldEditor", "-run", "-load", target, "-forceSaveAll", "-noPause"];
   }
 }
 
@@ -188,7 +165,9 @@ export function registerWbCliRun(server: McpServer, config: Config): void {
         const targetErr = validateResourceTarget(target);
         if (targetErr !== null) {
           return {
-            content: [{ type: "text" as const, text: `Invalid target: ${targetErr} (got: ${target})` }],
+            content: [
+              { type: "text" as const, text: `Invalid target: ${targetErr} (got: ${target})` },
+            ],
             isError: true,
           };
         }
@@ -237,6 +216,12 @@ export function registerWbCliRun(server: McpServer, config: Config): void {
           });
         }
 
+        const blocker = headlessSpawnBlocker();
+
+        if (blocker) {
+          return { content: [{ type: "text" as const, text: blocker }], isError: true };
+        }
+
         const result = await runWorkbench({
           workbenchPath: config.workbenchPath,
           args,
@@ -246,7 +231,10 @@ export function registerWbCliRun(server: McpServer, config: Config): void {
 
         const consoleTail = tailLines(tracker.readConsoleLog(), 15);
 
-        if (result.earlySignal === "stuck:launcher-picker" || result.earlySignal === "stuck:missing-deps") {
+        if (
+          result.earlySignal === "stuck:launcher-picker" ||
+          result.earlySignal === "stuck:missing-deps"
+        ) {
           return {
             content: [
               {

@@ -23,7 +23,7 @@
  * second Workbench outlives the call.
  */
 
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { logger } from "../utils/logger.js";
@@ -94,6 +94,52 @@ const DEFAULT_MAX_OUTPUT_BYTES = 1 * 1024 * 1024;
  * tests. The pid is validated as a positive safe integer so nothing
  * flag-shaped can ride in; the argv is passed to spawn without a shell.
  */
+/**
+ * Image name of the Workbench executable, used to detect an already-running
+ * instance before a headless spawn.
+ */
+export const WORKBENCH_IMAGE = "ArmaReforgerWorkbenchSteamDiag.exe";
+
+/**
+ * PIDs of running Workbench instances (win32 via `tasklist`, argv array, no
+ * shell). Empty elsewhere or on error. Injectable for tests.
+ */
+export function runningWorkbenchPids(
+  exec: (file: string, args: string[]) => string = (f, a) =>
+    execFileSync(f, a, { encoding: "utf-8", windowsHide: true }),
+): number[] {
+  if (process.platform !== "win32") return [];
+  try {
+    const out = exec("tasklist", ["/FI", `IMAGENAME eq ${WORKBENCH_IMAGE}`, "/FO", "CSV", "/NH"]);
+    const pids: number[] = [];
+    for (const line of out.split(/\r?\n/)) {
+      const m = /^"[^"]+","(\d+)"/.exec(line.trim());
+      if (m) pids.push(Number(m[1]));
+    }
+    return pids;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Headless Workbench runs (buildData / validate / cli) MUST NOT start while a
+ * Workbench instance is already running: the Steam launcher stub forwards the
+ * new arguments to the existing instance, which drops the live NET API
+ * session and re-opens the launcher picker (live-observed 2026-09-03 — the
+ * open editor session was lost and a different recent project was opened).
+ * Returns a user-facing refusal message, or null when it is safe to spawn.
+ */
+export function headlessSpawnBlocker(pids: number[] = runningWorkbenchPids()): string | null {
+  if (pids.length === 0) return null;
+  return (
+    `Refusing to start a headless Workbench run: ${WORKBENCH_IMAGE} is already running ` +
+    `(pid ${pids.join(", ")}). Steam's single-instance launcher would forward the arguments ` +
+    "to the open Workbench, dropping the live session and re-opening the project picker. " +
+    "Close Workbench (or wb_stop your session) first, then retry."
+  );
+}
+
 export function buildTaskkillArgv(pid: number): string[] {
   if (!Number.isSafeInteger(pid) || pid <= 0) {
     throw new Error(`Refusing to taskkill invalid pid ${String(pid)}`);
@@ -166,8 +212,7 @@ export function validateArgs(args: string[], knownFlagPrefixes: string[]): void 
  * stderr (bounded), reports exit code, and applies a wall-clock timeout.
  */
 export function runWorkbench(opts: RunOptions): Promise<RunResult> {
-  const exePath =
-    opts.exePath ?? join(opts.workbenchPath, "Workbench", WORKBENCH_EXE);
+  const exePath = opts.exePath ?? join(opts.workbenchPath, "Workbench", WORKBENCH_EXE);
   if (!existsSync(exePath)) {
     return Promise.reject(
       new Error(
@@ -191,7 +236,10 @@ export function runWorkbench(opts: RunOptions): Promise<RunResult> {
     let earlySignal: string | null = null;
     let settled = false;
     let closed = false;
-    let closeInfo: { code: number | null; signal: NodeJS.Signals | null } = { code: null, signal: null };
+    let closeInfo: { code: number | null; signal: NodeJS.Signals | null } = {
+      code: null,
+      signal: null,
+    };
     let signalTimer: NodeJS.Timeout | undefined;
     let graceTimer: NodeJS.Timeout | undefined;
 
@@ -273,14 +321,20 @@ export function runWorkbench(opts: RunOptions): Promise<RunResult> {
     child.stdout.on("data", (chunk: Buffer) => {
       if (stdout.length < maxOutputBytes) {
         const remaining = maxOutputBytes - stdout.length;
-        stdout += chunk.length <= remaining ? chunk.toString("utf-8") : chunk.subarray(0, remaining).toString("utf-8");
+        stdout +=
+          chunk.length <= remaining
+            ? chunk.toString("utf-8")
+            : chunk.subarray(0, remaining).toString("utf-8");
         if (chunk.length > remaining) stdoutOverflow = true;
       }
     });
     child.stderr.on("data", (chunk: Buffer) => {
       if (stderr.length < maxOutputBytes) {
         const remaining = maxOutputBytes - stderr.length;
-        stderr += chunk.length <= remaining ? chunk.toString("utf-8") : chunk.subarray(0, remaining).toString("utf-8");
+        stderr +=
+          chunk.length <= remaining
+            ? chunk.toString("utf-8")
+            : chunk.subarray(0, remaining).toString("utf-8");
         if (chunk.length > remaining) stderrOverflow = true;
       }
     });
@@ -370,10 +424,15 @@ export function finishRun(
     try {
       check = artefactCheck();
     } catch (e) {
-      check = { ok: false, detail: `artefact check threw: ${e instanceof Error ? e.message : String(e)}` };
+      check = {
+        ok: false,
+        detail: `artefact check threw: ${e instanceof Error ? e.message : String(e)}`,
+      };
     }
     if (!check.ok) {
-      const exitNote = result.earlySignal ? `signal ${result.earlySignal}` : `exit ${result.exitCode ?? 0}`;
+      const exitNote = result.earlySignal
+        ? `signal ${result.earlySignal}`
+        : `exit ${result.exitCode ?? 0}`;
       return {
         ok: false,
         status: "no-artefacts",

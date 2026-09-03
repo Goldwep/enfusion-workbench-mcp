@@ -41,16 +41,11 @@ import {
   runWorkbench,
   tailLines,
   type ArtefactCheckResult,
+  headlessSpawnBlocker,
 } from "../workbench/cli-runner.js";
 import { LaunchWatchdog } from "../workbench/launch-watchdog.js";
-import {
-  inspectProcessWindows,
-  nudgeEnfusionLauncher,
-} from "../workbench/launcher-nudge.js";
-import {
-  WorkbenchLaunchTracker,
-  snapshotSessionDirs,
-} from "../workbench/launch-tracker.js";
+import { inspectProcessWindows, nudgeEnfusionLauncher } from "../workbench/launcher-nudge.js";
+import { WorkbenchLaunchTracker, snapshotSessionDirs } from "../workbench/launch-tracker.js";
 import {
   buildPreflightNote,
   buildStuckReport,
@@ -204,6 +199,9 @@ export async function executeBuildData(
       depCheckError = e instanceof Error ? e.message : String(e);
     }
 
+    const blocker = headlessSpawnBlocker();
+    if (blocker) return { text: blocker, isError: true };
+
     const args = buildBuildDataArgs(platform, outFull, gprojFull);
     const logsRoot = config.logsPath;
     const tracker = new WorkbenchLaunchTracker(logsRoot, snapshotSessionDirs(logsRoot));
@@ -222,11 +220,16 @@ export async function executeBuildData(
       timeoutMs: timeout_seconds * 1000,
       pollSignal: { intervalMs: 2000, check: tracker.check },
     });
-    log(`exit: code=${result.exitCode ?? "(killed)"} timedOut=${result.timedOut} ${(result.durationMs / 1000).toFixed(1)}s`);
+    log(
+      `exit: code=${result.exitCode ?? "(killed)"} timedOut=${result.timedOut} ${(result.durationMs / 1000).toFixed(1)}s`,
+    );
 
     const consoleTail = tailLines(tracker.readConsoleLog(), 15);
 
-    if (result.earlySignal === "stuck:launcher-picker" || result.earlySignal === "stuck:missing-deps") {
+    if (
+      result.earlySignal === "stuck:launcher-picker" ||
+      result.earlySignal === "stuck:missing-deps"
+    ) {
       return {
         text: buildStuckReport(result.earlySignal, {
           toolLabel: "wb_build_data",
@@ -250,7 +253,9 @@ export async function executeBuildData(
     lines.push(`## wb_build_data: ${platform} → ${outFull}`);
     lines.push("");
     lines.push(`Source: ${gprojFull}`);
-    lines.push(`Exit code: ${result.exitCode ?? "(killed)"}${result.timedOut ? " — TIMEOUT (process tree killed)" : ""}`);
+    lines.push(
+      `Exit code: ${result.exitCode ?? "(killed)"}${result.timedOut ? " — TIMEOUT (process tree killed)" : ""}`,
+    );
     lines.push(`Duration: ${(result.durationMs / 1000).toFixed(1)}s`);
     lines.push(
       `Output files: ${artefacts.fresh} written this run (${artefacts.total} total under out_dir)`,
@@ -326,8 +331,7 @@ export function formatBuildJobStatus(
       isError: true,
     };
   }
-  const elapsedMs =
-    info.startedAt === null ? 0 : (info.completedAt ?? Date.now()) - info.startedAt;
+  const elapsedMs = info.startedAt === null ? 0 : (info.completedAt ?? Date.now()) - info.startedAt;
   const head =
     `## wb_build_data job ${info.id}\n\n` +
     `Status: ${info.status}\n` +
@@ -335,7 +339,10 @@ export function formatBuildJobStatus(
   if (info.status === "queued" || info.status === "running") {
     const logTail = info.logs.slice(-10).join("\n");
     return {
-      text: head + `\nStill ${info.status} — poll again with action:"poll", job_id:"${info.id}".` + (logTail ? `\n\n### Job log\n\`\`\`\n${logTail}\n\`\`\`` : ""),
+      text:
+        head +
+        `\nStill ${info.status} — poll again with action:"poll", job_id:"${info.id}".` +
+        (logTail ? `\n\n### Job log\n\`\`\`\n${logTail}\n\`\`\`` : ""),
       isError: false,
     };
   }
@@ -368,7 +375,7 @@ export function registerWbBuildData(server: McpServer, config: Config): void {
         "Run `ArmaReforgerWorkbenchSteamDiag.exe -wbModule=ResourceManager -buildData <platform> <outDir> -wbProjectPath <gproj>` to produce packed .pak output for a project (Workbench exits when the build completes). " +
         "Success requires at least one file written to out_dir during the run — an exit 0 with an empty out_dir is reported as an error with the log tail. " +
         `Default timeout is ${DEFAULT_BUILD_TIMEOUT_S}s so the call fits an MCP client window; on timeout the whole Workbench process tree is killed. ` +
-        "Long builds (1-10 min): either raise `timeout_seconds` explicitly, or use `action:\"start\"` (returns a job_id immediately, build continues in the background) then `action:\"poll\"` with that job_id until status is done. " +
+        'Long builds (1-10 min): either raise `timeout_seconds` explicitly, or use `action:"start"` (returns a job_id immediately, build continues in the background) then `action:"poll"` with that job_id until status is done. ' +
         "If the launcher holds at its Projects picker (waiting for a human click on Open, often minimized), the run auto-confirms it by restoring the window and posting Enter; " +
         "a genuine launch block reports the diagnosis (dependency GUID visibility + remedies) instead of a bare timeout.",
       inputSchema: {
@@ -392,10 +399,7 @@ export function registerWbBuildData(server: McpServer, config: Config): void {
           .describe(
             "Output directory (will be created if missing). Absolute or relative to cwd. Required for `run`/`start`.",
           ),
-        platform: z
-          .enum(BUILD_PLATFORMS)
-          .default("PC")
-          .describe("Target platform for pak output"),
+        platform: z.enum(BUILD_PLATFORMS).default("PC").describe("Target platform for pak output"),
         timeout_seconds: z
           .number()
           .min(10)
@@ -420,7 +424,7 @@ export function registerWbBuildData(server: McpServer, config: Config): void {
 
       if (action === "poll") {
         if (!job_id) {
-          return wrap({ text: "action:\"poll\" requires job_id", isError: true });
+          return wrap({ text: 'action:"poll" requires job_id', isError: true });
         }
         return wrap(formatBuildJobStatus(job_id, buildJobs.status(job_id)));
       }
@@ -431,7 +435,13 @@ export function registerWbBuildData(server: McpServer, config: Config): void {
           isError: true,
         });
       }
-      const params: BuildDataParams = { gproj_path, out_dir, platform, timeout_seconds, launcher_nudge };
+      const params: BuildDataParams = {
+        gproj_path,
+        out_dir,
+        platform,
+        timeout_seconds,
+        launcher_nudge,
+      };
 
       if (action === "start") {
         const id = buildJobs.spawn<BuildDataOutcome>(

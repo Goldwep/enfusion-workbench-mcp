@@ -7,6 +7,8 @@ import {
   finishRun,
   killProcessTree,
   runWorkbench,
+  runningWorkbenchPids,
+  headlessSpawnBlocker,
   type RunResult,
 } from "../../src/workbench/cli-runner.js";
 
@@ -81,7 +83,9 @@ describe("cli-runner: finishRun (H10)", () => {
   });
 
   it("flags launcher-stuck signals", () => {
-    expect(finishRun(result({ earlySignal: "stuck:launcher-picker", exitCode: null })).status).toBe("stuck");
+    expect(finishRun(result({ earlySignal: "stuck:launcher-picker", exitCode: null })).status).toBe(
+      "stuck",
+    );
   });
 
   it("exit 0 but a failing artefact check is an error with the detail", () => {
@@ -209,4 +213,30 @@ describe("cli-runner: killProcessTree (real taskkill on win32)", () => {
     expect(alive(parent.pid!)).toBe(false);
     expect(alive(grand)).toBe(false);
   }, 20_000);
+});
+
+describe("headless spawn guard (running Workbench instance)", () => {
+  it("parses tasklist CSV into pids", () => {
+    const out = '"ArmaReforgerWorkbenchSteamDiag.exe","16992","Console","1","534,120 K"\r\n';
+    expect(runningWorkbenchPids(() => out)).toEqual([16992]);
+  });
+
+  it("returns [] when tasklist reports no match or throws", () => {
+    expect(
+      runningWorkbenchPids(() => "INFO: No tasks are running which match the specified criteria."),
+    ).toEqual([]);
+    expect(
+      runningWorkbenchPids(() => {
+        throw new Error("nope");
+      }),
+    ).toEqual([]);
+  });
+
+  it("blocks with a clear message when an instance is running, null otherwise", () => {
+    expect(headlessSpawnBlocker([])).toBeNull();
+    const msg = headlessSpawnBlocker([16992]);
+    expect(msg).toContain("already running");
+    expect(msg).toContain("16992");
+    expect(msg).toContain("Close Workbench");
+  });
 });
