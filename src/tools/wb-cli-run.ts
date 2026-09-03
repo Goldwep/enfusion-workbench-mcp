@@ -224,6 +224,7 @@ export function registerWbCliRun(server: McpServer, config: Config): void {
 
         const result = await runWorkbench({
           workbenchPath: config.workbenchPath,
+          gamePath: config.gamePath,
           args,
           timeoutMs: timeout_seconds * 1000,
           pollSignal: { intervalMs: 2000, check: tracker.check },

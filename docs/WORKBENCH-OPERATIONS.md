@@ -57,3 +57,7 @@ The dep scan reads the same locations Workbench does, including the registered-p
 ## Headless runs and the single-instance launcher
 
 `ArmaReforgerWorkbenchSteamDiag.exe` is single-instance via the Steam launcher stub. Starting a second copy with headless arguments (`-wbModule=ResourceManager -buildData …`, `-wbModule=ScriptEditor -validate …`) while a Workbench is open does **not** start a second process: the stub forwards the arguments to the running instance, which drops your NET API session and falls back to the launcher picker. The headless tools now refuse to spawn while an instance is running. Rule: **headless builds/validation only with no Workbench open**, and never drive one Workbench from two sessions at once — a second session's launch (e.g. via a junction path like `C:\Users\<you>\WBaddons`) will collide with yours.
+
+## Orphaned NET API port after a Workbench crash
+
+When Workbench crashes, its `CrashReporter.exe` child inherits the open socket handles — `netstat -ano | findstr :5775` then shows a LISTENING entry owned by a PID that no longer exists, and `wb_connect` fails even though a fresh Workbench is up. Fix: `Get-Process CrashReporter` → terminate it (its `.mdmp` is already written), then reconnect. The audit's 2026-09-03 session lost ~10 minutes to this.

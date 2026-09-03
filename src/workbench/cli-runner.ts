@@ -26,6 +26,7 @@
 import { spawn, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { findGameAcrossSteamLibraries, steamRootOf } from "../utils/steam.js";
 import { logger } from "../utils/logger.js";
 
 const WORKBENCH_EXE = "ArmaReforgerWorkbenchSteamDiag.exe";
@@ -60,8 +61,14 @@ export interface RunOptions {
   exePath?: string;
   /** Curated argv. Each entry is passed as-is to spawn (no shell). */
   args: string[];
-  /** Working directory. Defaults to workbenchPath/Workbench. */
+  /**
+   * Working directory. Defaults to {@link resolveHeadlessCwd}: the GAME
+   * install dir when it can be found (so `./addons/data` — the base-game
+   * addon 58D0FB3206B6F859 — resolves), else workbenchPath/Workbench.
+   */
   cwd?: string;
+  /** Game install dir hint for the default cwd (config.gamePath). */
+  gamePath?: string;
   /** Wall-clock timeout in ms. Default {@link DEFAULT_TIMEOUT_MS} (100 s). */
   timeoutMs?: number;
   /**
@@ -138,6 +145,22 @@ export function headlessSpawnBlocker(pids: number[] = runningWorkbenchPids()): s
     "to the open Workbench, dropping the live session and re-opening the project picker. " +
     "Close Workbench (or wb_stop your session) first, then retry."
   );
+}
+
+/**
+ * Working directory for a headless Workbench spawn. Same rule as the GUI
+ * launch in client.ts: the engine resolves the base-game data addon
+ * (58D0FB3206B6F859) via `./addons` relative to CWD, so a mod that depends on
+ * the base game only loads when CWD is the GAME install — not the Tools.
+ * Live 2026-09-03: a build spawned from the Workbench dir stalled at engine
+ * creation on the Missing Addon modal. Order: gamePath (if it has addons/)
+ * → Steam-library scan → the historical Workbench dir.
+ */
+export function resolveHeadlessCwd(workbenchPath: string, gamePath?: string): string {
+  if (gamePath && existsSync(join(gamePath, "addons"))) return gamePath;
+  const scanned = findGameAcrossSteamLibraries("Arma Reforger", [steamRootOf(workbenchPath)]);
+  if (scanned) return scanned;
+  return join(workbenchPath, "Workbench");
 }
 
 export function buildTaskkillArgv(pid: number): string[] {
@@ -223,7 +246,7 @@ export function runWorkbench(opts: RunOptions): Promise<RunResult> {
 
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxOutputBytes = opts.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
-  const cwd = opts.cwd ?? join(opts.workbenchPath, "Workbench");
+  const cwd = opts.cwd ?? resolveHeadlessCwd(opts.workbenchPath, opts.gamePath);
   const killTree = opts.killTree ?? killProcessTree;
   const startedAt = Date.now();
 

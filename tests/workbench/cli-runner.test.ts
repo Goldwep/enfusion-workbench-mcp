@@ -9,8 +9,11 @@ import {
   runWorkbench,
   runningWorkbenchPids,
   headlessSpawnBlocker,
+  resolveHeadlessCwd,
   type RunResult,
 } from "../../src/workbench/cli-runner.js";
+import { mkdtempSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { join } from "node:path";
 
 const IDLE_SCRIPT = "setInterval(() => {}, 1000)";
 
@@ -213,6 +216,33 @@ describe("cli-runner: killProcessTree (real taskkill on win32)", () => {
     expect(alive(parent.pid!)).toBe(false);
     expect(alive(grand)).toBe(false);
   }, 20_000);
+});
+
+describe("resolveHeadlessCwd (game-dir cwd for headless spawns)", () => {
+  it("prefers a gamePath that has an addons/ folder", () => {
+    const game = mkdtempSync(join(tmpdir(), "emcp-game-"));
+    mkdirSync(join(game, "addons"));
+    try {
+      expect(resolveHeadlessCwd(join(tmpdir(), "no-tools-here"), game)).toBe(game);
+    } finally {
+      rmSync(game, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores a gamePath without addons/ and never returns it", () => {
+    const tools = mkdtempSync(join(tmpdir(), "emcp-tools-"));
+    try {
+      const bogusGame = join(tools, "nope");
+      const cwd = resolveHeadlessCwd(tools, bogusGame);
+      expect(cwd).not.toBe(bogusGame);
+      // Either the Steam-library scan found a real install (dev box with the
+      // game installed) or we fell back to the historical Workbench dir.
+      const realGame = existsSync(join(cwd, "addons"));
+      expect(realGame || cwd === join(tools, "Workbench")).toBe(true);
+    } finally {
+      rmSync(tools, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("headless spawn guard (running Workbench instance)", () => {
