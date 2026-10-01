@@ -56,6 +56,12 @@ const RECON: Record<string, string> = {
     "| GetSelectedEntitiesCount | API method | Number of selected entities | WorldEditorAPI.GetSelectedEntitiesCount() | net-api-handler | wb_entity_select [emcp_wb_selectentity] | WorldEditorAPI.c | high |",
     "| Startup | architecture | How the module boots | none | n/a | none | src/server.ts | high |",
     "",
+    "## 2.8 Script plugins registered for the World Editor module (or driving it from the CLI)",
+    "",
+    "| Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence |",
+    "|---|---|---|---|---|---|---|---|",
+    "| SelectionToPrefabPlugin | plugin (WorldEditorPlugin) | Saves the selection as a prefab | WorldEditorAPI.CreateEntityTemplate | plugin-run | none | wiki | high |",
+    "",
     "## 5. Proposed 2.0 work items",
     "",
     "| # | Title | Kind | Size | Needs live Workbench |",
@@ -72,6 +78,12 @@ const RECON: Record<string, string> = {
     "| --- | --- | --- | --- |",
     "| `TextureImportPlugin` | Resource Manager | partial | mutating |",
     "| `MaterialCheckPlugin` | Resource Manager | none | read-only |",
+    "",
+    "## 3.2 Texture Editor",
+    "",
+    "| Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence |",
+    "|---|---|---|---|---|---|---|---|",
+    "| Open texture | editor | 2D viewer | SetOpenedResource | net-api-handler | partial: wb_resources open | wiki | high |",
     "",
   ].join("\n"),
   "script-string-dialogue.md": [
@@ -198,7 +210,7 @@ describe("e01-recon-import", () => {
       provisional: true,
       row_count: lines.length,
     });
-    expect(lines.length).toBe(25);
+    expect(lines.length).toBe(27);
     expect(lines.every((l) => l.confidence === "low")).toBe(true);
     expect(
       lines.every(
@@ -207,7 +219,7 @@ describe("e01-recon-import", () => {
           /^<repo>\/docs\/v2\/recon\/[a-z-]+\.md#L\d+$/.test(l.ref as string),
       ),
     ).toBe(true);
-    expect(r.stdout).toContain("25 provisional observations");
+    expect(r.stdout).toContain("27 provisional observations");
   });
 
   it("flags the row that stands for several features as aggregate", () => {
@@ -321,7 +333,7 @@ describe("e01-recon-import", () => {
     runIn(fx, runImport, []);
     const built = buildLedger(fx.paths);
     expect(built.rejected).toEqual([]);
-    expect(built.rows).toHaveLength(25);
+    expect(built.rows).toHaveLength(27);
     expect(built.rows.every((r) => r.provisional && r.sources[0].enumerator === "E01")).toBe(true);
     expect(built.rows.find((r) => r.label === "Exit")?.risk).toBe("destructive");
     expect(built.meta.unverified_refs).toEqual({});
@@ -379,6 +391,22 @@ describe("e01 real recon shape (mapping version 2)", () => {
       covers_proposed: ["wb_entity_select"],
     });
     expect(r.stdout).toContain("kind unmappable (architecture)");
+    // A fixed-module file keeps its module under a heading that merely mentions "Script".
+    expect(by("SelectionToPrefabPlugin")).toMatchObject({
+      dim: "plugin",
+      kind: "plugin",
+      module: "WorldEditor",
+      key: { class: "SelectionToPrefabPlugin" },
+      signature: "WorldEditorAPI.CreateEntityTemplate",
+      paths_proposed: [{ path: "plugin-run" }],
+    });
+    // A heading naming a Resource Manager sub-editor outright selects that module.
+    expect(by("Open texture")).toMatchObject({
+      kind: "window",
+      module: "ResourceManager.Texture",
+      recon_coverage: "partial",
+      covers_proposed: ["wb_resources"],
+    });
   });
 
   it("skips work-item tables by heading instead of dropping their rows", () => {

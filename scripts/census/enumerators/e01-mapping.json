@@ -1,5 +1,5 @@
 {
-  "$comment": "E01 recon-import mapping, version 2: corrected against the real docs/v2/recon/*.md headers and cell vocabularies reported from the owner's PC on 2026-10-01 (DEC-011). Every feature table there has the header Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence (with or without parenthesised explanations). Matching is case-insensitive on cells with markdown emphasis and backticks removed; a header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis. A kind cell is normalised before lookup (normalizeKind in e01-recon-import.ts): bracketed and parenthesised parts, a ' -> ', ', ' or '/' tail, 'xN' counts and the trailing words in kind_qualifiers are removed; then the phrase, its singular, and progressively shorter suffixes (head noun last) and prefixes (head noun first) are looked up in kind_values and the plan vocabulary. A count inside the kind cell (kind_aggregate_patterns) marks the row aggregate. The kinds the recon uses for knowledge rows (architecture, knowledge, data, protocol, ...) are deliberately absent so those rows are reported as dropped. Readings still to verify against the files: 'action' and 'menu-action' are read as menu items (ExecuteAction labels are menu labels); audio and animation graph node kinds are read as script classes; 'editor', 'sub-editor' and 'viewer' are read as windows; 'option (property)' is read as option; the 'Confidence' column is ignored because every E01 row is capped at confidence low.",
+  "$comment": "E01 recon-import mapping, version 2: corrected against the real docs/v2/recon/*.md headers and cell vocabularies reported from the owner's PC on 2026-10-01 (DEC-011). Every feature table there has the header Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence (with or without parenthesised explanations). Matching is case-insensitive on cells with markdown emphasis and backticks removed; a header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis. A kind cell is normalised before lookup (normalizeKind in e01-recon-import.ts): bracketed and parenthesised parts, a ' -> ', ', ' or '/' tail, 'xN' counts and the trailing words in kind_qualifiers are removed; then the phrase, its singular, and progressively shorter suffixes (head noun last) and prefixes (head noun first) are looked up in kind_values and the plan vocabulary. A count inside the kind cell (kind_aggregate_patterns) marks the row aggregate. The kinds the recon uses for knowledge rows (architecture, knowledge, data, protocol, ...) are deliberately absent so those rows are reported as dropped. Readings still to verify against the files: 'action' and 'menu-action' are read as menu items (ExecuteAction labels are menu labels); audio and animation graph node kinds are read as script classes; 'editor', 'sub-editor' and 'viewer' are read as windows; 'option (property)' is read as option; the 'Confidence' column is ignored because every E01 row is capped at confidence low. Module from headings: a file whose `files` entry names a module (world-editor.md, resource-manager.md) keeps it unless a heading names another editor outright (heading_modules_strict, '<name> editor' forms, so '2.8 Script plugins registered for the World Editor module' stays WorldEditor); files with module 'none' use the looser heading_modules words.",
   "version": 2,
   "files": {
     "world-editor.md": {
@@ -391,7 +391,17 @@
     "shared": "Shared",
     "all": "Shared",
     "blender": "BlenderTools",
-    "blender tools": "BlenderTools"
+    "blender tools": "BlenderTools",
+    "texture editor": "ResourceManager.Texture",
+    "material editor": "ResourceManager.Material",
+    "model editor": "ResourceManager.Model",
+    "mesh editor": "ResourceManager.Model",
+    "config editor": "ResourceManager.Config",
+    "layout editor": "ResourceManager.Layout",
+    "imageset editor": "ResourceManager.Imageset",
+    "font editor": "ResourceManager.Font",
+    "style editor": "ResourceManager.Styles",
+    "styles editor": "ResourceManager.Styles"
   },
   "heading_modules": [
     {
@@ -437,6 +447,84 @@
     {
       "pattern": "blender",
       "module": "BlenderTools"
+    }
+  ],
+  "heading_modules_strict": [
+    {
+      "pattern": "script editor",
+      "module": "ScriptEditor"
+    },
+    {
+      "pattern": "string editor|locali[sz]ation editor",
+      "module": "LocalizationEditor"
+    },
+    {
+      "pattern": "dialogue editor",
+      "module": "DialogueEditor"
+    },
+    {
+      "pattern": "procedural animation editor|procanim editor",
+      "module": "ProcAnimEditor"
+    },
+    {
+      "pattern": "animation editor|anim editor",
+      "module": "AnimEditor"
+    },
+    {
+      "pattern": "behaviou?r editor",
+      "module": "BehaviorEditor"
+    },
+    {
+      "pattern": "audio editor",
+      "module": "AudioEditor"
+    },
+    {
+      "pattern": "particle editor",
+      "module": "ParticleEditor"
+    },
+    {
+      "pattern": "navmesh generator",
+      "module": "NavmeshGeneratorMain"
+    },
+    {
+      "pattern": "texture editor",
+      "module": "ResourceManager.Texture"
+    },
+    {
+      "pattern": "material editor",
+      "module": "ResourceManager.Material"
+    },
+    {
+      "pattern": "model editor|mesh editor",
+      "module": "ResourceManager.Model"
+    },
+    {
+      "pattern": "config editor",
+      "module": "ResourceManager.Config"
+    },
+    {
+      "pattern": "layout editor",
+      "module": "ResourceManager.Layout"
+    },
+    {
+      "pattern": "imageset editor",
+      "module": "ResourceManager.Imageset"
+    },
+    {
+      "pattern": "font editor",
+      "module": "ResourceManager.Font"
+    },
+    {
+      "pattern": "styles? editor",
+      "module": "ResourceManager.Styles"
+    },
+    {
+      "pattern": "blender",
+      "module": "BlenderTools"
+    },
+    {
+      "pattern": "launcher",
+      "module": "Launcher"
     }
   ],
   "risk_values": {

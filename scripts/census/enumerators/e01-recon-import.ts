@@ -122,6 +122,8 @@ export interface E01Mapping {
   file_default_kinds: Record<string, string>;
   module_values: Record<string, string>;
   heading_modules: { pattern: string; module: string }[];
+  /** Used instead of `heading_modules` for files whose `files` entry names a module. */
+  heading_modules_strict: { pattern: string; module: string }[];
   risk_values: Record<string, string>;
   kind_dims: Record<string, string>;
   path_values: Record<string, string>;
@@ -568,8 +570,8 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
       }
       const tableKind =
         headingMatch(t.headings, m.heading_kinds, (r) => r.kind) ?? m.file_default_kinds[file];
-      const tableModule =
-        headingMatch(t.headings, m.heading_modules, (r) => r.module) ?? fileModule;
+      const moduleRules = fileModule === "none" ? m.heading_modules : m.heading_modules_strict;
+      const tableModule = headingMatch(t.headings, moduleRules, (r) => r.module) ?? fileModule;
 
       for (const r of t.rows) {
         const drop = (reason: string): void => {

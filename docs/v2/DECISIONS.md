@@ -208,6 +208,11 @@ path | Current MCP coverage | Evidence | Confidence` (with or without parenthesi
 - "5. Proposed 2.0 work items" tables are skipped by heading (reported as skipped, not dropped);
   "Known limitations and open items" and "Unknowns …" material seeds probes.
 
+- Module from headings: `world-editor.md` and `resource-manager.md` keep their file module unless a
+  heading names another editor outright (`heading_modules_strict`, "<name> editor" forms, including
+  the Resource Manager sub-editors), so "2.8 Script plugins registered for the World Editor module"
+  stays WorldEditor; the six files with module `none` use the looser `heading_modules` words.
+
 The first run's empty observation file and its 208 seeded probes were not committed on the PC;
 the E01 run is repeated there with this mapping.
 
