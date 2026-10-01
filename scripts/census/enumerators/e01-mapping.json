@@ -1,6 +1,6 @@
 {
-  "$comment": "E01 recon-import mapping. Every rule here is a GUESS made without the real recon files (they are local-only, plan 2.1): header synonyms, coverage spellings, kind words and heading keywords must be checked against docs/v2/recon/*.md by the REVIEWER pass (Phase 0 item 10) and corrected here, not in the script. Matching is case-insensitive on cells with markdown emphasis and backticks removed. A header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis.",
-  "version": 1,
+  "$comment": "E01 recon-import mapping, version 2: corrected against the real docs/v2/recon/*.md headers and cell vocabularies reported from the owner's PC on 2026-10-01 (DEC-011). Every feature table there has the header Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence (with or without parenthesised explanations). Matching is case-insensitive on cells with markdown emphasis and backticks removed; a header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis. A kind cell is normalised before lookup (normalizeKind in e01-recon-import.ts): bracketed and parenthesised parts, a ' -> ', ', ' or '/' tail, 'xN' counts and the trailing words in kind_qualifiers are removed; then the phrase, its singular, and progressively shorter suffixes (head noun last) and prefixes (head noun first) are looked up in kind_values and the plan vocabulary. A count inside the kind cell (kind_aggregate_patterns) marks the row aggregate. The kinds the recon uses for knowledge rows (architecture, knowledge, data, protocol, ...) are deliberately absent so those rows are reported as dropped. Readings still to verify against the files: 'action' and 'menu-action' are read as menu items (ExecuteAction labels are menu labels); audio and animation graph node kinds are read as script classes; 'editor', 'sub-editor' and 'viewer' are read as windows; 'option (property)' is read as option; the 'Confidence' column is ignored because every E01 row is capped at confidence low.",
+  "version": 2,
   "files": {
     "world-editor.md": {
       "module": "WorldEditor"
@@ -60,9 +60,20 @@
     ],
     "kind": ["kind", "type", "category", "surface kind"],
     "what": ["what", "description", "purpose", "does", "effect", "notes", "note", "details"],
-    "coverage": ["coverage", "mcp coverage", "covered by mcp", "mcp", "status", "covered?"],
+    "coverage": [
+      "current mcp coverage",
+      "coverage",
+      "mcp coverage",
+      "covered by mcp",
+      "mcp",
+      "covered?"
+    ],
     "module": ["module", "editor", "window"],
-    "risk": ["risk", "safety", "danger", "risk class"]
+    "risk": ["risk", "safety", "danger", "risk class"],
+    "api": ["script api", "script-api", "api"],
+    "path": ["automation path", "automation", "path"],
+    "evidence": ["evidence", "source"],
+    "confidence": ["confidence"]
   },
   "tri_columns": {
     "covered": ["covered", "full"],
@@ -88,6 +99,28 @@
       "n/a"
     ]
   },
+  "coverage_patterns": [
+    {
+      "pattern": "^none\\b",
+      "coverage": "none"
+    },
+    {
+      "pattern": "^(no|n/a|not covered|uncovered|missing|unsupported|absent)\\b",
+      "coverage": "none"
+    },
+    {
+      "pattern": "\\bpartial(ly)?\\b|\\bpartial-",
+      "coverage": "partial"
+    },
+    {
+      "pattern": "^(shipped|covered|yes|fully?|done)\\b",
+      "coverage": "covered"
+    },
+    {
+      "pattern": "^[a-z][a-z0-9]*_[a-z0-9_]+",
+      "coverage": "covered"
+    }
+  ],
   "kind_values": {
     "menu": "menu",
     "submenu": "menu",
@@ -154,8 +187,100 @@
     "mcp tool": "mcp-tool",
     "tool action": "mcp-action",
     "mcp action": "mcp-action",
-    "handler action": "handler-action"
+    "handler action": "handler-action",
+    "action": "menu-item",
+    "menu-action": "menu-item",
+    "menu action": "menu-item",
+    "action list": "menu-item",
+    "shortcut action": "shortcut",
+    "context-action": "context-item",
+    "context action": "context-item",
+    "plugin hook": "method",
+    "plugin cli": "plugin-cli-arg",
+    "plugin-option": "plugin-setting",
+    "plugin option": "plugin-setting",
+    "function": "method",
+    "api-method": "method",
+    "script-api": "method",
+    "script api": "method",
+    "api": "method",
+    "module method": "method",
+    "net-api": "net-function",
+    "net api function": "net-function",
+    "native net api function": "net-function",
+    "netapi function": "net-function",
+    "engine built-in": "net-function",
+    "built-in net function": "net-function",
+    "builtin handler": "net-handler",
+    "netapihandler": "net-handler",
+    "netapihandler subclasses": "net-handler",
+    "net-handler": "net-handler",
+    "panel-op": "control",
+    "panel op": "control",
+    "toggle": "control",
+    "slider": "control",
+    "checkbox": "control",
+    "combo": "control",
+    "dock widget": "dock",
+    "module window": "module",
+    "modules": "module",
+    "editor": "window",
+    "sub-editor": "window",
+    "viewer": "window",
+    "native editor tab in resource manager": "tab",
+    "native editor tabs in resource manager": "tab",
+    "node": "class",
+    "signal node": "class",
+    "node type": "class",
+    "dsp type": "class",
+    "mixer node": "class",
+    "sub-structure": "class",
+    "generator": "class",
+    "entity": "class",
+    "component": "class",
+    "type": "class",
+    "subclass": "class",
+    "data-field": "property",
+    "data field": "property",
+    "field": "property",
+    "file": "file-type",
+    "config file": "file-type",
+    "profile file": "file-type",
+    "log file": "file-type",
+    "os protocol": "link-format",
+    "cli param": "cli-switch",
+    "cli flag": "cli-switch",
+    "cli-flag": "cli-switch",
+    "param": "cli-switch",
+    "parameter": "cli-switch",
+    "startup parameter": "cli-switch",
+    "settings": "setting-key",
+    "settings subtree": "setting-key",
+    "hazard": "hazard-dialog",
+    "diag": "diag-option",
+    "diagnostics": "diag-option",
+    "drag-drop": "canvas-gesture",
+    "drag and drop": "canvas-gesture",
+    "mcp-tool": "mcp-tool",
+    "offline tool": "mcp-tool"
   },
+  "kind_aggregate_patterns": [
+    "\\(\\d+\\b",
+    "\\bx\\d+\\b",
+    ",\\s*\\d+\\s+\\w+",
+    "\\b\\d+\\s+(items|actions|methods|classes|subclasses)\\b"
+  ],
+  "kind_qualifiers": [
+    "live",
+    "file",
+    "know",
+    "cli",
+    "proc",
+    "udp",
+    "live+file",
+    "file+cli",
+    "file+index"
+  ],
   "heading_kinds": [
     {
       "pattern": "context menu",
@@ -385,14 +510,51 @@
     "mcp-action": "mcp",
     "handler-action": "mcp"
   },
+  "path_values": {
+    "gui-automation": "gui-automation",
+    "gui automation": "gui-automation",
+    "uia": "gui-automation",
+    "net-api-handler": "net-api-handler",
+    "net api handler": "net-api-handler",
+    "net-api": "net-api-handler",
+    "handler": "net-api-handler",
+    "builtin-net-handler": "builtin-net-handler",
+    "builtin net handler": "builtin-net-handler",
+    "built-in": "builtin-net-handler",
+    "builtin": "builtin-net-handler",
+    "execute-action": "execute-action",
+    "executeaction": "execute-action",
+    "execute action": "execute-action",
+    "plugin-run": "plugin-run",
+    "plugin run": "plugin-run",
+    "plugin": "plugin-run",
+    "cli": "cli",
+    "command line": "cli",
+    "file-format": "file-format",
+    "file format": "file-format",
+    "file": "file-format",
+    "file edit": "file-format",
+    "none": "none-known",
+    "unknown": "none-known",
+    "none known": "none-known",
+    "—": "none-known",
+    "-": "none-known"
+  },
   "aggregate_patterns": [
     "^\\d+\\s+\\S",
     "\\b\\d+\\s+(actions|items|entries|methods|functions|plugins|switches|flags|docks|toolbars|options|settings|keys|classes|files|tools|dialogs|panels|tabs|buttons|nodes|handlers|events|types|formats|operators|shortcuts)\\b",
     "^all\\s",
     "\\betc\\.?$",
-    "\\band (the )?others?\\b"
+    "\\band (the )?others?\\b",
+    "\\s/\\s"
   ],
   "summary_labels": ["total", "totals", "sum", "subtotal", "overall"],
-  "probe_headings": "probe|unverified|open question|unknowns?",
+  "skip_headings": [
+    {
+      "pattern": "proposed 2\\.0 work items",
+      "reason": "work-item table, not a feature table"
+    }
+  ],
+  "probe_headings": "probe|unverified|open question|unknowns?|open items?|known limitations",
   "probe_columns": "probe|question|unverified|unknown|claim"
 }

@@ -10,16 +10,21 @@
  * `aggregate: true`. Every E01 row must later merge into a row of a real
  * enumerator or be explained (G6).
  *
- * WHAT IS A GUESS (the real recon files are local-only and were not
- * available when this was written; main ruling 17):
- *  - the table layout: a header row, a separator row, one feature per row;
- *  - which header names mean label / kind / what / coverage / module / risk,
- *    the coverage spellings, the kind words, the heading keywords that give
- *    a table its default kind and module, and the aggregate patterns. All of
- *    these live in `e01-mapping.json` so the REVIEWER pass corrects data, not
- *    code;
- *  - that probe / unverified / open-question material sits under a heading
- *    with one of those words, or in a table with such a column.
+ * WHAT WAS A GUESS AND IS NOW CHECKED (mapping version 2, DEC-011): the
+ * mapping was first written without the real recon files (main ruling 17).
+ * On 2026-10-01 the owner's PC reported the real shape: every feature table
+ * has the header Feature | Kind | What it does | Script API | Automation path
+ * | Current MCP coverage | Evidence | Confidence, the "Kind" cells use some
+ * 290 spellings, the coverage cells are "none", "shipped", "partial: ..." or
+ * tool names, and probe material sits under "Unknowns ..." / "Unverified
+ * claims" / "Known limitations and open items" headings. `e01-mapping.json`
+ * now carries that vocabulary; its `$comment` lists the readings that still
+ * need a look at the files (how "action" rows and graph-node kinds are read).
+ * Rows whose kind is a knowledge word (architecture, protocol, ...) are
+ * dropped with their reason so the REVIEWER pass can decide. Beyond the plan
+ * fields, each row keeps the "Automation path" cell as `paths_proposed`, the
+ * tool names of the coverage cell as `covers_proposed`, and (api-side rows
+ * only) the "Script API" cell as `signature`.
  * WHAT IS NOT A GUESS: determinism (sorted output, no timestamps; a second
  * run is byte-identical), the output location (only observations/E01/), the
  * low-confidence cap, the provisional header, and reporting every dropped
@@ -48,9 +53,11 @@ import { appendProbeLine } from "../../../src/census/writers.js";
 import {
   KINDS,
   MODULES,
+  PATH_KINDS,
   RISKS,
   type Dim,
   type Kind,
+  type PathKind,
   type Risk,
 } from "../../../src/census/vocab.js";
 import {
@@ -73,7 +80,29 @@ const QUOTE_MAX = 200;
 
 // ── Mapping ───────────────────────────────────────────────────────────────────
 
-type ColumnName = "label" | "kind" | "what" | "coverage" | "module" | "risk";
+type ColumnName =
+  | "label"
+  | "kind"
+  | "what"
+  | "coverage"
+  | "api"
+  | "path"
+  | "evidence"
+  | "confidence"
+  | "module"
+  | "risk";
+const COLUMN_ORDER: readonly ColumnName[] = [
+  "label",
+  "coverage",
+  "kind",
+  "what",
+  "api",
+  "path",
+  "evidence",
+  "confidence",
+  "module",
+  "risk",
+];
 type Coverage = "covered" | "partial" | "none";
 
 export interface E01Mapping {
@@ -82,15 +111,24 @@ export interface E01Mapping {
   tri_columns: Record<Coverage, string[]>;
   tri_marks: string[];
   coverage_values: Record<Coverage, string[]>;
+  /** Ordered regular expressions tried after the exact coverage spellings. */
+  coverage_patterns: { pattern: string; coverage: Coverage }[];
   kind_values: Record<string, string>;
+  /** A kind cell matching one of these stands for several features. */
+  kind_aggregate_patterns: string[];
+  /** Trailing qualifier words removed from a kind cell before lookup. */
+  kind_qualifiers: string[];
   heading_kinds: { pattern: string; kind: string }[];
   file_default_kinds: Record<string, string>;
   module_values: Record<string, string>;
   heading_modules: { pattern: string; module: string }[];
   risk_values: Record<string, string>;
   kind_dims: Record<string, string>;
+  path_values: Record<string, string>;
   aggregate_patterns: string[];
   summary_labels: string[];
+  /** Tables under a heading matching `pattern` are skipped with `reason`. */
+  skip_headings: { pattern: string; reason: string }[];
   probe_headings: string;
   probe_columns: string;
 }
@@ -214,7 +252,7 @@ export function mapColumns(
   const out: Partial<Record<ColumnName, number>> = {};
   const used = new Set<number>();
   for (const pass of ["exact", "prefix"] as const) {
-    for (const col of ["label", "coverage", "kind", "what", "module", "risk"] as ColumnName[]) {
+    for (const col of COLUMN_ORDER) {
       if (out[col] !== undefined) continue;
       const idx = header.findIndex(
         (h, i) => !used.has(i) && headerMatches(h, m.columns[col]) === pass,
@@ -234,13 +272,49 @@ function triColumns(header: readonly string[], m: E01Mapping): Record<Coverage, 
   return t.covered !== -1 && t.partial !== -1 && t.none !== -1 ? t : null;
 }
 
-function readCoverage(value: string, m: E01Mapping): Coverage | null {
+export function readCoverage(value: string, m: E01Mapping): Coverage | null {
   const v = norm(value);
   for (const c of ["covered", "partial", "none"] as Coverage[]) {
     if (m.coverage_values[c].includes(v)) return c;
     if (m.coverage_values[c].some((x) => x.length > 2 && v.startsWith(`${x} `))) return c;
   }
+  for (const rule of m.coverage_patterns) {
+    if (new RegExp(rule.pattern, "i").test(v)) return rule.coverage;
+  }
   return null;
+}
+
+/** MCP tool names named in a coverage cell (`emcp_*` handler names excluded), in order, unique. */
+export function coversFrom(value: string): string[] | undefined {
+  const out: string[] = [];
+  for (const tok of cleanCell(value).match(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g) ?? []) {
+    if (!tok.startsWith("emcp_") && !out.includes(tok)) out.push(tok);
+  }
+  return out.length ? out : undefined;
+}
+
+/**
+ * Reads an "Automation path" cell: `;`- or ` / `-separated entries, each a path
+ * word with an optional parenthesised or bracketed detail that becomes the
+ * reason. Unknown words are ignored; an empty result is `undefined`.
+ */
+export function parsePaths(
+  value: string,
+  m: E01Mapping,
+): NonNullable<Observation["paths_proposed"]> | undefined {
+  const out: NonNullable<Observation["paths_proposed"]> = [];
+  for (const part of cleanCell(value).split(/\s*;\s*|\s+\/\s+/)) {
+    const head = part
+      .replace(/\s*[([].*$/, "")
+      .trim()
+      .toLowerCase();
+    const path = m.path_values[head];
+    if (!path || !(PATH_KINDS as readonly string[]).includes(path)) continue;
+    if (out.some((e) => e.path === path)) continue;
+    const detail = /[([]\s*([^)\]]*?)\s*[)\]]/.exec(part)?.[1]?.trim().slice(0, 120);
+    out.push(detail ? { path: path as PathKind, reason: detail } : { path: path as PathKind });
+  }
+  return out.length ? out : undefined;
 }
 
 function headingMatch<R extends { pattern: string }>(
@@ -257,6 +331,69 @@ function headingMatch<R extends { pattern: string }>(
 function kindOf(value: string): Kind | undefined {
   const v = value.toLowerCase().replace(/\s+/g, "-");
   return (KINDS as readonly string[]).includes(v) ? (v as Kind) : undefined;
+}
+
+function singular(phrase: string): string {
+  if (/ies$/.test(phrase)) return phrase.replace(/ies$/, "y");
+  if (/sses$/.test(phrase)) return phrase.replace(/es$/, "");
+  if (/[^s]s$/.test(phrase)) return phrase.slice(0, -1);
+  return phrase;
+}
+
+export interface KindReading {
+  kind?: Kind;
+  /** The kind cell carried a count: the row stands for several features. */
+  aggregate: boolean;
+  /** The normalised phrase that was looked up (for drop reasons and tests). */
+  phrase: string;
+}
+
+/**
+ * Maps a recon kind cell to the plan vocabulary (mapping `$comment` describes
+ * the normalisation). Lookup order: the whole phrase, then shorter suffixes
+ * (compound nouns carry the head noun last: "native tool"), then shorter
+ * prefixes ("flag passed by MCP"); each candidate is tried as written and in
+ * the singular.
+ */
+export function normalizeKind(cell: string, m: E01Mapping): KindReading {
+  const raw = cleanCell(cell).toLowerCase();
+  const aggregate = m.kind_aggregate_patterns.some((p) => new RegExp(p, "i").test(raw));
+  let s = raw.replace(/\[[^\]]*\]/g, " ").replace(/\([^)]*\)/g, " ");
+  s = s.split(/\s*(?:->|→)\s*/)[0];
+  s = s.split(/\s*[,;]\s*/)[0];
+  s = s.split(/\s*\/\s*/)[0];
+  s = s
+    .replace(/\s+x\d+\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = s.split(" ").filter(Boolean);
+  while (words.length > 1 && m.kind_qualifiers.includes(words[words.length - 1])) words.pop();
+  const lookup = (phrase: string): Kind | undefined => {
+    for (const cand of [phrase, singular(phrase)]) {
+      const mapped = (m.kind_values[cand] as Kind | undefined) ?? kindOf(cand);
+      if (mapped && (KINDS as readonly string[]).includes(mapped)) return mapped;
+    }
+    return undefined;
+  };
+  const phrase = words.join(" ");
+  const candidates: string[] = [];
+  for (let i = 0; i < words.length; i++) candidates.push(words.slice(i).join(" "));
+  for (let n = words.length - 1; n >= 1; n--) candidates.push(words.slice(0, n).join(" "));
+  for (const cand of candidates) {
+    const kind = lookup(cand);
+    if (kind) return { kind, aggregate, phrase };
+  }
+  return { aggregate, phrase };
+}
+
+const API_DIMS: readonly Dim[] = ["api", "net", "plugin"];
+
+/** The Script API cell as a signature for api-side rows; "none"-like values are dropped. */
+function signatureOf(dim: Dim, cell: string): string | undefined {
+  if (!API_DIMS.includes(dim)) return undefined;
+  const v = cleanCell(cell);
+  if (!v || /^(none|n\/a|-|—|unknown)\b/i.test(v)) return undefined;
+  return v.slice(0, QUOTE_MAX);
 }
 
 function buildKey(kind: Kind, dim: Dim, label: string): Observation["key"] {
@@ -296,6 +433,8 @@ export interface TableReport {
   dropped: number;
   probes: number;
   unmappable?: string;
+  /** Set when the table was skipped by a `skip_headings` rule (rows not counted as dropped). */
+  skipped?: string;
 }
 
 export interface ProbeSeed {
@@ -385,6 +524,11 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
         probes: 0,
       };
       tables.push(report);
+      const skip = headingMatch(t.headings, m.skip_headings, (r) => r.reason);
+      if (skip) {
+        report.skipped = skip;
+        continue;
+      }
       const cols = mapColumns(t.header, m);
       const tri = triColumns(t.header, m);
       const hasCoverage = tri !== null || cols.coverage !== undefined;
@@ -434,11 +578,15 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
         };
         const cell = (c: number | undefined): string =>
           c === undefined ? "" : cleanCell(r.cells[c] ?? "");
-        const label = cell(cols.label);
+        let label = cell(cols.label);
         if (!label) {
           drop("empty label");
           continue;
         }
+        // "World Editor: Entity list" names the module in the label.
+        const prefixed = /^([A-Za-z][A-Za-z ]*?)\s*:\s+(\S.*)$/.exec(label);
+        const labelModule = prefixed ? m.module_values[prefixed[1].toLowerCase()] : undefined;
+        if (prefixed && labelModule) label = prefixed[2].trim();
         if (m.summary_labels.includes(label.toLowerCase())) {
           drop("summary row");
           continue;
@@ -461,9 +609,8 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
           continue;
         }
         const kindCell = cell(cols.kind);
-        const kind: Kind | undefined = kindCell
-          ? ((m.kind_values[kindCell.toLowerCase()] as Kind | undefined) ?? kindOf(kindCell))
-          : (tableKind as Kind | undefined);
+        const kindRead = kindCell ? normalizeKind(kindCell, m) : undefined;
+        const kind: Kind | undefined = kindCell ? kindRead?.kind : (tableKind as Kind | undefined);
         if (!kind || !(KINDS as readonly string[]).includes(kind)) {
           drop(`kind unmappable (${kindCell || `heading "${heading}"`})`);
           continue;
@@ -471,7 +618,7 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
         const moduleCell = cell(cols.module);
         const module = moduleCell
           ? (m.module_values[moduleCell.toLowerCase()] ?? moduleCell)
-          : tableModule;
+          : (labelModule ?? tableModule);
         if (!(MODULES as readonly string[]).includes(module)) {
           drop(`module unmappable (${moduleCell})`);
           continue;
@@ -484,7 +631,8 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
         }
         const dim = (m.kind_dims[kind] ?? "ui") as Dim;
         const what = cell(cols.what);
-        const aggregate = aggregateRes.some((re) => re.test(label));
+        const aggregate =
+          aggregateRes.some((re) => re.test(label)) || (kindRead?.aggregate ?? false);
         const obs: Observation = {
           dim,
           kind,
@@ -495,12 +643,15 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
               ? normalizeLabel(label.split(/\s+(?:>|→|›|»)\s+/).pop() ?? label) || label
               : label,
           what: what || undefined,
+          signature: signatureOf(dim, cell(cols.api)),
           risk_hint: risk,
           origin: "vanilla",
           aggregate: aggregate || undefined,
           ref: ref(file, r.line),
           quote: quoteOf(r.raw),
           confidence: "low",
+          paths_proposed: parsePaths(cell(cols.path), m),
+          covers_proposed: coverage === "none" ? undefined : coversFrom(cell(cols.coverage)),
           recon_coverage: coverage,
         };
         const parsed = observationSchema.safeParse(obs);
@@ -624,6 +775,7 @@ export function run(argv: string[], io: Io = PROCESS_IO): number {
 
     const emitted = result.observations.length;
     const aggregates = result.observations.filter((o) => o.obs.aggregate).length;
+    const skipped = result.tables.filter((t) => t.skipped).length;
     if (values.json) {
       io.out(
         JSON.stringify({
@@ -634,6 +786,7 @@ export function run(argv: string[], io: Io = PROCESS_IO): number {
           aggregates,
           probes_found: result.probes.length,
           probes_seeded: seeded,
+          tables_skipped: skipped,
           tables: result.tables,
           dropped: result.dropped,
           missing_files: result.missingFiles,
@@ -644,14 +797,16 @@ export function run(argv: string[], io: Io = PROCESS_IO): number {
     for (const t of result.tables) {
       io.out(
         `${t.file}:${t.line} "${t.heading}": rows ${t.rows}, emitted ${t.emitted}, aggregate ${t.aggregate}, ` +
-          `probes ${t.probes}, dropped ${t.dropped}${t.unmappable ? ` (unmappable: ${t.unmappable})` : ""}`,
+          `probes ${t.probes}, dropped ${t.dropped}` +
+          `${t.unmappable ? ` (unmappable: ${t.unmappable})` : ""}${t.skipped ? ` (skipped: ${t.skipped})` : ""}`,
       );
     }
     for (const d of result.dropped) io.out(`dropped ${d.file}:${d.line}: ${d.reason}`);
     for (const f of result.missingFiles) io.out(`missing recon file ${f}`);
     io.out(
       `E01 at build ${build}: ${emitted} provisional observation${emitted !== 1 ? "s" : ""} (${aggregates} aggregate), ` +
-        `${result.dropped.length} dropped, ${result.probes.length} probe${result.probes.length !== 1 ? "s" : ""} found, ${seeded} newly seeded`,
+        `${result.dropped.length} dropped, ${skipped} table${skipped !== 1 ? "s" : ""} skipped, ` +
+        `${result.probes.length} probe${result.probes.length !== 1 ? "s" : ""} found, ${seeded} newly seeded`,
     );
     return EXIT_OK;
   });

@@ -4,9 +4,13 @@ import { join } from "node:path";
 import { buildLedger } from "../../src/census/build-ledger.js";
 import {
   cleanCell,
+  coversFrom,
   mapColumns,
   loadMapping,
+  normalizeKind,
   parseMarkdown,
+  parsePaths,
+  readCoverage,
 } from "../../scripts/census/enumerators/e01-recon-import.js";
 import { run as runImport } from "../../scripts/census/enumerators/e01-recon-import.js";
 import { makeCensus, runIn, type Fixture } from "./helpers.js";
@@ -37,6 +41,26 @@ const RECON: Record<string, string> = {
     "",
     "- Does `GetModule` return a handle for the Animation Editor?",
     "- Is undo registered for API-driven edits?",
+    "",
+    // The real recon header shape (mapping version 2).
+    "## 2.6 World Editor UI: top bar, panels, native tools",
+    "",
+    "| Feature | Kind | What it does | Script API (class.method or none) | Automation path | Current MCP coverage (tool name, partial, or none) | Evidence (file / wiki page title / class) | Confidence |",
+    "|---|---|---|---|---|---|---|---|",
+    "| Top bar sections | toolbar | Basic Actions / Basic Tools / Scripted Tools groups | none | gui-automation | none | wiki:World Editor | high |",
+    "| Copy / Cut / Paste (same position) / Duplicate | toolbar | Clipboard operations on the selection | WorldEditorAPI.CopySelectedEntities / CutSelectedEntities | net-api-handler | wb_clipboard [emcp_wb_clipboard] | EMCP_WB_Clipboard.c | high |",
+    "| Toggle gizmo space | toolbar | World vs object reference (X) | none; registry `TranslationGizmoMode` | execute-action [label unverified]; gui-automation | **none** | wiki:World Editor; registry | medium |",
+    "| Tool Properties panel | panel | Settings panel of the active tool | WorldEditorAPI.GetCurrentToolName (read) | gui-automation | none | wiki:World Editor | high |",
+    "| Entity list filter / sort | control (2) | Filters the hierarchy | none | gui-automation | partial: wb_entity_list | wiki | high |",
+    "| Script Editor: Build > Compile All | menu-action | Compiles every script | Workbench.ExecuteAction | execute-action | wb_reload (partial: hard-coded paths return false on 1.8) | INI | H |",
+    "| GetSelectedEntitiesCount | API method | Number of selected entities | WorldEditorAPI.GetSelectedEntitiesCount() | net-api-handler | wb_entity_select [emcp_wb_selectentity] | WorldEditorAPI.c | high |",
+    "| Startup | architecture | How the module boots | none | n/a | none | src/server.ts | high |",
+    "",
+    "## 5. Proposed 2.0 work items",
+    "",
+    "| # | Title | Kind | Size | Needs live Workbench |",
+    "|---|---|---|---|---|",
+    "| 1 | Probe and fix headless argv | test + offline-tool | S | yes |",
     "",
   ].join("\n"),
   "resource-manager.md": [
@@ -174,7 +198,7 @@ describe("e01-recon-import", () => {
       provisional: true,
       row_count: lines.length,
     });
-    expect(lines.length).toBe(18);
+    expect(lines.length).toBe(25);
     expect(lines.every((l) => l.confidence === "low")).toBe(true);
     expect(
       lines.every(
@@ -183,14 +207,18 @@ describe("e01-recon-import", () => {
           /^<repo>\/docs\/v2\/recon\/[a-z-]+\.md#L\d+$/.test(l.ref as string),
       ),
     ).toBe(true);
-    expect(r.stdout).toContain("18 provisional observations");
+    expect(r.stdout).toContain("25 provisional observations");
   });
 
   it("flags the row that stands for several features as aggregate", () => {
     const { fx } = reconFixture();
     runIn(fx, runImport, []);
     const agg = readObservationFile(fx).lines.filter((l) => l.aggregate === true);
-    expect(agg.map((l) => l.label)).toEqual(["59 actions of the Edit menu"]);
+    expect(agg.map((l) => l.label).sort()).toEqual([
+      "59 actions of the Edit menu",
+      "Copy / Cut / Paste (same position) / Duplicate",
+      "Entity list filter / sort",
+    ]);
   });
 
   it("reads tri-column coverage, heading modules and risk words", () => {
@@ -293,10 +321,163 @@ describe("e01-recon-import", () => {
     runIn(fx, runImport, []);
     const built = buildLedger(fx.paths);
     expect(built.rejected).toEqual([]);
-    expect(built.rows).toHaveLength(18);
+    expect(built.rows).toHaveLength(25);
     expect(built.rows.every((r) => r.provisional && r.sources[0].enumerator === "E01")).toBe(true);
     expect(built.rows.find((r) => r.label === "Exit")?.risk).toBe("destructive");
     expect(built.meta.unverified_refs).toEqual({});
+  });
+});
+
+describe("e01 real recon shape (mapping version 2)", () => {
+  it("reads the eight-column feature tables: paths, covered tools, kind counts, label module prefixes", () => {
+    const { fx } = reconFixture();
+    const r = runIn(fx, runImport, []);
+    expect(r.code).toBe(0);
+    const { lines } = readObservationFile(fx);
+    const by = (label: string): Record<string, unknown> | undefined =>
+      lines.find((l) => l.label === label);
+    expect(by("Top bar sections")).toMatchObject({
+      kind: "toolbar",
+      module: "WorldEditor",
+      recon_coverage: "none",
+      paths_proposed: [{ path: "gui-automation" }],
+    });
+    expect(by("Top bar sections")).not.toHaveProperty("covers_proposed");
+    expect(by("Top bar sections")).not.toHaveProperty("signature");
+    expect(by("Copy / Cut / Paste (same position) / Duplicate")).toMatchObject({
+      aggregate: true,
+      recon_coverage: "covered",
+      covers_proposed: ["wb_clipboard"],
+      paths_proposed: [{ path: "net-api-handler" }],
+    });
+    expect(by("Toggle gizmo space")).toMatchObject({
+      recon_coverage: "none",
+      paths_proposed: [
+        { path: "execute-action", reason: "label unverified" },
+        { path: "gui-automation" },
+      ],
+    });
+    expect(by("Tool Properties panel")?.kind).toBe("panel");
+    expect(by("Entity list filter / sort")).toMatchObject({
+      kind: "control",
+      aggregate: true,
+      recon_coverage: "partial",
+      covers_proposed: ["wb_entity_list"],
+    });
+    expect(by("Compile All")).toMatchObject({
+      kind: "menu-item",
+      module: "ScriptEditor",
+      key: { path: ["Build", "Compile All"] },
+      recon_coverage: "partial",
+      covers_proposed: ["wb_reload"],
+      paths_proposed: [{ path: "execute-action" }],
+    });
+    expect(by("GetSelectedEntitiesCount")).toMatchObject({
+      dim: "api",
+      kind: "method",
+      signature: "WorldEditorAPI.GetSelectedEntitiesCount()",
+      covers_proposed: ["wb_entity_select"],
+    });
+    expect(r.stdout).toContain("kind unmappable (architecture)");
+  });
+
+  it("skips work-item tables by heading instead of dropping their rows", () => {
+    const { fx } = reconFixture();
+    const r = runIn(fx, runImport, []);
+    expect(r.stdout).toMatch(
+      /world-editor\.md:\d+ "5\. Proposed 2\.0 work items": rows 1, emitted 0, aggregate 0, probes 0, dropped 0 \(skipped: work-item table, not a feature table\)/,
+    );
+    expect(r.stdout).not.toMatch(/dropped world-editor\.md:\d+: table "5\. Proposed/);
+    expect(r.stdout).toContain("1 table skipped");
+  });
+
+  it("maps the kind cells the real recon files use", () => {
+    const m = loadMapping();
+    const k = (cell: string): [string | undefined, boolean] => {
+      const r = normalizeKind(cell, m);
+      return [r.kind, r.aggregate];
+    };
+    expect(k("plugin (WorkbenchPlugin)")).toEqual(["plugin", false]);
+    expect(k("API method")).toEqual(["method", false]);
+    expect(k("mcp-tool LIVE (World Editor)")).toEqual(["mcp-tool", false]);
+    expect(k("mcp-tool LIVE+FILE (lifecycle)")).toEqual(["mcp-tool", false]);
+    expect(k("NetApiHandler, 7 actions")).toEqual(["net-handler", true]);
+    expect(k("file type, text")).toEqual(["file-type", false]);
+    expect(k("menu item -> dialog")).toEqual(["menu-item", false]);
+    expect(k("static methods")).toEqual(["static-method", false]);
+    expect(k("flag passed by MCP")).toEqual(["cli-switch", false]);
+    expect(k("native tool")).toEqual(["tool", false]);
+    expect(k("plugin x4 (R)")).toEqual(["plugin", true]);
+    expect(k("menu items [File membership inferred]")).toEqual(["menu-item", false]);
+    expect(k("control (3)")).toEqual(["control", true]);
+    expect(k("engine built-in NET function")).toEqual(["net-function", false]);
+    expect(k("BI `NetApiHandler` subclasses (7)")).toEqual(["net-handler", true]);
+    expect(k("menu (dynamic)")).toEqual(["menu", false]);
+    expect(k("setting/action")).toEqual(["setting-key", false]);
+    expect(k("signal node")).toEqual(["class", false]);
+    expect(k("startup parameter")).toEqual(["cli-switch", false]);
+    expect(k("**undocumented / unrecognised**")).toEqual([undefined, false]);
+    expect(k("architecture")).toEqual([undefined, false]);
+  });
+
+  it("reads the coverage spellings the real recon files use", () => {
+    const m = loadMapping();
+    expect(readCoverage("none (handler: not used)", m)).toBe("none");
+    expect(readCoverage("**none**", m)).toBe("none");
+    expect(readCoverage("shipped", m)).toBe("covered");
+    expect(readCoverage("wb_entity_modify (partial)", m)).toBe("partial");
+    expect(readCoverage("partial — as above", m)).toBe("partial");
+    expect(readCoverage("partial-broken (same)", m)).toBe("partial");
+    expect(readCoverage("wb_clipboard [emcp_wb_clipboard]", m)).toBe("covered");
+    expect(readCoverage("none (wb_connect uses emcp_wb_ping)", m)).toBe("none");
+    expect(readCoverage("≈ 75.7k chars of string literals", m)).toBeNull();
+    expect(coversFrom("wb_state, wb_layers [emcp_wb_getstate/layers]")).toEqual([
+      "wb_state",
+      "wb_layers",
+    ]);
+    expect(coversFrom("none")).toBeUndefined();
+    expect(
+      parsePaths(
+        "net-api-handler; builtin-net-handler (BringModuleWindowToFront, OpenResource); cli (-wbmodule=ResourceManager); execute-action",
+        m,
+      ),
+    ).toEqual([
+      { path: "net-api-handler" },
+      { path: "builtin-net-handler", reason: "BringModuleWindowToFront, OpenResource" },
+      { path: "cli", reason: "-wbmodule=ResourceManager" },
+      { path: "execute-action" },
+    ]);
+    expect(parsePaths("none", m)).toEqual([{ path: "none-known" }]);
+    expect(parsePaths("n/a", m)).toBeUndefined();
+    expect(parsePaths("", m)).toBeUndefined();
+  });
+
+  it("maps the real eight-column header", () => {
+    const m = loadMapping();
+    expect(
+      mapColumns(
+        [
+          "Feature",
+          "Kind",
+          "What it does",
+          "Script API (class.method or none)",
+          "Automation path",
+          "Current MCP coverage (tool name, partial, or none)",
+          "Evidence (file / wiki page title / class)",
+          "Confidence",
+        ],
+        m,
+      ),
+    ).toEqual({
+      label: 0,
+      kind: 1,
+      what: 2,
+      api: 3,
+      path: 4,
+      coverage: 5,
+      evidence: 6,
+      confidence: 7,
+    });
   });
 });
 

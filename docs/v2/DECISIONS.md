@@ -175,3 +175,64 @@ allow-list "any path" claim). Fixed before the push:
 Left for later phases (recorded, not fixed): dry-run exception bound to the declared script name
 (F-11); T1 counting pattern-conforming but unverifiable refs as resolvable (F-17, see DEC-009);
 `diagnose()` still sends one read-only ping under a foreign lease (reported in its output).
+
+## DEC-011 — 2026-10-01 — E01 mapping rewritten from the real recon vocabulary
+
+The first E01 run on the owner's PC (Tools 1.8.0.13, eight real recon files) emitted 0 rows:
+127 tables dropped, 87 of them "no coverage column", because the mapping guessed header names
+that the files do not use. The PC session reported the real vocabulary read-only (header sets,
+every distinct Kind, coverage and Confidence cell, the Appendix B table, example rows, probe
+headings) and the mapping is now version 2:
+
+- Every feature table has the header `Feature | Kind | What it does | Script API | Automation
+path | Current MCP coverage | Evidence | Confidence` (with or without parenthesised notes);
+  the coverage column is found by "current mcp coverage", "status" is no longer a coverage
+  synonym.
+- Coverage cells: "none …" (2,011 rows), "shipped", "partial…" anywhere in the cell, or a
+  snake_case tool name read as covered; ordered regular expressions in `coverage_patterns`.
+- Kind cells (about 290 spellings) go through `normalizeKind`: bracketed and parenthesised
+  parts, `->`/`,`/`/` tails, `xN` counts and the qualifiers LIVE/FILE/KNOW/CLI/PROC/UDP are
+  removed, then the phrase, its singular, its suffixes (head noun last) and its prefixes are
+  looked up. A count in the kind cell ("control (3)", "NetApiHandler, 7 actions", "plugin x4")
+  marks the row aggregate, as does " / " between several features in the label.
+- Readings taken without seeing every file (listed in the mapping `$comment`, to be checked by
+  the REVIEWER pass): "action" and "menu-action" are menu items; audio and animation graph node
+  kinds are classes; "editor", "sub-editor", "viewer" are windows; "option (property)" is an
+  option. Knowledge kinds (architecture, knowledge, data, protocol, …) are left unmapped so the
+  rows are reported as dropped rather than forced into the vocabulary.
+- Beyond the plan fields: the "Automation path" cell becomes `paths_proposed` (reason from the
+  parenthesised detail; "n/a" proposes nothing), tool names in the coverage cell become
+  `covers_proposed` (handler names `emcp_*` excluded, and nothing for "none"), and api-side rows
+  keep the "Script API" cell as `signature`. The "Confidence" column is ignored (E01 is capped at
+  low). A label prefix naming a module ("Script Editor: Build > Compile All") sets the module.
+- "5. Proposed 2.0 work items" tables are skipped by heading (reported as skipped, not dropped);
+  "Known limitations and open items" and "Unknowns …" material seeds probes.
+
+The first run's empty observation file and its 208 seeded probes were not committed on the PC;
+the E01 run is repeated there with this mapping.
+
+## DEC-012 — 2026-10-01 — Windows results of the Phase 0 local half
+
+Run on the owner's PC in the new `v2` worktree (local `v2` = local `main` 6602d39 plus the
+branch's commits cherry-picked; `docs/TEST-RESULTS.md` conflict resolved by keeping local
+`main`'s already-scrubbed line). Build clean; `guards-check` PASS on both cases; sandbox
+`EMCP2_sandbox` created (initial commit b8eeeab, OA-3 pending); Tools build 1.8.0.13 read from
+the executable's file metadata without running it.
+
+- Suite: 7 failures, all Windows-only and all in files from this branch, fixed here (commit
+  "Tests: Windows portability …"): the live-harness CLI tests spawned `node_modules/.bin/tsx`
+  (a shell script; `spawnSync` gives status null on Windows) and now run `node --import tsx`;
+  the export test built a path from `new URL(import.meta.url).pathname` (`\C:\…`) and now uses
+  `fileURLToPath`; its fixture relied on the executable bit that `core.fileMode=false` ignores
+  and now sets the index mode explicitly; the pre-commit hook test runs three `npx tsx` hook
+  invocations and gets a 120 s timeout; the evidence test expects the platform separator in a
+  placeholder path.
+- Owner PII pattern file (OA-9): the PC session first listed public addon names in it. `Test1`
+  occurs 217 times in public history, so the gate flagged committed public content. Rule
+  recorded: the file holds only names absent from `origin/main` (account name first); it now
+  holds 8 patterns. With it, `pii-gate.ts --tree` reports one finding, a home path in the
+  local-only `docs/v2/REVIEW.md:234` (owner to scrub, OA-10).
+- Public history already carries the account name in one line of `docs/TEST-RESULTS.md` (the
+  home path scrubbed by local `main` 6602d39 and by this branch at the tip); the history itself
+  is not rewritten (D8). The six case-insensitive hits in `data/wiki/export.xml` are other
+  people's wiki user names, not the owner's. Recorded as OA-11 for the owner's decision.
