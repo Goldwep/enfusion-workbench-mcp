@@ -59,6 +59,16 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 		continue
 	fi
 
+	# public-release must never carry local main/v2 history (plan 5.2):
+	# the branch is built by scripts/export-public.ts as additive commits.
+	for private_branch in main v2; do
+		if git rev-parse -q --verify "refs/heads/$private_branch" >/dev/null 2>&1 &&
+			git merge-base --is-ancestor "refs/heads/$private_branch" "$local_sha" 2>/dev/null; then
+			reject "$remote_ref" "local $private_branch history is an ancestor of the commit being pushed; publish through scripts/export-public.ts instead."
+			continue 2
+		fi
+	done
+
 	if ! is_zero "$remote_sha"; then
 		if ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
 			reject "$remote_ref" "the remote tip $remote_sha is not in this repository, so the push cannot be shown to fast-forward; fetch first."

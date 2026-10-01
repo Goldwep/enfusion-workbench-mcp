@@ -8,23 +8,8 @@
     },
     {
       "path": "data/wiki/export.xml",
-      "string": "arma3reed@gmail.com",
-      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
-    },
-    {
-      "path": "data/wiki/export.xml",
-      "string": "alphahomer15@gmail.com",
-      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
-    },
-    {
-      "path": "data/wiki/export.xml",
-      "string": "hcrt1@hotmail.com",
-      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
-    },
-    {
-      "path": "data/wiki/export.xml",
-      "string": "justinstroud@gmail.com",
-      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
+      "pattern": "email",
+      "reason": "Third-party or placeholder values in the public Bohemia wiki export (contact table, server-config example); allowed by pattern so the strings are not copied into this file."
     },
     {
       "path": "data/wiki/export.xml",
@@ -33,18 +18,13 @@
     },
     {
       "path": "data/wiki/export.xml",
-      "string": "76561198200329058",
-      "reason": "Steam id in the Bohemia wiki server-config example, quoted verbatim from the public wiki; third-party, not owner data (see hand-off)."
+      "pattern": "steam64-id",
+      "reason": "Third-party or placeholder values in the public Bohemia wiki export (contact table, server-config example); allowed by pattern so the strings are not copied into this file."
     },
     {
       "path": "data/wiki/export.xml",
       "string": "C:\\Users\\MyUserName",
       "reason": "Bohemia wiki placeholder profile name quoted in the scraped wiki."
-    },
-    {
-      "path": "data/wiki/export.xml",
-      "string": "myEmail@bistudio.com",
-      "reason": "Bohemia wiki placeholder address in a command-line example."
     },
     {
       "path": "data/wiki/pages.json",
@@ -63,8 +43,8 @@
     },
     {
       "path": "data/wiki/pages.json",
-      "string": "76561198200329058",
-      "reason": "Steam id in the Bohemia wiki server-config example, quoted verbatim from the public wiki; third-party, not owner data (see hand-off)."
+      "pattern": "steam64-id",
+      "reason": "Third-party or placeholder values in the public Bohemia wiki export (contact table, server-config example); allowed by pattern so the strings are not copied into this file."
     },
     {
       "path": "data/wiki/pages.json",
@@ -73,8 +53,8 @@
     },
     {
       "path": "data/wiki/pages.json",
-      "string": "myEmail@bistudio.com",
-      "reason": "Bohemia wiki placeholder address in a command-line example."
+      "pattern": "email",
+      "reason": "Third-party or placeholder values in the public Bohemia wiki export (contact table, server-config example); allowed by pattern so the strings are not copied into this file."
     },
     {
       "path": "docs/TEST-PLAN-WRITE-MODE.md",

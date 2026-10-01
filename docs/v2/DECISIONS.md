@@ -141,3 +141,37 @@ inputs?, branch?, ui_language?}`; no timestamps. `parent_key` resolved to an id;
   the committing machine (here: generic-only).
 - Deferred to Phase 1 or Phase 4: G4 summary self-consistency, G5 sampling, `validate.ts
 --reproduce`, artifact-hash verification, `--explain`, G7 reasons, state-line authorship proof.
+
+## DEC-010 — 2026-10-01 — Review round (finder, then refuter) on the Phase 0 deliverables
+
+25 findings from the finder; the refuter confirmed 21, marked 3 partial and refuted 1 (the
+allow-list "any path" claim). Fixed before the push:
+
+- Lease: stale takeover and heartbeat/update/release serialised through a `<lease>.lock`
+  directory with a second check under the lock; `releaseLease` refuses (LEASE_ORPHANED) while the
+  recorded Workbench process still runs, so a server exit never erases an orphan; holder id gains
+  a per-process nonce against pid reuse.
+- `wb_launch`: refuses before the probe when another session holds the lease; refuses a
+  default-mod launch while the no-autolaunch marker exists (only an explicit `gprojPath` counts).
+  `wb_connect` refuses under a foreign lease without sending traffic.
+- Headless spawns (`wb_cli_run`, `wb_validate_scripts`, `wb_build_data`, `mod build`) consult the
+  lease through `headlessSpawnBlocker(pids, config)`.
+- Harness: the no-autolaunch marker now persists across sittings and is removed only by
+  `lane.ts end --release-programme` (reading of plan 5.1 guard 3: "removed at release" = end of
+  programme); pre-flight step 9 waits for a session log created after the spawn and never reads an
+  older one, closes the started Workbench through `onAbort` when the assertion fails, and reads
+  the real `ledger.meta.json` build object; `launch.ts` drives only the `EMCP2_sandbox` addon
+  unless `--any-project`; the artifacts override refuses a directory inside a git work tree;
+  dry-run flags `EMCP_WB_ExecuteAction` net-calls by their path, numpad Enter spellings, and bare
+  characters (menu mnemonics).
+- Gates: the PII gate decodes UTF-16 before the binary test, scans oversize text up to 64 MB and
+  reports anything larger as a finding, never allow-lists an owner-pattern match, and accepts
+  `{path, pattern}` allow entries so third-party addresses from the public wiki export are no
+  longer copied into the allow-list; G10 fails without the owner pattern file unless `CI` is set
+  (so `validate.ts --all` is run with `CI=1` in this container); the pre-push hook also rejects a
+  `public-release` commit that descends from local `main` or `v2`; `guards-check` compares the
+  foreign lease byte for byte.
+
+Left for later phases (recorded, not fixed): dry-run exception bound to the declared script name
+(F-11); T1 counting pattern-conforming but unverifiable refs as resolvable (F-17, see DEC-009);
+`diagnose()` still sends one read-only ping under a foreign lease (reported in its output).

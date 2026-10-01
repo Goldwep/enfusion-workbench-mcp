@@ -914,7 +914,7 @@ describe("gates", () => {
     expect(u?.status).toBe("single-source");
   });
 
-  it("labels G10 as generic-only when the pattern file is absent and fails under --phase release", () => {
+  it("fails G10 when the pattern file is absent unless CI is set", () => {
     const fx = makeCensus(BUILD);
     build(fx);
     const env: NodeJS.ProcessEnv = {
@@ -922,10 +922,12 @@ describe("gates", () => {
       ENFUSION_PII_PATTERNS: join(fx.repo, "absent.txt"),
     };
     delete env.CI;
+    // Plan 5.2: without the owner pattern file the gate refuses to pass
+    // unless CI is set, in every phase.
     let r = runIn(fx, (a, io) => runValidate(a, io, env), ["--gate", "G10"]);
-    expect(r.stdout).toContain("G10 SOFT");
-    expect(r.stdout).toContain("generic patterns only; no owner pattern file");
-    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("G10 FAIL");
+    expect(r.stdout).toContain("owner pattern file is missing");
+    expect(r.code).toBe(1);
     r = runIn(fx, (a, io) => runValidate(a, io, env), ["--gate", "G10", "--phase", "release"]);
     expect(r.code).toBe(1);
     r = runIn(fx, (a, io) => runValidate(a, io, { ...env, CI: "1" }), ["--gate", "G10"]);

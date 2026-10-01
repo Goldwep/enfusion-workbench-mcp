@@ -26,7 +26,15 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+  readFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, isAbsolute } from "node:path";
@@ -325,6 +333,7 @@ export async function runGuardCases(command: string[], sb: GuardSandbox): Promis
     "utf-8",
   );
   const gproj = join(sb.addons, "X", "X.gproj");
+  const leaseBefore = readFileSync(sb.leasePath, "utf-8");
   try {
     const [launchText, stateText] = await withServer(command, sb, async (rpc) => {
       const l = await callTool(rpc, "wb_launch", { gprojPath: gproj });
@@ -335,7 +344,10 @@ export async function runGuardCases(command: string[], sb: GuardSandbox): Promis
     });
     const launchOk = launchText.includes("Workbench lease held by another session");
     const stateOk = stateText.includes("Workbench lease refused (LEASE_HELD)");
-    const leaseKept = existsSync(sb.leasePath) && readdirSync(sb.addons).length === 0;
+    const leaseKept =
+      existsSync(sb.leasePath) &&
+      readFileSync(sb.leasePath, "utf-8") === leaseBefore &&
+      readdirSync(sb.addons).length === 0;
     results.push({
       name: "B: marker present + lease held, wb_launch and wb_state refused by the lease",
       pass: launchOk && stateOk && leaseKept,

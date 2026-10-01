@@ -12,6 +12,7 @@ import { assertInsideRoot } from "../utils/path-guard.js";
 import { readTextFileBounded } from "../utils/safe-read.js";
 import type { SearchEngine } from "../index/search-engine.js";
 import { parse, getProperty } from "../formats/enfusion-text.js";
+import { headlessSpawnBlocker } from "../workbench/cli-runner.js";
 
 // ─── build helpers ────────────────────────────────────────────────────────────
 
@@ -570,6 +571,17 @@ export function registerMod(
           args.push("-filterPath", filterPath);
         }
 
+        // Plan 5.1: a headless build is a Workbench launch; refuse while a
+        // Workbench is open (single-instance launcher) or another session
+        // holds the lease.
+        const blocker = headlessSpawnBlocker(undefined, config);
+        if (blocker) {
+          return {
+            content: [{ type: "text" as const, text: `Error building mod: ${blocker}` }],
+            isError: true,
+          };
+        }
+
         try {
           const startTime = Date.now();
           const result = await runBuild(exePath, args, BUILD_TIMEOUT_MS);
@@ -679,7 +691,7 @@ export function registerMod(
                   text: `Unknown pattern: "${patternName}"\nAvailable patterns: ${available}`,
                 },
               ],
-            isError: true,
+              isError: true,
             };
           }
         }
@@ -694,7 +706,10 @@ export function registerMod(
           assertInsideRoot(addonDir, config.projectPath, "addon directory");
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          return { content: [{ type: "text", text: `Error creating addon: ${msg}` }], isError: true };
+          return {
+            content: [{ type: "text", text: `Error creating addon: ${msg}` }],
+            isError: true,
+          };
         }
 
         if (existsSync(addonDir)) {
@@ -705,7 +720,7 @@ export function registerMod(
                 text: `Directory already exists: ${addonDir}\nUse a different name or delete the existing directory.`,
               },
             ],
-          isError: true,
+            isError: true,
           };
         }
 
@@ -754,7 +769,7 @@ export function registerMod(
                       text: `Pattern "${patternName}" produces duplicate script file after prefix replacement: ${path}\nUse a different prefix to avoid collisions.`,
                     },
                   ],
-                isError: true,
+                  isError: true,
                 };
               }
               scriptPaths.push(path);
@@ -772,7 +787,7 @@ export function registerMod(
                       text: `Pattern "${patternName}" produces duplicate config file after prefix replacement: ${path}\nUse a different prefix to avoid collisions.`,
                     },
                   ],
-                isError: true,
+                  isError: true,
                 };
               }
               configPaths.push(path);
@@ -890,7 +905,7 @@ export function registerMod(
                 text: `Invalid project path: "${projectPath}". Path must be within the configured project directory (${config.projectPath}).`,
               },
             ],
-          isError: true,
+            isError: true,
           };
         }
       } else {

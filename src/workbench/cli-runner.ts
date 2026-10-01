@@ -28,6 +28,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { findGameAcrossSteamLibraries, steamRootOf } from "../utils/steam.js";
 import { logger } from "../utils/logger.js";
+import { checkLease, describeLease, resolveLeasePath } from "./lease.js";
+import { LEASE_SESSION } from "./client.js";
+import type { Config } from "../config.js";
 
 const WORKBENCH_EXE = "ArmaReforgerWorkbenchSteamDiag.exe";
 
@@ -137,7 +140,22 @@ export function runningWorkbenchPids(
  * open editor session was lost and a different recent project was opened).
  * Returns a user-facing refusal message, or null when it is safe to spawn.
  */
-export function headlessSpawnBlocker(pids: number[] = runningWorkbenchPids()): string | null {
+export function headlessSpawnBlocker(
+  pids: number[] = runningWorkbenchPids(),
+  config?: Pick<Config, "leasePath">,
+): string | null {
+  // Plan 5.1: no headless launch while another session holds the Workbench lease.
+  if (config) {
+    const check = checkLease(resolveLeasePath(config));
+    if (check.state !== "free" && !("lease" in check && check.lease.session === LEASE_SESSION)) {
+      const who =
+        "lease" in check ? describeLease(check.lease) : `corrupt lease file: ${check.reason}`;
+      return (
+        "Refusing to start a headless Workbench run: the Workbench lease is held by another " +
+        `session (${who}). Wait for that session to end or ask the owner.`
+      );
+    }
+  }
   if (pids.length === 0) return null;
   return (
     `Refusing to start a headless Workbench run: ${WORKBENCH_IMAGE} is already running ` +

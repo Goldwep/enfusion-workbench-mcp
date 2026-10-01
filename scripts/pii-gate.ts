@@ -99,8 +99,14 @@ export interface LoadPatternsOptions {
 export interface AllowEntry {
   /** Repo-relative path with forward slashes. */
   path: string;
-  /** Exact matched text that is benign in that file. */
-  string: string;
+  /** Exact matched text that is benign in that file (mutually exclusive with `pattern`). */
+  string?: string;
+  /**
+   * Generic pattern name (e.g. "email", "steam64-id") whose every match in that
+   * file is benign third-party or placeholder data; the strings themselves are
+   * then never copied into the allow-list. Owner patterns can never be listed.
+   */
+  pattern?: string;
   /** Why the match is benign. */
   reason?: string;
 }
@@ -311,6 +317,41 @@ export function isBinary(buf: Buffer): boolean {
   return buf.subarray(0, BINARY_SNIFF_BYTES).includes(0);
 }
 
+/** Files larger than this are reported as a finding instead of being scanned. */
+export const HARD_MAX_SCAN_BYTES = 64 * 1024 * 1024;
+
+/**
+ * Decodes a buffer as text: UTF-8, or UTF-16 (BOM, or NUL bytes on every
+ * other position in the sniffed head, as `reg export` and other Windows tools
+ * write). Returns null for real binary data.
+ */
+export function decodeText(buf: Buffer): string | null {
+  if (buf.length >= 2) {
+    if (buf[0] === 0xff && buf[1] === 0xfe) return buf.subarray(2).toString("utf16le");
+    if (buf[0] === 0xfe && buf[1] === 0xff) return swap16(buf.subarray(2)).toString("utf16le");
+  }
+  if (!isBinary(buf)) return buf.toString("utf-8");
+  const head = buf.subarray(0, BINARY_SNIFF_BYTES);
+  let oddNul = 0;
+  let evenNul = 0;
+  for (let i = 0; i < head.length; i++) {
+    if (head[i] === 0) {
+      if (i % 2 === 1) oddNul++;
+      else evenNul++;
+    }
+  }
+  const pairs = Math.floor(head.length / 2);
+  if (pairs > 0 && oddNul >= pairs * 0.3 && evenNul === 0) return buf.toString("utf16le");
+  if (pairs > 0 && evenNul >= pairs * 0.3 && oddNul === 0) return swap16(buf).toString("utf16le");
+  return null;
+}
+
+function swap16(buf: Buffer): Buffer {
+  const out = Buffer.from(buf.subarray(0, buf.length - (buf.length % 2)));
+  out.swap16();
+  return out;
+}
+
 /** True when a path has a `.git`, `node_modules` or `dist` segment. */
 export function isSkippedPath(path: string): boolean {
   return path.split(/[\\/]/).some((s) => SKIPPED_SEGMENTS.has(s));
@@ -332,10 +373,17 @@ export function loadAllowList(file: string): AllowEntry[] {
   if (!Array.isArray(entries)) throw new Error(`allow-list ${file} must hold an "entries" array`);
   return entries.map((e, i) => {
     const o = e as Partial<AllowEntry>;
-    if (typeof o.path !== "string" || typeof o.string !== "string" || o.string === "") {
-      throw new Error(`allow-list ${file} entry ${i} needs string "path" and non-empty "string"`);
+    const hasString = typeof o.string === "string" && o.string !== "";
+    const hasPattern = typeof o.pattern === "string" && o.pattern !== "";
+    if (typeof o.path !== "string" || hasString === hasPattern) {
+      throw new Error(
+        `allow-list ${file} entry ${i} needs string "path" and exactly one of non-empty "string" or "pattern"`,
+      );
     }
-    return { path: o.path, string: o.string, reason: o.reason };
+    if (hasPattern && o.pattern!.startsWith("owner-pattern")) {
+      throw new Error(`allow-list ${file} entry ${i}: owner patterns can never be allow-listed`);
+    }
+    return { path: o.path, string: o.string, pattern: o.pattern, reason: o.reason };
   });
 }
 
@@ -360,11 +408,18 @@ export function applyAllowList(
   const kept: PiiFinding[] = [];
   const allowed: PiiFinding[] = [];
   for (const f of findings) {
-    const ok = allow.some((a) =>
-      own
-        ? a.string === f.match || JSON.stringify(a.string).slice(1, -1) === f.match
-        : toPosixPath(a.path) === p && a.string === f.match,
-    );
+    // An owner pattern match is never benign, wherever it sits, including
+    // inside the allow-list file itself (a listed real path would otherwise
+    // whitelist the target file and commit the string).
+    if (f.pattern.startsWith("owner-pattern")) {
+      kept.push(f);
+      continue;
+    }
+    const ok = allow.some((a) => {
+      if (a.pattern !== undefined) return toPosixPath(a.path) === p && a.pattern === f.pattern;
+      if (own) return a.string === f.match || JSON.stringify(a.string).slice(1, -1) === f.match;
+      return toPosixPath(a.path) === p && a.string === f.match;
+    });
     (ok ? allowed : kept).push(f);
   }
   return { kept, allowed };
@@ -393,15 +448,26 @@ export function scanTargets(
       reports.push({ path: t.path, findings: [], allowed: 0, skipped: `unreadable: ${msg}` });
       continue;
     }
-    if (buf.length > maxBytes) {
-      reports.push({ path: t.path, findings: [], allowed: 0, skipped: `over ${maxBytes} bytes` });
-      continue;
-    }
-    if (isBinary(buf)) {
+    const text = decodeText(buf);
+    if (text === null) {
       reports.push({ path: t.path, findings: [], allowed: 0, skipped: "binary" });
       continue;
     }
-    const raw = scanText(buf.toString("utf-8"), patterns);
+    if (buf.length > maxBytes) {
+      // Oversize text is scanned anyway up to HARD_MAX_SCAN_BYTES; beyond that
+      // the file counts as a finding, never as a silent pass.
+      if (buf.length > HARD_MAX_SCAN_BYTES) {
+        reports.push({
+          path: t.path,
+          findings: [
+            { line: 0, column: 0, pattern: "oversize-unscanned", match: `${buf.length} bytes` },
+          ],
+          allowed: 0,
+        });
+        continue;
+      }
+    }
+    const raw = scanText(text, patterns);
     const { kept, allowed } = applyAllowList(t.path, raw, allow, options.allowFilePath);
     reports.push({ path: t.path, findings: kept, allowed: allowed.length });
   }

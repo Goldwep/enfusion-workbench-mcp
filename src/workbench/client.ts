@@ -33,7 +33,7 @@ import {
   rmSync,
   statSync,
 } from "node:fs";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { findGameAcrossSteamLibraries, steamRootOf } from "../utils/steam.js";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,8 +80,12 @@ const HANDLER_RECOMPILE_POLL_MS = 2_000;
  * recovery path and diagnose() so they classify the same condition identically.
  */
 const NO_HANDLERS_ERROR = "Undefined API func";
-/** Lease holder id of this server process (plan 5.1: "registered:<pid>"). */
-const LEASE_SESSION = `registered:${process.pid}`;
+/**
+ * Lease holder id of this server process (plan 5.1: "registered:<pid>"), with a
+ * per-process nonce so a later server that happens to reuse a crashed server's
+ * pid never mistakes that server's lease for its own.
+ */
+export const LEASE_SESSION = `registered:${process.pid}-${randomBytes(3).toString("hex")}`;
 /** Lease purpose recorded by this server. */
 const LEASE_PURPOSE = "registered-server";
 /** Minimum interval between two heartbeat writes of our own lease. */
@@ -692,16 +696,21 @@ export class WorkbenchClient {
   }
 
   /**
-   * Release the Workbench lease if this server process holds it. Best
-   * effort: never throws; a lease held by another session is left alone.
-   * Returns true when our lease file was removed. Called on server shutdown.
+   * Release the Workbench lease if this server process holds it and the
+   * Workbench it recorded is not running any more. Best effort: never throws;
+   * a lease held by another session is left alone, and so is our own lease
+   * while its Workbench process lives. Returns true when the file was removed.
+   * Called on server shutdown.
    */
   releaseLease(): boolean {
     if (!this.config) return false;
     this.lastHeartbeatAt = 0;
     try {
-      return releaseLeaseFile(resolveLeasePath(this.config), LEASE_SESSION);
+      return releaseLeaseFile(resolveLeasePath(this.config), LEASE_SESSION, this.leaseDeps);
     } catch (e) {
+      // LEASE_ORPHANED here means the Workbench this server launched is still
+      // running: the lease is kept on purpose so the next session asks the
+      // owner instead of adopting that Workbench (plan 5.1).
       logger.debug(`Workbench lease not released: ${e instanceof Error ? e.message : String(e)}`);
       return false;
     }
@@ -792,6 +801,11 @@ export class WorkbenchClient {
       }
       throw e;
     }
+  }
+
+  /** True when a lease check names this server process as the holder. */
+  holdsLease(check: LeaseCheck): boolean {
+    return "lease" in check && check.lease.session === LEASE_SESSION;
   }
 
   /** Record pid/project in our lease. Best effort: a failure is logged, not thrown. */

@@ -11,18 +11,18 @@ verified, Known not driven, Unexplored) plus weak-oracle passes and work in prog
 
 ## Gates (phase 0)
 
-| Gate | Status  | Summary                                                              |
-| ---- | ------- | -------------------------------------------------------------------- |
-| G1   | PASS    | 0 rows valid; ledger matches a fresh build                           |
-| G2   | SKIPPED | no universe has two independent sources or a count gate yet          |
-| G3   | PASS    | no open frontier                                                     |
-| G4   | SKIPPED | no L01 observations yet                                              |
-| G5   | SKIPPED | no E05 UI labels yet                                                 |
-| G6   | PASS    | 0 recon row(s), 0 probe(s) carried over                              |
-| G7   | SOFT    | 1196 of 1196 module-by-kind cells empty without a reason             |
-| G8   | PASS    | 0 tool action(s) linked                                              |
-| G9   | PASS    | no orphan below target                                               |
-| G10  | SOFT    | 21 census files clean (generic patterns only; no owner pattern file) |
+| Gate | Status  | Summary                                                     |
+| ---- | ------- | ----------------------------------------------------------- |
+| G1   | PASS    | 0 rows valid; ledger matches a fresh build                  |
+| G2   | SKIPPED | no universe has two independent sources or a count gate yet |
+| G3   | PASS    | no open frontier                                            |
+| G4   | SKIPPED | no L01 observations yet                                     |
+| G5   | SKIPPED | no E05 UI labels yet                                        |
+| G6   | PASS    | 0 recon row(s), 0 probe(s) carried over                     |
+| G7   | SOFT    | 1196 of 1196 module-by-kind cells empty without a reason    |
+| G8   | PASS    | 0 tool action(s) linked                                     |
+| G9   | PASS    | no orphan below target                                      |
+| G10  | PASS    | 21 census files clean (generic patterns only; CI set)       |
 
 ## Headline (shard core)
 

@@ -80,7 +80,7 @@ describe("runPostflight", () => {
       expect(r.steps[0].detail).toContain("a.txt");
       expect(r.released).toBe(true);
       expect(existsSync(join(root, "lease.json"))).toBe(false);
-      expect(existsSync(join(root, "marker"))).toBe(false);
+      expect(existsSync(join(root, "marker"))).toBe(true); // marker persists for the programme (plan 5.1)
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

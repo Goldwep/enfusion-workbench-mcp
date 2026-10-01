@@ -15,8 +15,9 @@
  * Usage: npx tsx scripts/live/paths.ts [artifacts | rewrite <text>]
  */
 
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, posix, resolve, win32 } from "node:path";
+import { dirname, join, posix, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "./cli.js";
 
@@ -37,13 +38,31 @@ export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", 
  * The artifacts folder for this host. Pure: every input is injectable so the
  * win32 form can be tested on any platform.
  */
+/** True when `dir` or any parent holds a `.git` entry (a working tree or a worktree link). */
+export function insideGitWorkTree(dir: string): boolean {
+  let cur = resolve(dir);
+  for (;;) {
+    if (existsSync(join(cur, ".git"))) return true;
+    const parent = dirname(cur);
+    if (parent === cur) return false;
+    cur = parent;
+  }
+}
+
 export function artifactsDir(
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,
   home: string = homedir(),
 ): string {
   const override = env[ARTIFACTS_ENV];
-  if (override) return override;
+  if (override) {
+    if (insideGitWorkTree(override)) {
+      throw new Error(
+        `${ARTIFACTS_ENV}=${override} lies inside a git working tree; raw artifacts never enter one (plan 4.2)`,
+      );
+    }
+    return override;
+  }
   if (platform === "win32") {
     const localAppData = env.LOCALAPPDATA || win32.join(home, "AppData", "Local");
     return win32.join(localAppData, "enfusion-mcp", "artifacts");

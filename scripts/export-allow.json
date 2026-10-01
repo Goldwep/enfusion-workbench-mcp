@@ -1,5 +1,5 @@
 {
-  "$comment": "Public export filter for scripts/export-public.ts (plan 5.2). A tracked path at the gate tag is exported when it matches an include glob, matches no exclude glob, and carries no tag listed in excludeTags. Globs: ** spans directories, * and ? stay within one path segment. .githooks/** is included on purpose.",
+  "$comment": "Public export filter for scripts/export-public.ts (plan 5.2). A tracked path at the gate tag is exported when it matches an include glob, matches no exclude glob, and carries no tag listed in excludeTags. Globs: ** spans directories, * and ? stay within one path segment. .githooks/** is included on purpose. Files tagged executable-derived (E05 label tables, decision D2 default) are excluded until the owner decides otherwise.",
   "include": ["**"],
   "exclude": [
     "docs/v2/STATE.md",
@@ -10,7 +10,7 @@
     "data/census/observations/E05*/**"
   ],
   "tags": {
-    "executable-derived": []
+    "executable-derived": ["data/census/observations/E05/**", "data/census/observations/E05*/**"]
   },
   "excludeTags": ["executable-derived"]
 }

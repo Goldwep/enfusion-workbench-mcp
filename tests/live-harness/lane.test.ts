@@ -38,7 +38,14 @@ describe("Lane", () => {
       });
       expect(lane.recordedPid()).toBe(4242);
 
-      expect(lane.end()).toEqual({ released: true, markerRemoved: true, markerNote: null });
+      expect(lane.end()).toMatchObject({ released: true, markerRemoved: false });
+      expect(existsSync(markerPath)).toBe(true);
+      lane.start("S-C again");
+      expect(lane.end({ removeMarker: true })).toEqual({
+        released: true,
+        markerRemoved: true,
+        markerNote: null,
+      });
       expect(existsSync(leasePath)).toBe(false);
       expect(existsSync(markerPath)).toBe(false);
     } finally {

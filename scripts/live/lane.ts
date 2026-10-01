@@ -9,8 +9,10 @@
  *                   no-autolaunch marker (only when it does not exist yet)
  *   heartbeat()     refresh the lease; startHeartbeat() repeats it on a timer
  *   record(pid, p)  record the Workbench pid and project this lane started
- *   end()           release the lease and remove the marker, but only the
- *                   marker this lane created (its content names the session)
+ *   end()           release the lease; the marker stays for the programme.
+ *                   end({ removeMarker: true }) also removes the marker, but
+ *                   only the marker this lane created (its content names the
+ *                   session) — plan 5.1: removed at release, not per sitting
  *
  * A lease held by another session, an orphaned lease (heartbeat expired while
  * its Workbench is still running) and a corrupt lease all stop the lane with
@@ -22,7 +24,7 @@
  *   npx tsx scripts/live/lane.ts start --purpose "live session S-C" [--id <id>]
  *   npx tsx scripts/live/lane.ts heartbeat --id <id>
  *   npx tsx scripts/live/lane.ts record --id <id> --pid <wb pid> --project <gproj>
- *   npx tsx scripts/live/lane.ts end --id <id>
+ *   npx tsx scripts/live/lane.ts end --id <id> [--release-programme]
  */
 
 import { randomBytes } from "node:crypto";
@@ -270,11 +272,22 @@ export class Lane {
    * A marker created by anyone else is left in place. A lease held by another
    * session is not touched (LEASE_NOT_OWNER propagates) and the marker stays.
    */
-  end(): LaneEndResult {
+  end(opts: { removeMarker?: boolean } = {}): LaneEndResult {
     this.stopHeartbeat();
-    const released = releaseLease(this.leasePath, this.session);
+    // releaseLease refuses (LEASE_ORPHANED) while the recorded Workbench is
+    // still running; that error propagates so the caller reports it.
+    const released = releaseLease(this.leasePath, this.session, this.deps);
     if (!existsSync(this.markerPath)) {
       return { released, markerRemoved: false, markerNote: "no marker present" };
+    }
+    if (!opts.removeMarker) {
+      // Plan 5.1 guard 3: the marker stays for the whole programme and is
+      // removed at release, not after every sitting.
+      return {
+        released,
+        markerRemoved: false,
+        markerNote: "kept for the programme (lane.ts end --release-programme removes it)",
+      };
     }
     if (!this.markerOwnedByLane()) {
       return {
@@ -382,7 +395,7 @@ export function main(argv: string[]): number {
         return 0;
       }
       case "end": {
-        const r = lane.end();
+        const r = lane.end({ removeMarker: args.flags.has("release-programme") });
         console.log(`lease released: ${r.released ? "yes" : "no lease present"}`);
         console.log(`marker removed: ${r.markerRemoved ? "yes" : `no (${r.markerNote})`}`);
         return 0;

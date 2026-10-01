@@ -142,7 +142,21 @@ export function pathOf(path: string[] | string | undefined): string[] {
     .filter(Boolean);
 }
 
-const ENTER_TOKENS = new Set(["enter", "return", "{enter}", "~", "vk_return", "\n", "\r", "\r\n"]);
+const ENTER_TOKENS = new Set([
+  "enter",
+  "return",
+  "{enter}",
+  "~",
+  "vk_return",
+  "numpadenter",
+  "{numpadenter}",
+  "numpad_enter",
+  "kp_enter",
+  "vk_separator",
+  "\n",
+  "\r",
+  "\r\n",
+]);
 const MODIFIER_TOKENS = new Set([
   "alt",
   "lalt",
@@ -160,10 +174,17 @@ const MODIFIER_TOKENS = new Set([
 ]);
 
 /** Classify a key spec: "enter", "accelerator" or null (plain key). */
-export function classifyKey(spec: string): "enter" | "accelerator" | null {
+export function classifyKey(spec: string): "enter" | "accelerator" | "mnemonic" | null {
   const raw = spec.trim();
   const lower = raw.toLowerCase();
-  if (ENTER_TOKENS.has(lower) || lower.includes("{enter}") || raw.includes("~")) return "enter";
+  if (ENTER_TOKENS.has(lower) || lower.includes("{enter}") || lower.includes("numpadenter")) {
+    return "enter";
+  }
+  if (raw.includes("~")) return "enter";
+  // A bare letter or digit activates a mnemonic while a menu is open (plan
+  // 4.5 L02: no accelerator keys during a walk); the dry run treats every
+  // single printable character as one unless a named exception lifts it.
+  if (/^[A-Za-z0-9]$/.test(raw)) return "mnemonic";
   const tokens = lower.split(/\s*\+\s*/).filter(Boolean);
   if (tokens.some((t) => ENTER_TOKENS.has(t))) return "enter";
   if (tokens.some((t) => MODIFIER_TOKENS.has(t))) return "accelerator";
@@ -237,6 +258,22 @@ function actionViolations(
       const apiFunc = typeof action.target === "string" ? action.target : (t.apiFunc ?? "");
       const hit = deniedApi(apiFunc, deniedApiNames(policy));
       if (hit) out.push({ rule: "deny-listed-api", detail: `${apiFunc} is denied (${hit})` });
+      // The shipped EMCP_WB_ExecuteAction handler runs an arbitrary menu path:
+      // its path parameter is checked exactly like an execute-action entry.
+      if (/executeaction/i.test(apiFunc)) {
+        const params = (action.params ?? {}) as Record<string, unknown>;
+        const rawPath = params.menuPath ?? params.path ?? params.action ?? params.actionPath;
+        const path = pathOf(rawPath as string | string[] | undefined);
+        const pathHit = deniedHit(path);
+        if (pathHit)
+          out.push({ rule: "deny-listed-path", detail: `"${pathHit}" is on a deny list` });
+        if (!allowListed(path, policy.execute_action?.allow_list ?? [])) {
+          out.push({
+            rule: "not-allow-listed",
+            detail: `ExecuteAction path "${path.join(" > ")}" via ${apiFunc} is not on execute_action.allow_list`,
+          });
+        }
+      }
       break;
     }
     case "key": {
@@ -245,6 +282,12 @@ function actionViolations(
       if (cls === "enter") out.push({ rule: "key-enter", detail: `key "${spec}" is Enter` });
       if (cls === "accelerator") {
         out.push({ rule: "key-accelerator", detail: `key "${spec}" is an accelerator` });
+      }
+      if (cls === "mnemonic") {
+        out.push({
+          rule: "key-accelerator",
+          detail: `key "${spec}" is a bare character that activates a menu mnemonic`,
+        });
       }
       break;
     }

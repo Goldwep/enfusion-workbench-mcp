@@ -216,7 +216,7 @@ export function registerWbCliRun(server: McpServer, config: Config): void {
           });
         }
 
-        const blocker = headlessSpawnBlocker();
+        const blocker = headlessSpawnBlocker(undefined, config);
 
         if (blocker) {
           return { content: [{ type: "text" as const, text: blocker }], isError: true };

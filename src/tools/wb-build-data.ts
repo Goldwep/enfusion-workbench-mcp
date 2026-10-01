@@ -199,7 +199,7 @@ export async function executeBuildData(
       depCheckError = e instanceof Error ? e.message : String(e);
     }
 
-    const blocker = headlessSpawnBlocker();
+    const blocker = headlessSpawnBlocker(undefined, config);
     if (blocker) return { text: blocker, isError: true };
 
     const args = buildBuildDataArgs(platform, outFull, gprojFull);

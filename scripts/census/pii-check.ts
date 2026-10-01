@@ -95,10 +95,12 @@ export function g10Runner(
         offenders,
       };
     }
+    // Plan 5.2: the gate refuses to pass without the owner pattern file
+    // unless CI is set. A FAIL here is cleared by creating the file (OA-9).
     return {
       gate: "G10",
-      status: release ? "FAIL" : "SOFT",
-      summary: `${scanned} clean (generic patterns only; no owner pattern file)`,
+      status: "FAIL",
+      summary: `${scanned} clean under generic patterns, but the owner pattern file is missing and CI is unset (plan 5.2, OA-9)`,
       offenders,
     };
   };

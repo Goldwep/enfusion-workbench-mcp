@@ -28,8 +28,20 @@ function gitEnv(dir: string): NodeJS.ProcessEnv {
   };
 }
 
-/** A scratch repository with three commits: a, b (child of a) and c (child of a, not of b). */
-function scratchRepo(): { dir: string; env: NodeJS.ProcessEnv; a: string; b: string; c: string } {
+/**
+ * A scratch repository with three commits on main's history: a, b (child of a)
+ * and c (child of a, not of b), plus an orphan history p, q (child of p) that
+ * shares no ancestor with main, the shape scripts/export-public.ts produces.
+ */
+function scratchRepo(): {
+  dir: string;
+  env: NodeJS.ProcessEnv;
+  a: string;
+  b: string;
+  c: string;
+  p: string;
+  q: string;
+} {
   const dir = mkdtempSync(join(tmpdir(), "emcp-hooks-"));
   const env = gitEnv(dir);
   const repo = join(dir, "repo");
@@ -44,7 +56,13 @@ function scratchRepo(): { dir: string; env: NodeJS.ProcessEnv; a: string; b: str
   g("checkout", "-q", "-b", "side", a);
   g("commit", "-q", "--allow-empty", "-m", "c");
   const c = g("rev-parse", "HEAD");
-  return { dir: repo, env, a, b, c };
+  g("checkout", "-q", "--orphan", "pub");
+  g("commit", "-q", "--allow-empty", "-m", "p");
+  const p = g("rev-parse", "HEAD");
+  g("commit", "-q", "--allow-empty", "-m", "q");
+  const q = g("rev-parse", "HEAD");
+  g("checkout", "-q", "main");
+  return { dir: repo, env, a, b, c, p, q };
 }
 
 function prePush(lines: string[], cwd: string, env: NodeJS.ProcessEnv) {
@@ -58,7 +76,7 @@ function prePush(lines: string[], cwd: string, env: NodeJS.ProcessEnv) {
 }
 
 describe.skipIf(!HAS_SH || !HAS_GIT)("pre-push hook", () => {
-  const { dir, env, a, b, c } = HAS_SH && HAS_GIT ? scratchRepo() : ({} as never);
+  const { dir, env, a, b, p, q } = HAS_SH && HAS_GIT ? scratchRepo() : ({} as never);
 
   it("rejects main and names the ref", () => {
     const r = prePush([`refs/heads/main ${a} refs/heads/main ${ZERO}`], dir, env);
@@ -89,7 +107,7 @@ describe.skipIf(!HAS_SH || !HAS_GIT)("pre-push hook", () => {
 
   it("allows a new public-release", () => {
     const r = prePush(
-      [`refs/heads/public-release ${a} refs/heads/public-release ${ZERO}`],
+      [`refs/heads/public-release ${p} refs/heads/public-release ${ZERO}`],
       dir,
       env,
     );
@@ -98,12 +116,24 @@ describe.skipIf(!HAS_SH || !HAS_GIT)("pre-push hook", () => {
   });
 
   it("allows a fast-forward of public-release", () => {
-    const r = prePush([`refs/heads/public-release ${b} refs/heads/public-release ${a}`], dir, env);
+    const r = prePush([`refs/heads/public-release ${q} refs/heads/public-release ${p}`], dir, env);
     expect(r.code).toBe(0);
   });
 
+  it("rejects a public-release that carries main history", () => {
+    // b is main's tip: pushing it (or any descendant) would publish the
+    // pre-scrub history (plan 5.2).
+    const r = prePush(
+      [`refs/heads/public-release ${b} refs/heads/public-release ${ZERO}`],
+      dir,
+      env,
+    );
+    expect(r.code).toBe(1);
+    expect(r.err).toContain("local main history is an ancestor");
+  });
+
   it("rejects a non-fast-forward of public-release", () => {
-    const r = prePush([`refs/heads/public-release ${c} refs/heads/public-release ${b}`], dir, env);
+    const r = prePush([`refs/heads/public-release ${p} refs/heads/public-release ${q}`], dir, env);
     expect(r.code).toBe(1);
     expect(r.err).toContain("would not fast-forward");
   });
@@ -117,7 +147,7 @@ describe.skipIf(!HAS_SH || !HAS_GIT)("pre-push hook", () => {
   it("rejects the whole push when one of several refs is refused", () => {
     const r = prePush(
       [
-        `refs/heads/public-release ${a} refs/heads/public-release ${ZERO}`,
+        `refs/heads/public-release ${p} refs/heads/public-release ${ZERO}`,
         `refs/heads/v2 ${a} refs/heads/v2 ${ZERO}`,
       ],
       dir,
@@ -142,7 +172,7 @@ describe.skipIf(!HAS_SH || !HAS_GIT)("pre-push hook", () => {
         encoding: "utf-8",
       });
     expect(g("branch", "v2", a).status).toBe(0);
-    expect(g("branch", "public-release", a).status).toBe(0);
+    expect(g("branch", "public-release", p).status).toBe(0);
     const v2 = g("push", bare, "v2");
     expect(v2.status).not.toBe(0);
     expect(v2.stderr).toContain("REJECTED refs/heads/v2");

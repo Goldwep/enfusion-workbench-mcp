@@ -4,6 +4,13 @@ import { basename, dirname, join, resolve } from "node:path";
 import { existsSync, readdirSync } from "node:fs";
 import type { Config } from "../config.js";
 import { WorkbenchError, findDefaultModGproj, type WorkbenchClient } from "../workbench/client.js";
+import {
+  checkLease,
+  describeLease,
+  isNoAutolaunch,
+  resolveLeasePath,
+  resolveNoAutolaunchPath,
+} from "../workbench/lease.js";
 import { formatConnectionStatus } from "../workbench/status.js";
 import { handlerErrorMessage } from "../workbench/response.js";
 import { openResourceFailed } from "./wb-editor.js";
@@ -79,7 +86,47 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
         // that is already running needs no project to be opened, so the
         // refusal applies only when something would actually be launched.
         const explicitGproj = gprojPath ?? findDefaultModGproj(config);
+        // A lease held by another session refuses even the read-only probe
+        // below: that Workbench belongs to someone else (plan 5.1).
+        const leaseCheck = checkLease(resolveLeasePath(config));
+        if (leaseCheck.state !== "free" && !client.holdsLease(leaseCheck)) {
+          const who =
+            "lease" in leaseCheck
+              ? describeLease(leaseCheck.lease)
+              : `corrupt file: ${leaseCheck.reason}`;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  `**Launch Refused — Workbench lease held by another session**\n\n${who}\n\n` +
+                  "Nothing was probed, installed or launched. Wait for that session to end, or ask the owner.",
+              },
+            ],
+            isError: true,
+          };
+        }
         const alreadyRunning = await client.ping();
+        if (!alreadyRunning && !gprojPath) {
+          // Only an explicit gprojPath may launch while the no-autolaunch
+          // marker exists; the default mod is an implicit choice (plan 5.1).
+          const markerPath = resolveNoAutolaunchPath(config);
+          if (isNoAutolaunch(markerPath)) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text:
+                    "**Launch Refused — no-autolaunch marker present**\n\n" +
+                    `The marker ${markerPath} exists, so Workbench is launched only for an explicit ` +
+                    "`gprojPath`. The configured default mod does not count as explicit." +
+                    formatConnectionStatus(client),
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
         if (!explicitGproj && !alreadyRunning) {
           return {
             content: [

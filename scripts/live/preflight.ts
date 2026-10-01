@@ -150,6 +150,14 @@ export interface PreflightContext {
   openedProjectPattern: string | null;
   /** Session console.log to read the opened project from. */
   sessionLog: string | null;
+  /** True when sessionLog was chosen automatically (newest); step 9 then requires one newer than the spawn. */
+  sessionLogAuto?: boolean;
+  /** Workbench logs root, for the post-launch session-log search. */
+  logsPath?: string | null;
+  /** How long step 9 waits for a new session log (default 30 s). */
+  logWaitMs?: number;
+  /** Called when step 9 fails after step 8 started a Workbench: close it (plan 5.3 step 9). */
+  onAbort?: (ctx: PreflightContext) => Promise<string>;
   exec: ExecFn;
   powershell: (script: string, env?: Record<string, string>) => Promise<PowerShellResult>;
   now: () => Date;
@@ -160,6 +168,8 @@ export interface PreflightContext {
     registryExport?: string;
     launch?: LaunchPlan;
     startedPid?: number;
+    /** Wall-clock time of the spawn in step 8; step 9 only trusts a session log newer than this. */
+    launchedAt?: number;
     queue?: QueuedProbe[];
   };
 }
@@ -244,6 +254,15 @@ export function recordedBuild(
     for (const k of keys) if (typeof raw[k] === "string") return raw[k] as string;
     return null;
   };
+  // ledger.meta.json (src/census) stores build as { tag, branch, ui_language }.
+  const build = raw.build;
+  if (build && typeof build === "object") {
+    const b = build as Record<string, unknown>;
+    const tag = typeof b.tag === "string" && b.tag !== "unknown" ? b.tag : null;
+    const lang =
+      typeof b.ui_language === "string" && b.ui_language !== "unknown" ? b.ui_language : null;
+    return { build: tag, uiLanguage: lang };
+  }
   return { build: pick("build", "build_tag"), uiLanguage: pick("ui_language", "uiLanguage") };
 }
 
@@ -632,6 +651,7 @@ export function stepLaunch(ctx: PreflightContext): StepResult {
   const gproj = ctx.variant === "launcher-walk" ? null : ctx.gproj;
   const pid = spawnWorkbench(plan, ctx.lane, gproj);
   ctx.state.startedPid = pid;
+  ctx.state.launchedAt = Date.now();
   return { step: 8, name, ok: true, detail: `started pid ${pid}: ${plan.commandLine}${noNudge}` };
 }
 
@@ -737,7 +757,33 @@ export async function stepAssertProject(ctx: PreflightContext): Promise<StepResu
       instruction,
     };
   }
-  const text = existsSync(ctx.sessionLog) ? readFileSync(ctx.sessionLog, "utf-8") : "";
+  // The default session log is the newest one; it must have been created
+  // after this lane's spawn, or the assertion would read the PREVIOUS
+  // session's log. Wait briefly for Workbench to create it.
+  let logPath: string | null = ctx.sessionLog;
+  if (ctx.sessionLogAuto && ctx.state.launchedAt !== undefined) {
+    const deadline = Date.now() + (ctx.logWaitMs ?? 30_000);
+    logPath = null;
+    for (;;) {
+      const candidate = newestSessionLog(ctx.logsPath ?? "", ctx.state.launchedAt);
+      if (candidate) {
+        logPath = candidate;
+        break;
+      }
+      if (Date.now() > deadline) break;
+      await new Promise((r) => setTimeout(r, 1_000));
+    }
+    if (!logPath) {
+      return {
+        step: 9,
+        name,
+        ok: false,
+        detail: "no session log newer than this launch appeared; refusing to read an older one",
+        instruction,
+      };
+    }
+  }
+  const text = existsSync(logPath) ? readFileSync(logPath, "utf-8") : "";
   const opened = openedProjectFromLog(text, ctx.openedProjectPattern);
   const ok = opened !== null && normPath(opened) === normPath(ctx.gproj);
   return {
@@ -784,7 +830,17 @@ export async function runPreflight(
       };
     }
     results.push(r);
-    if (!r.ok) return { ok: false, results };
+    if (!r.ok) {
+      // Plan 5.3 step 9: abort AND close the Workbench this lane started.
+      if (ctx.state.startedPid !== undefined && ctx.onAbort) {
+        try {
+          r.detail += `; abort: ${await ctx.onAbort(ctx)}`;
+        } catch (e) {
+          r.detail += `; abort failed: ${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+      return { ok: false, results };
+    }
   }
   return { ok: true, results };
 }
@@ -799,14 +855,23 @@ export function formatStep(r: StepResult): string {
 // ── CLI ──────────────────────────────────────────────────────────────────────
 
 /** Newest `logs_*` directory's console.log under `logsPath`, or null. */
-export function newestSessionLog(logsPath: string): string | null {
-  if (!existsSync(logsPath)) return null;
+export function newestSessionLog(logsPath: string, createdAfter?: number): string | null {
+  if (!logsPath || !existsSync(logsPath)) return null;
   const dirs = readdirSync(logsPath)
     .filter((d) => d.startsWith("logs_"))
     .sort();
   for (let i = dirs.length - 1; i >= 0; i--) {
     const f = join(logsPath, dirs[i], "console.log");
-    if (existsSync(f)) return f;
+    if (!existsSync(f)) continue;
+    if (createdAfter !== undefined) {
+      try {
+        const st = statSync(join(logsPath, dirs[i]));
+        if (Math.max(st.birthtimeMs, st.ctimeMs) < createdAfter) return null;
+      } catch {
+        return null;
+      }
+    }
+    return f;
   }
   return null;
 }
@@ -828,6 +893,7 @@ export async function main(argv: string[]): Promise<number> {
       "headless-args",
       "opened-project-pattern",
       "session-log",
+      "log-wait-ms",
       "ledger-meta",
       "workbench-path",
       "game-path",
@@ -895,6 +961,9 @@ export async function main(argv: string[]): Promise<number> {
       ownerYesAboveMutating: args.flags.has("owner-yes-above-mutating"),
       openedProjectPattern: o["opened-project-pattern"] ?? null,
       sessionLog: o["session-log"] ?? (config ? newestSessionLog(config.logsPath) : null),
+      sessionLogAuto: o["session-log"] === undefined,
+      logsPath: config?.logsPath ?? null,
+      logWaitMs: o["log-wait-ms"] ? Number(o["log-wait-ms"]) : undefined,
       exec: defaultExec,
       powershell: (script, env) => runPowerShell(script, { env }),
       now: () => new Date(),

@@ -33,6 +33,8 @@ import {
   openSync,
   readFileSync,
   renameSync,
+  rmdirSync,
+  statSync,
   unlinkSync,
   writeFileSync,
   writeSync,
@@ -201,6 +203,53 @@ function writeAtomic(path: string, lease: WorkbenchLease): void {
   renameSync(tmp, path);
 }
 
+/** A lock directory beside the lease file; `mkdir` is atomic on every platform. */
+const LOCK_STALE_MS = 30_000;
+const LOCK_WAIT_MS = 2_000;
+
+/**
+ * Run `fn` while holding `<path>.lock`. Serialises check-then-act sequences
+ * (stale takeover, heartbeat, release) between processes on one machine. A
+ * lock directory older than LOCK_STALE_MS is treated as abandoned.
+ */
+function withLock<T>(path: string, fn: () => T): T {
+  const lockDir = `${path}.lock`;
+  mkdirSync(dirname(path), { recursive: true });
+  const deadline = Date.now() + LOCK_WAIT_MS;
+  for (;;) {
+    try {
+      mkdirSync(lockDir);
+      break;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      try {
+        if (Date.now() - statSync(lockDir).mtimeMs > LOCK_STALE_MS) {
+          rmdirSync(lockDir);
+          continue;
+        }
+      } catch {
+        /* lock vanished or is unreadable; retry */
+      }
+      if (Date.now() > deadline) {
+        throw new LeaseError(
+          `Could not take the lease lock ${lockDir} within ${LOCK_WAIT_MS} ms`,
+          "LEASE_HELD",
+        );
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    try {
+      rmdirSync(lockDir);
+    } catch {
+      /* already gone */
+    }
+  }
+}
+
 function createExclusive(path: string, lease: WorkbenchLease): boolean {
   mkdirSync(dirname(path), { recursive: true });
   let fd: number;
@@ -250,14 +299,21 @@ export function acquireLease(
       case "free":
         if (createExclusive(path, fresh)) return fresh;
         continue; // lost a race; re-check once
-      case "stale":
-        try {
-          unlinkSync(path);
-        } catch (e) {
-          if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
-        }
-        if (createExclusive(path, fresh)) return fresh;
+      case "stale": {
+        // Re-check under the lock: the file may have been replaced since the
+        // first read. Only a still-stale lease is removed.
+        const taken = withLock(path, () => {
+          if (checkLease(path, deps).state !== "stale") return false;
+          try {
+            unlinkSync(path);
+          } catch (e) {
+            if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+          }
+          return createExclusive(path, fresh);
+        });
+        if (taken) return fresh;
         continue;
+      }
       case "held":
         if (check.lease.session === opts.session) {
           const refreshed = { ...check.lease, heartbeat_at: iso };
@@ -309,10 +365,12 @@ export function heartbeatLease(
   session: string,
   deps: LeaseDeps = {},
 ): WorkbenchLease {
-  const lease = readOwned(path, session);
-  const updated = { ...lease, heartbeat_at: new Date((deps.now ?? Date.now)()).toISOString() };
-  writeAtomic(path, updated);
-  return updated;
+  return withLock(path, () => {
+    const lease = readOwned(path, session);
+    const updated = { ...lease, heartbeat_at: new Date((deps.now ?? Date.now)()).toISOString() };
+    writeAtomic(path, updated);
+    return updated;
+  });
 }
 
 /** Record the Workbench pid and/or project once known. Also refreshes the heartbeat. */
@@ -322,29 +380,51 @@ export function updateLease(
   patch: { wb_pid?: number | null; project?: string | null },
   deps: LeaseDeps = {},
 ): WorkbenchLease {
-  const lease = readOwned(path, session);
-  const updated: WorkbenchLease = {
-    ...lease,
-    wb_pid: patch.wb_pid === undefined ? lease.wb_pid : patch.wb_pid,
-    project: patch.project === undefined ? lease.project : patch.project,
-    heartbeat_at: new Date((deps.now ?? Date.now)()).toISOString(),
-  };
-  writeAtomic(path, updated);
-  return updated;
+  return withLock(path, () => {
+    const lease = readOwned(path, session);
+    const updated: WorkbenchLease = {
+      ...lease,
+      wb_pid: patch.wb_pid === undefined ? lease.wb_pid : patch.wb_pid,
+      project: patch.project === undefined ? lease.project : patch.project,
+      heartbeat_at: new Date((deps.now ?? Date.now)()).toISOString(),
+    };
+    writeAtomic(path, updated);
+    return updated;
+  });
 }
 
 /**
  * Release the lease held by `session`. Returns false when no lease exists.
- * Throws LEASE_NOT_OWNER when another session holds it.
+ * Throws LEASE_NOT_OWNER when another session holds it, and LEASE_ORPHANED
+ * when the recorded Workbench process is still running: a lease is never
+ * dropped while its Workbench lives, so the next session finds it (held or
+ * orphaned) and asks the owner instead of adopting that Workbench. Pass
+ * `force` only on the owner's explicit go.
  */
-export function releaseLease(path: string, session: string): boolean {
+export function releaseLease(
+  path: string,
+  session: string,
+  opts: { force?: boolean } & LeaseDeps = {},
+): boolean {
   if (!existsSync(path)) return false;
-  readOwned(path, session);
-  try {
-    unlinkSync(path);
-  } catch (e) {
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
-    throw e;
-  }
-  return true;
+  return withLock(path, () => {
+    if (!existsSync(path)) return false;
+    const lease = readOwned(path, session);
+    const alive = opts.isAlive ?? isProcessAlive;
+    if (!opts.force && lease.wb_pid !== null && alive(lease.wb_pid)) {
+      throw new LeaseError(
+        `Workbench (pid ${lease.wb_pid}) recorded in the lease is still running; the lease is kept ` +
+          "until that Workbench has exited or the owner gives a go to drop it.",
+        "LEASE_ORPHANED",
+        lease,
+      );
+    }
+    try {
+      unlinkSync(path);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") return false;
+      throw e;
+    }
+    return true;
+  });
 }

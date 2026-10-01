@@ -7,7 +7,8 @@
  * A list of responses is consumed in order; the last one repeats.
  *
  * Two forms:
- *   - `MockNet.call()`: in-process, no socket, for action-plan dry runs.
+ *   - `MockNet.call()`: in-process, no socket, for battery tests that script
+ *     NET responses (the action-plan checker in dry-run.ts needs no NET layer).
  *   - `startMockNetServer()`: a real TCP listener on 127.0.0.1 that speaks the
  *     wire protocol of `src/workbench/protocol.ts`, for exercising netcall.ts
  *     end to end without Workbench.

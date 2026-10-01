@@ -250,7 +250,7 @@ export function registerWbValidateScripts(server: McpServer, config: Config): vo
           });
         }
 
-        const blocker = headlessSpawnBlocker();
+        const blocker = headlessSpawnBlocker(undefined, config);
 
         if (blocker) {
           return { content: [{ type: "text" as const, text: blocker }], isError: true };

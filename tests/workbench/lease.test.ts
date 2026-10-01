@@ -167,6 +167,40 @@ describe("lease", () => {
       expect(existsSync(path)).toBe(false);
     });
 
+    it("keeps the lease while the recorded Workbench process is still running", () => {
+      const path = tmpLease();
+      acquireLease(path, { session: "a", purpose: "test", wb_pid: 4242 });
+      expect(() => releaseLease(path, "a", { isAlive: () => true })).toThrow(/still running/);
+      expect(existsSync(path)).toBe(true);
+      expect(releaseLease(path, "a", { isAlive: () => true, force: true })).toBe(true);
+      expect(existsSync(path)).toBe(false);
+    });
+
+    it("releases once the recorded Workbench process is gone", () => {
+      const path = tmpLease();
+      acquireLease(path, { session: "a", purpose: "test", wb_pid: 4242 });
+      expect(releaseLease(path, "a", { isAlive: () => false })).toBe(true);
+      expect(existsSync(path + ".lock")).toBe(false);
+    });
+
+    it("does not take over a lease that became fresh between the check and the takeover", () => {
+      const path = tmpLease();
+      acquireLease(path, { session: "a", purpose: "test" }, { now: () => T0 });
+      const later = T0 + LEASE_STALE_MS + 1;
+      // "a" refreshes its heartbeat just before "b" takes the lock: the second
+      // check under the lock sees a fresh lease and refuses.
+      let calls = 0;
+      const now = () => {
+        calls += 1;
+        if (calls === 2) heartbeatLease(path, "a", { now: () => later });
+        return later;
+      };
+      expect(() =>
+        acquireLease(path, { session: "b", purpose: "test" }, { now, isAlive: () => false }),
+      ).toThrow(/held by a/);
+      expect(readLease(path)?.session).toBe("a");
+    });
+
     it("keeps the raw file identical on a failed takeover", () => {
       const path = tmpLease();
       const original: WorkbenchLease = {

@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { Config } from "../../src/config.js";
 import {
+  LEASE_SESSION,
   WorkbenchClient,
   WorkbenchError,
   findDefaultModGproj,
@@ -26,7 +27,7 @@ import {
   encodePascalString,
 } from "../../src/workbench/protocol.js";
 
-const OUR_SESSION = `registered:${process.pid}`;
+const OUR_SESSION = LEASE_SESSION;
 const T0 = Date.parse("2026-10-01T12:00:00.000Z");
 
 /** Reply from the mock: a JSON payload, or a bare error status string. */

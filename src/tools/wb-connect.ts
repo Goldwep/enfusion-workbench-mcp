@@ -1,9 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WorkbenchError, type WorkbenchClient } from "../workbench/client.js";
+import { checkLease, describeLease, resolveLeasePath } from "../workbench/lease.js";
+import type { Config } from "../config.js";
 import { formatConnectionStatus } from "../workbench/status.js";
 import { isHandlerError, handlerErrorResponse } from "../workbench/response.js";
 
-export function registerWbConnect(server: McpServer, client: WorkbenchClient): void {
+export function registerWbConnect(
+  server: McpServer,
+  client: WorkbenchClient,
+  config?: Config,
+): void {
   server.registerTool(
     "wb_connect",
     {
@@ -13,6 +19,24 @@ export function registerWbConnect(server: McpServer, client: WorkbenchClient): v
     },
     async () => {
       try {
+        // A lease held by another session refuses even the read-only probe:
+        // that Workbench belongs to someone else (plan 5.1).
+        const leaseCheck = checkLease(resolveLeasePath(config));
+        if (leaseCheck.state !== "free" && !client.holdsLease(leaseCheck)) {
+          const who =
+            "lease" in leaseCheck
+              ? describeLease(leaseCheck.lease)
+              : `corrupt lease file: ${leaseCheck.reason}`;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Connection Refused — Workbench lease held by another session**\n\n${who}\n\nNothing was sent to Workbench.`,
+              },
+            ],
+            isError: true,
+          };
+        }
         const alive = await client.ping();
         if (!alive) {
           return {

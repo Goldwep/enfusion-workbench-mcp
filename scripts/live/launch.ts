@@ -31,7 +31,7 @@
 
 import { spawn } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { loadConfig } from "../../src/config.js";
 import { isMainModule, liveGateReason, parseArgs } from "./cli.js";
 import { Lane } from "./lane.js";
@@ -332,6 +332,15 @@ export function main(argv: string[]): number {
     const gproj = args.flags.has("no-project")
       ? null
       : (args.options.gproj ?? defaultSandboxGproj(config!.projectPath));
+    // Plan 5.1: the harness always passes the explicit 2.0 sandbox project.
+    // Anything else needs --any-project, and is never Test1_sandbox.
+    if (gproj && !args.flags.has("any-project") && basename(dirname(gproj)) !== SANDBOX_NAME) {
+      console.error(
+        `Refusing to launch ${gproj}: the 2.0 harness drives only the ${SANDBOX_NAME} addon ` +
+          "(plan 5.1). Pass --any-project to override for a throwaway copy.",
+      );
+      return 1;
+    }
     const plan = buildLaunch({
       workbenchPath: args.options["workbench-path"] ?? config!.workbenchPath,
       gamePath: args.options["game-path"] ?? config!.gamePath,

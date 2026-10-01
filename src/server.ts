@@ -145,7 +145,7 @@ export function registerTools(server: McpServer, config: Config): void {
   // Workbench Live Control tools (Phase 4)
   const wbClient = new WorkbenchClient(config.workbenchHost, config.workbenchPort, config);
   registerWbLaunch(server, config, wbClient);
-  registerWbConnect(server, wbClient);
+  registerWbConnect(server, wbClient, config);
   registerWbDiagnose(server, wbClient);
   registerWbReload(server, wbClient);
   registerWbEditorTools(server, wbClient);
