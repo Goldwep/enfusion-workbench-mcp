@@ -23,8 +23,9 @@
  * Rows whose kind is a knowledge word (architecture, protocol, ...) are
  * dropped with their reason so the REVIEWER pass can decide. Beyond the plan
  * fields, each row keeps the "Automation path" cell as `paths_proposed`, the
- * tool names of the coverage cell as `covers_proposed`, and (api-side rows
- * only) the "Script API" cell as `signature`.
+ * and (api-side rows only) the "Script API" cell as `signature`. The tool
+ * names of the coverage cell stay in the row's `quote`: `covers_proposed`
+ * holds row ids proposed by the MCP self-inventory (E11), never bare names.
  * WHAT IS NOT A GUESS: determinism (sorted output, no timestamps; a second
  * run is byte-identical), the output location (only observations/E01/), the
  * low-confidence cap, the provisional header, and reporting every dropped
@@ -286,15 +287,6 @@ export function readCoverage(value: string, m: E01Mapping): Coverage | null {
   return null;
 }
 
-/** MCP tool names named in a coverage cell (`emcp_*` handler names excluded), in order, unique. */
-export function coversFrom(value: string): string[] | undefined {
-  const out: string[] = [];
-  for (const tok of cleanCell(value).match(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g) ?? []) {
-    if (!tok.startsWith("emcp_") && !out.includes(tok)) out.push(tok);
-  }
-  return out.length ? out : undefined;
-}
-
 /**
  * Reads an "Automation path" cell: `;`- or ` / `-separated entries, each a path
  * word with an optional parenthesised or bracketed detail that becomes the
@@ -358,18 +350,27 @@ export interface KindReading {
  * the singular.
  */
 export function normalizeKind(cell: string, m: E01Mapping): KindReading {
-  const raw = cleanCell(cell).toLowerCase();
+  const raw = cleanCell(cell);
   const aggregate = m.kind_aggregate_patterns.some((p) => new RegExp(p, "i").test(raw));
   let s = raw.replace(/\[[^\]]*\]/g, " ").replace(/\([^)]*\)/g, " ");
   s = s.split(/\s*(?:->|→)\s*/)[0];
   s = s.split(/\s*[,;]\s*/)[0];
   s = s.split(/\s*\/\s*/)[0];
   s = s
-    .replace(/\s+x\d+\b/g, " ")
+    .replace(/\s+x\d+\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
-  const words = s.split(" ").filter(Boolean);
-  while (words.length > 1 && m.kind_qualifiers.includes(words[words.length - 1])) words.pop();
+  // Qualifiers are stripped only as the recon writes them, in capitals
+  // ("mcp-tool LIVE"); a lowercase "profile file" keeps its noun.
+  const original = s.split(" ").filter(Boolean);
+  while (
+    original.length > 1 &&
+    m.kind_qualifiers.includes(original[original.length - 1].toLowerCase()) &&
+    original[original.length - 1] === original[original.length - 1].toUpperCase()
+  ) {
+    original.pop();
+  }
+  const words = original.map((w) => w.toLowerCase());
   const lookup = (phrase: string): Kind | undefined => {
     for (const cand of [phrase, singular(phrase)]) {
       const mapped = (m.kind_values[cand] as Kind | undefined) ?? kindOf(cand);
@@ -416,6 +417,11 @@ function buildKey(kind: Kind, dim: Dim, label: string): Observation["key"] {
     return { class: label };
   if (kind === "net-function" && ident.test(label)) return { native: label };
   if (kind === "net-handler" && ident.test(label)) return { handler: label };
+  if (kind === "link-format") {
+    // Ids forbid whitespace in `name`: prefer the link itself, else a slug.
+    const link = /\S+:\/\/\S+/.exec(label)?.[0];
+    return { name: link ?? label.trim().replace(/\s+/g, "-") };
+  }
   return { name: label };
 }
 
@@ -653,7 +659,6 @@ export function importRecon(reconDir: string, m: E01Mapping): ImportResult {
           quote: quoteOf(r.raw),
           confidence: "low",
           paths_proposed: parsePaths(cell(cols.path), m),
-          covers_proposed: coverage === "none" ? undefined : coversFrom(cell(cols.coverage)),
           recon_coverage: coverage,
         };
         const parsed = observationSchema.safeParse(obs);

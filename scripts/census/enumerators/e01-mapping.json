@@ -1,5 +1,5 @@
 {
-  "$comment": "E01 recon-import mapping, version 2: corrected against the real docs/v2/recon/*.md headers and cell vocabularies reported from the owner's PC on 2026-10-01 (DEC-011). Every feature table there has the header Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence (with or without parenthesised explanations). Matching is case-insensitive on cells with markdown emphasis and backticks removed; a header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis. A kind cell is normalised before lookup (normalizeKind in e01-recon-import.ts): bracketed and parenthesised parts, a ' -> ', ', ' or '/' tail, 'xN' counts and the trailing words in kind_qualifiers are removed; then the phrase, its singular, and progressively shorter suffixes (head noun last) and prefixes (head noun first) are looked up in kind_values and the plan vocabulary. A count inside the kind cell (kind_aggregate_patterns) marks the row aggregate. The kinds the recon uses for knowledge rows (architecture, knowledge, data, protocol, ...) are deliberately absent so those rows are reported as dropped. Readings still to verify against the files: 'action' and 'menu-action' are read as menu items (ExecuteAction labels are menu labels); audio and animation graph node kinds are read as script classes; 'editor', 'sub-editor' and 'viewer' are read as windows; 'option (property)' is read as option; the 'Confidence' column is ignored because every E01 row is capped at confidence low. Module from headings: a file whose `files` entry names a module (world-editor.md, resource-manager.md) keeps it unless a heading names another editor outright (heading_modules_strict, '<name> editor' forms, so '2.8 Script plugins registered for the World Editor module' stays WorldEditor); files with module 'none' use the looser heading_modules words.",
+  "$comment": "E01 recon-import mapping, version 2: corrected against the real docs/v2/recon/*.md headers and cell vocabularies reported from the owner's PC on 2026-10-01 (DEC-011). Every feature table there has the header Feature | Kind | What it does | Script API | Automation path | Current MCP coverage | Evidence | Confidence (with or without parenthesised explanations). Matching is case-insensitive on cells with markdown emphasis and backticks removed; a header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis. A kind cell is normalised before lookup (normalizeKind in e01-recon-import.ts): bracketed and parenthesised parts, a ' -> ', ', ' or '/' tail, 'xN' counts and the trailing words in kind_qualifiers are removed when the recon wrote them in capitals (mcp-tool LIVE, FILE, KNOW, CLI, PROC, UDP; a lowercase 'profile file' keeps its noun); then the phrase, its singular, and progressively shorter suffixes (head noun last) and prefixes (head noun first) are looked up in kind_values and the plan vocabulary. A count inside the kind cell (kind_aggregate_patterns) marks the row aggregate. The kinds the recon uses for knowledge rows (architecture, knowledge, data, protocol, ...) are deliberately absent so those rows are reported as dropped. Readings still to verify against the files: 'action' and 'menu-action' are read as menu items (ExecuteAction labels are menu labels); audio and animation graph node kinds are read as script classes; 'editor', 'sub-editor' and 'viewer' are read as windows; 'option (property)' is read as option; the 'Confidence' column is ignored because every E01 row is capped at confidence low. Module from headings: a file whose `files` entry names a module (world-editor.md, resource-manager.md) keeps it unless a heading names another editor outright (heading_modules_strict, '<name> editor' forms, so '2.8 Script plugins registered for the World Editor module' stays WorldEditor); files with module 'none' use the looser heading_modules words. Tool names in the coverage cell are not emitted as covers_proposed: that field holds row ids proposed by the MCP self-inventory (E11), never bare tool names; the names stay in the row's quote.",
   "version": 2,
   "files": {
     "world-editor.md": {
@@ -105,7 +105,7 @@
       "coverage": "none"
     },
     {
-      "pattern": "^(no|n/a|not covered|uncovered|missing|unsupported|absent)\\b",
+      "pattern": "^(no|n/a|not covered|uncovered|missing|unsupported|absent|unused|not used|never used)\\b",
       "coverage": "none"
     },
     {
@@ -113,7 +113,11 @@
       "coverage": "partial"
     },
     {
-      "pattern": "^(shipped|covered|yes|fully?|done)\\b",
+      "pattern": "^(misused|weak|placeholder|internal only|broken)\\b",
+      "coverage": "partial"
+    },
+    {
+      "pattern": "^(shipped|covered|yes|fully?|done|used)\\b",
       "coverage": "covered"
     },
     {
@@ -262,7 +266,9 @@
     "drag-drop": "canvas-gesture",
     "drag and drop": "canvas-gesture",
     "mcp-tool": "mcp-tool",
-    "offline tool": "mcp-tool"
+    "offline tool": "mcp-tool",
+    "offline-tool": "mcp-tool",
+    "import helper": "plugin"
   },
   "kind_aggregate_patterns": [
     "\\(\\d+\\b",

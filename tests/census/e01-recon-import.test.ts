@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { buildLedger } from "../../src/census/build-ledger.js";
 import {
   cleanCell,
-  coversFrom,
   mapColumns,
   loadMapping,
   normalizeKind,
@@ -54,6 +53,8 @@ const RECON: Record<string, string> = {
     "| Entity list filter / sort | control (2) | Filters the hierarchy | none | gui-automation | partial: wb_entity_list | wiki | high |",
     "| Script Editor: Build > Compile All | menu-action | Compiles every script | Workbench.ExecuteAction | execute-action | wb_reload (partial: hard-coded paths return false on 1.8) | INI | H |",
     "| GetSelectedEntitiesCount | API method | Number of selected entities | WorldEditorAPI.GetSelectedEntitiesCount() | net-api-handler | wb_entity_select [emcp_wb_selectentity] | WorldEditorAPI.c | high |",
+    "| enfusion://ScriptEditor/Scripts/x.c;line=3 | link | Opens the script at a line | none | file-format | none | wiki | high |",
+    "| Jump to the resource browser | link format | Protocol link with no documented form | none | file-format | none | wiki | low |",
     "| Startup | architecture | How the module boots | none | n/a | none | src/server.ts | high |",
     "",
     "## 2.8 Script plugins registered for the World Editor module (or driving it from the CLI)",
@@ -210,7 +211,7 @@ describe("e01-recon-import", () => {
       provisional: true,
       row_count: lines.length,
     });
-    expect(lines.length).toBe(27);
+    expect(lines.length).toBe(29);
     expect(lines.every((l) => l.confidence === "low")).toBe(true);
     expect(
       lines.every(
@@ -219,7 +220,7 @@ describe("e01-recon-import", () => {
           /^<repo>\/docs\/v2\/recon\/[a-z-]+\.md#L\d+$/.test(l.ref as string),
       ),
     ).toBe(true);
-    expect(r.stdout).toContain("27 provisional observations");
+    expect(r.stdout).toContain("29 provisional observations");
   });
 
   it("flags the row that stands for several features as aggregate", () => {
@@ -333,7 +334,7 @@ describe("e01-recon-import", () => {
     runIn(fx, runImport, []);
     const built = buildLedger(fx.paths);
     expect(built.rejected).toEqual([]);
-    expect(built.rows).toHaveLength(27);
+    expect(built.rows).toHaveLength(29);
     expect(built.rows.every((r) => r.provisional && r.sources[0].enumerator === "E01")).toBe(true);
     expect(built.rows.find((r) => r.label === "Exit")?.risk).toBe("destructive");
     expect(built.meta.unverified_refs).toEqual({});
@@ -354,12 +355,12 @@ describe("e01 real recon shape (mapping version 2)", () => {
       recon_coverage: "none",
       paths_proposed: [{ path: "gui-automation" }],
     });
-    expect(by("Top bar sections")).not.toHaveProperty("covers_proposed");
     expect(by("Top bar sections")).not.toHaveProperty("signature");
+    // Tool names of the coverage cell never become covers_proposed (row ids of E11).
+    expect(lines.some((l) => "covers_proposed" in l)).toBe(false);
     expect(by("Copy / Cut / Paste (same position) / Duplicate")).toMatchObject({
       aggregate: true,
       recon_coverage: "covered",
-      covers_proposed: ["wb_clipboard"],
       paths_proposed: [{ path: "net-api-handler" }],
     });
     expect(by("Toggle gizmo space")).toMatchObject({
@@ -374,21 +375,26 @@ describe("e01 real recon shape (mapping version 2)", () => {
       kind: "control",
       aggregate: true,
       recon_coverage: "partial",
-      covers_proposed: ["wb_entity_list"],
     });
     expect(by("Compile All")).toMatchObject({
       kind: "menu-item",
       module: "ScriptEditor",
       key: { path: ["Build", "Compile All"] },
       recon_coverage: "partial",
-      covers_proposed: ["wb_reload"],
       paths_proposed: [{ path: "execute-action" }],
     });
     expect(by("GetSelectedEntitiesCount")).toMatchObject({
       dim: "api",
       kind: "method",
       signature: "WorldEditorAPI.GetSelectedEntitiesCount()",
-      covers_proposed: ["wb_entity_select"],
+    });
+    expect(by("enfusion://ScriptEditor/Scripts/x.c;line=3")).toMatchObject({
+      kind: "link-format",
+      key: { name: "enfusion://ScriptEditor/Scripts/x.c;line=3" },
+    });
+    expect(by("Jump to the resource browser")).toMatchObject({
+      kind: "link-format",
+      key: { name: "Jump-to-the-resource-browser" },
     });
     expect(r.stdout).toContain("kind unmappable (architecture)");
     // A fixed-module file keeps its module under a heading that merely mentions "Script".
@@ -405,7 +411,6 @@ describe("e01 real recon shape (mapping version 2)", () => {
       kind: "window",
       module: "ResourceManager.Texture",
       recon_coverage: "partial",
-      covers_proposed: ["wb_resources"],
     });
   });
 
@@ -444,6 +449,11 @@ describe("e01 real recon shape (mapping version 2)", () => {
     expect(k("setting/action")).toEqual(["setting-key", false]);
     expect(k("signal node")).toEqual(["class", false]);
     expect(k("startup parameter")).toEqual(["cli-switch", false]);
+    expect(k("profile file")).toEqual(["file-type", false]);
+    expect(k("config files")).toEqual(["file-type", false]);
+    expect(k("mcp-tool FILE")).toEqual(["mcp-tool", false]);
+    expect(k("offline-tool")).toEqual(["mcp-tool", false]);
+    expect(k("import helper (F)")).toEqual(["plugin", false]);
     expect(k("**undocumented / unrecognised**")).toEqual([undefined, false]);
     expect(k("architecture")).toEqual([undefined, false]);
   });
@@ -459,11 +469,10 @@ describe("e01 real recon shape (mapping version 2)", () => {
     expect(readCoverage("wb_clipboard [emcp_wb_clipboard]", m)).toBe("covered");
     expect(readCoverage("none (wb_connect uses emcp_wb_ping)", m)).toBe("none");
     expect(readCoverage("≈ 75.7k chars of string literals", m)).toBeNull();
-    expect(coversFrom("wb_state, wb_layers [emcp_wb_getstate/layers]")).toEqual([
-      "wb_state",
-      "wb_layers",
-    ]);
-    expect(coversFrom("none")).toBeUndefined();
+    expect(readCoverage("used by wb_launch and mod build only", m)).toBe("covered");
+    expect(readCoverage("unused", m)).toBe("none");
+    expect(readCoverage("misused (bug)", m)).toBe("partial");
+    expect(readCoverage("placeholder — handler returns not implemented", m)).toBe("partial");
     expect(
       parsePaths(
         "net-api-handler; builtin-net-handler (BringModuleWindowToFront, OpenResource); cli (-wbmodule=ResourceManager); execute-action",

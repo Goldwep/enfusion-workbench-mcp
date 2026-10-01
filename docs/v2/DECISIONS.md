@@ -213,6 +213,17 @@ path | Current MCP coverage | Evidence | Confidence` (with or without parenthesi
   the Resource Manager sub-editors), so "2.8 Script plugins registered for the World Editor module"
   stays WorldEditor; the six files with module `none` use the looser `heading_modules` words.
 
+- Second PC run under mapping v2 (build 1.8.0.13): 2,639 provisional observations from 2,882 feature
+  rows (346 aggregate), 243 dropped by reason (104 knowledge-kind cells, 41 unread coverage cells, 7
+  link ids with whitespace, the rest duplicates across files), 8 work-item tables skipped, 238 probes
+  seeded. `build.ts` rejected nothing but G1 failed with 592 issues: the importer had written the
+  coverage cell's tool names into `covers_proposed`, which the ledger defines as row ids proposed by
+  the MCP self-inventory (E11). Corrected: E01 emits no `covers_proposed` (the names stay in the
+  quote); link-format ids use the link itself or a hyphen slug; "used …", "unused", "misused",
+  "weak", "placeholder" and "internal only" coverage cells are read; only capitalised qualifiers
+  are stripped from kind cells ("profile file" keeps its noun); "offline-tool" rows are MCP tools
+  and "import helper" rows plugins.
+
 The first run's empty observation file and its 208 seeded probes were not committed on the PC;
 the E01 run is repeated there with this mapping.
 
