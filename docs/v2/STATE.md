@@ -7,7 +7,7 @@ Next action (one line): the PC session cherry-picks the correction, re-runs E01 
 In flight (uncommitted work, with file list): none
 Open train: none
 Lease: free (no live sitting has happened; `~/.enfusion-mcp/workbench.lease.json` untouched on the owner's machine)
-Blocked on owner: the push of the branch from the cloud session (permission), OA-1 (phase approval beyond 0), OA-2, OA-3, OA-4, OA-10 (scrub `docs/v2/REVIEW.md:234`), OA-11 (account name in public history, DEC-012), D1–D9 answers (defaults applied, DEC-003); OA-9 done
+Blocked on owner: a Remote Control session on the PC for the third round of the local half (every PC session was archived at 22:48 UTC; brief ready in the cloud session), OA-1 (phase approval beyond 0), OA-2, OA-3, OA-4, OA-10 (scrub `docs/v2/REVIEW.md:234`), OA-11 (account name in public history, DEC-012), D1–D9 answers (defaults applied, DEC-003); OA-9 done
 Unknowns still open: all of section 7 (U1–U40); none settled (Phase 0 is offline)
 Coverage: 0 / 0 / 0 committed (PC working tree after the second run: 2,639 E01 rows, 2,228 in the core shard, all T0; not committed because G1 failed on `covers_proposed`, DEC-011); frontier: 0 committed; enumerators pending: E02–E19, L01–L17
 Last live session: none; snapshot diff: n/a
