@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 import {
   BUNDLED_HANDLER_DIR,
   buildLaunch,
@@ -14,7 +15,9 @@ import {
 } from "../../scripts/live/launch.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const tsx = join(repoRoot, "node_modules", ".bin", "tsx");
+// `node --import tsx <script>`: node_modules/.bin/tsx is a shell script that
+// spawnSync cannot start on Windows (status null, ENOENT).
+const TSX_ARGS = ["--import", pathToFileURL(createRequire(import.meta.url).resolve("tsx")).href];
 
 describe("buildLaunch", () => {
   it("passes -gproj and the project as separate arguments with the game as cwd", () => {
@@ -137,8 +140,9 @@ describe("launch.ts CLI", () => {
     const dir = mkdtempSync(join(tmpdir(), "emcp-cli-"));
     try {
       const r = spawnSync(
-        tsx,
+        process.execPath,
         [
+          ...TSX_ARGS,
           join(repoRoot, "scripts", "live", "launch.ts"),
           "--workbench-path",
           join(dir, "tools"),

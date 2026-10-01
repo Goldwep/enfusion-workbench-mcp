@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   filterEntries,
   globToRegExp,
@@ -98,6 +99,9 @@ function scratchRepo(): Scratch {
   }
   chmodSync(join(repo, ".githooks/pre-push"), 0o755);
   g("add", "-A");
+  // Windows checkouts run with core.fileMode=false, so the index would record
+  // 100644 whatever chmod did; set the mode in the index explicitly.
+  g("update-index", "--chmod=+x", ".githooks/pre-push");
   g("commit", "-q", "-m", "first");
   g("tag", "gate-1");
   const allowPath = join(dir, "export-allow.json");
@@ -158,7 +162,7 @@ describe("filterEntries", () => {
 
   it("ships a default allow-list with the plan's exclusions and .githooks included", () => {
     const allow = loadExportAllow(
-      join(dirname(new URL(import.meta.url).pathname), "../../scripts/export-allow.json"),
+      join(dirname(fileURLToPath(import.meta.url)), "../../scripts/export-allow.json"),
     );
     expect(allow.exclude).toEqual(ALLOW.exclude);
     expect(allow.excludeTags).toEqual(["executable-derived"]);

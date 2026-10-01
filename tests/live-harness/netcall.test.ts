@@ -1,13 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 import { encodeRequest } from "../../src/workbench/protocol.js";
 import { HARNESS_CLIENT_ID, describeFrame, netCall } from "../../scripts/live/netcall.js";
 import { MockNet, startMockNetServer } from "../../scripts/live/mock/net.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const tsx = join(repoRoot, "node_modules", ".bin", "tsx");
+// `node --import tsx <script>`: node_modules/.bin/tsx is a shell script that
+// spawnSync cannot start on Windows (status null, ENOENT).
+const TSX_ARGS = ["--import", pathToFileURL(createRequire(import.meta.url).resolve("tsx")).href];
 
 describe("netCall", () => {
   it("sends one frame to a local listener and decodes an Ok response", async () => {
@@ -77,8 +80,9 @@ describe("MockNet", () => {
 describe("netcall.ts CLI", () => {
   it("prints the frame on --dry-run and opens no socket", () => {
     const r = spawnSync(
-      tsx,
+      process.execPath,
       [
+        ...TSX_ARGS,
         join(repoRoot, "scripts", "live", "netcall.ts"),
         "EMCP_WB_Ping",
         "--params",
@@ -96,8 +100,8 @@ describe("netcall.ts CLI", () => {
 
   it("refuses an API that is never called on a live instance", () => {
     const r = spawnSync(
-      tsx,
-      [join(repoRoot, "scripts", "live", "netcall.ts"), "RunCommandline", "--dry-run"],
+      process.execPath,
+      [...TSX_ARGS, join(repoRoot, "scripts", "live", "netcall.ts"), "RunCommandline", "--dry-run"],
       {
         encoding: "utf-8",
       },

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { createHash } from "node:crypto";
 import { nextSequence, writeEvidence } from "../../scripts/live/evidence.js";
 
@@ -29,9 +29,11 @@ describe("writeEvidence", () => {
       expect(path).toBe(join(evidence, "EV-S-C-001.json"));
       expect(record.ran).toBe("netcall.ts GetLoadedProjects from %LOCALAPPDATA%");
       expect(record.result_summary).toBe("opened <sandbox>\\x.gproj");
+      // Placeholders keep the separator the path was written with (backslashes
+      // on Windows), so the expectation is built with the platform separator.
       expect(record.artifacts).toEqual([
         {
-          path: "%LOCALAPPDATA%/shot.png",
+          path: `%LOCALAPPDATA%${sep}shot.png`,
           sha256: createHash("sha256").update("png bytes").digest("hex"),
         },
       ]);

@@ -212,5 +212,5 @@ describe.skipIf(!HAS_SH || !HAS_GIT)("pre-commit hook", () => {
     execFileSync("git", ["add", "notes.md"], { cwd: dir, env });
     const clean = spawnSync("sh", [PRE_COMMIT], { cwd: dir, env: hookEnv, encoding: "utf-8" });
     expect(clean.status).toBe(0);
-  });
+  }, 120_000); // three hook runs, each starting npx and tsx: well over 5 s on Windows
 });
