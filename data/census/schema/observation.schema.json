@@ -1,0 +1,653 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "census/observation.schema.json",
+  "title": "Census observation line",
+  "description": "One line after the header of data/census/observations/<enumerator>/<build>.jsonl (plan 4.1). additionalProperties is false: tier, state, disposition, MCP links and the enumerator name can never appear in an observation. The header line is described under $defs.header.",
+  "$defs": {
+    "header": {
+      "additionalProperties": false,
+      "properties": {
+        "$header": {
+          "const": 1
+        },
+        "branch": {
+          "enum": ["stable", "experimental"],
+          "type": "string"
+        },
+        "build": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "enumerator": {
+          "pattern": "^[EL]\\d{2}$",
+          "type": "string"
+        },
+        "generator": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "sha256": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              }
+            },
+            "required": ["path", "sha256"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "provisional": {
+          "type": "boolean"
+        },
+        "row_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ui_language": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["$header", "enumerator", "build", "generator", "provisional", "row_count"],
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "aggregate": {
+      "type": "boolean"
+    },
+    "children_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "class_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "confidence": {
+      "enum": ["low", "medium", "high"],
+      "type": "string"
+    },
+    "control_type": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "covers_proposed": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "dim": {
+      "enum": [
+        "ui",
+        "api",
+        "plugin",
+        "net",
+        "cli",
+        "file",
+        "schema",
+        "setting",
+        "link",
+        "diag",
+        "mcp"
+      ],
+      "type": "string"
+    },
+    "dismissed_by": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "key": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "arity": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "attr": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "button": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "class": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "cli": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "ext": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "handler": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "key": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "member": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "method": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "native": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "object_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "path": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "req": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "resp": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "section": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "switch": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "tool": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "kind": {
+      "enum": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "property",
+        "property-editor",
+        "context-menu",
+        "context-item",
+        "shortcut",
+        "tool",
+        "tool-button",
+        "canvas-gesture",
+        "region",
+        "status-item",
+        "hazard-dialog",
+        "class",
+        "method",
+        "static-method",
+        "event",
+        "attribute",
+        "enum",
+        "enum-value",
+        "plugin",
+        "plugin-setting",
+        "plugin-button",
+        "plugin-cli-arg",
+        "net-function",
+        "net-handler",
+        "net-field",
+        "cli-switch",
+        "link-format",
+        "file-type",
+        "resource-class",
+        "schema-class",
+        "schema-key",
+        "setting-key",
+        "option",
+        "diag-menu",
+        "diag-option",
+        "blender-operator",
+        "debug-panel",
+        "mcp-tool",
+        "mcp-action",
+        "handler-action"
+      ],
+      "type": "string"
+    },
+    "label": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "label_raw": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "locator": {
+      "additionalProperties": false,
+      "properties": {
+        "automationId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "controlType": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "menuPath": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "windowClass": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "modal": {
+      "enum": ["none", "opens", "blocks"],
+      "type": "string"
+    },
+    "module": {
+      "enum": [
+        "WorldEditor",
+        "ResourceManager",
+        "ScriptEditor",
+        "LocalizationEditor",
+        "DialogueEditor",
+        "AnimEditor",
+        "ProcAnimEditor",
+        "BehaviorEditor",
+        "AudioEditor",
+        "ParticleEditor",
+        "NavmeshGeneratorMain",
+        "ResourceManager.Config",
+        "ResourceManager.Layout",
+        "ResourceManager.Imageset",
+        "ResourceManager.Model",
+        "ResourceManager.Texture",
+        "ResourceManager.Material",
+        "ResourceManager.Font",
+        "ResourceManager.Styles",
+        "Launcher",
+        "Shared",
+        "BlenderTools",
+        "none"
+      ],
+      "type": "string"
+    },
+    "object_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "observed_state": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": ["edit", "play", "prefab-edit"],
+          "type": "string"
+        },
+        "resource_type": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "script_debug": {
+          "enum": ["on", "off"],
+          "type": "string"
+        },
+        "selection": {
+          "enum": [
+            "none",
+            "entity",
+            "prefab-instance",
+            "shape",
+            "terrain",
+            "layer",
+            "folder",
+            "multi"
+          ],
+          "type": "string"
+        },
+        "world_type": {
+          "enum": ["with-terrain", "without-terrain"],
+          "type": "string"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "origin": {
+      "pattern": "^(vanilla|addon:[A-Za-z0-9_.-]+)$",
+      "type": "string"
+    },
+    "parent_key": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "dim": {
+              "enum": [
+                "ui",
+                "api",
+                "plugin",
+                "net",
+                "cli",
+                "file",
+                "schema",
+                "setting",
+                "link",
+                "diag",
+                "mcp"
+              ],
+              "type": "string"
+            },
+            "key": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "arity": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "attr": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "button": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "class": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "cli": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "ext": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "handler": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "key": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "member": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "method": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "name": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "native": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "object_name": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "path": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "req": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "resp": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "section": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "switch": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "tool": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "kind": {
+              "enum": [
+                "module",
+                "window",
+                "menu",
+                "menu-item",
+                "toolbar",
+                "toolbar-button",
+                "dock",
+                "panel",
+                "tab",
+                "dialog",
+                "control",
+                "property-group",
+                "property",
+                "property-editor",
+                "context-menu",
+                "context-item",
+                "shortcut",
+                "tool",
+                "tool-button",
+                "canvas-gesture",
+                "region",
+                "status-item",
+                "hazard-dialog",
+                "class",
+                "method",
+                "static-method",
+                "event",
+                "attribute",
+                "enum",
+                "enum-value",
+                "plugin",
+                "plugin-setting",
+                "plugin-button",
+                "plugin-cli-arg",
+                "net-function",
+                "net-handler",
+                "net-field",
+                "cli-switch",
+                "link-format",
+                "file-type",
+                "resource-class",
+                "schema-class",
+                "schema-key",
+                "setting-key",
+                "option",
+                "diag-menu",
+                "diag-option",
+                "blender-operator",
+                "debug-panel",
+                "mcp-tool",
+                "mcp-action",
+                "handler-action"
+              ],
+              "type": "string"
+            },
+            "module": {
+              "enum": [
+                "WorldEditor",
+                "ResourceManager",
+                "ScriptEditor",
+                "LocalizationEditor",
+                "DialogueEditor",
+                "AnimEditor",
+                "ProcAnimEditor",
+                "BehaviorEditor",
+                "AudioEditor",
+                "ParticleEditor",
+                "NavmeshGeneratorMain",
+                "ResourceManager.Config",
+                "ResourceManager.Layout",
+                "ResourceManager.Imageset",
+                "ResourceManager.Model",
+                "ResourceManager.Texture",
+                "ResourceManager.Material",
+                "ResourceManager.Font",
+                "ResourceManager.Styles",
+                "Launcher",
+                "Shared",
+                "BlenderTools",
+                "none"
+              ],
+              "type": "string"
+            }
+          },
+          "required": ["dim", "kind", "module", "key"],
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "paths_proposed": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "enum": [
+              "net-api-handler",
+              "builtin-net-handler",
+              "execute-action",
+              "plugin-run",
+              "cli",
+              "file-format",
+              "gui-automation",
+              "none-known"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["path"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "quote": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "recon_coverage": {
+      "enum": ["covered", "partial", "none"],
+      "type": "string"
+    },
+    "ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "risk_commit_hint": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "risk_hint": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "risk_open_hint": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "shortcut_default": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "signature": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "unverified": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "what": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": ["dim", "kind", "module", "key", "origin", "ref", "confidence"],
+  "type": "object"
+}

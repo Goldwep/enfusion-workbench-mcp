@@ -77,7 +77,7 @@ describe("WorkbenchClient", () => {
   let client: WorkbenchClient;
 
   beforeEach(() => {
-    mockServer = createMockWorkbench((apiFunc, params) => {
+    mockServer = createMockWorkbench((apiFunc, _params) => {
       if (apiFunc === "EMCP_WB_Ping") {
         return { status: "ok", mode: "edit", message: "EnfusionMCP Workbench bridge active" };
       }
@@ -321,12 +321,13 @@ describe("cleanupHandlerScripts", () => {
 function captureClientSockets(): { sockets: Socket[]; restore: () => void } {
   const sockets: Socket[] = [];
   const original = Socket.prototype.connect;
-  const spy = vi
-    .spyOn(Socket.prototype, "connect")
-    .mockImplementation(function (this: Socket, ...args: unknown[]) {
-      sockets.push(this);
-      return (original as unknown as (...a: unknown[]) => Socket).apply(this, args);
-    });
+  const spy = vi.spyOn(Socket.prototype, "connect").mockImplementation(function (
+    this: Socket,
+    ...args: unknown[]
+  ) {
+    sockets.push(this);
+    return (original as unknown as (...a: unknown[]) => Socket).apply(this, args);
+  });
   return { sockets, restore: () => spy.mockRestore() };
 }
 
@@ -480,10 +481,14 @@ describe("ensureRunning launch coordination", () => {
     writeFileSync(join(tmp, "ModB", "ModB.gproj"), "GameProject {}");
     // workbenchPath points at an empty dir → findWorkbenchExe() returns null →
     // launchWorkbench throws LAUNCH_FAILED before any spawn. logsPath unset →
-    // no tracker. Port 1 → ping refused immediately.
+    // no tracker. Port 1 → ping refused immediately. The lease and the
+    // no-autolaunch marker live in the temp dir (ensureRunning takes the
+    // lease), never at the real per-user location.
     config = {
       workbenchPath: join(tmp, "no-tools-here"),
       projectPath: tmp,
+      leasePath: join(tmp, "lease", "workbench.lease.json"),
+      noAutolaunchPath: join(tmp, "lease", "no-autolaunch"),
     } as unknown as Config;
   });
 

@@ -1,0 +1,7 @@
+{
+  "$comment": "Current Tools build the ledger is keyed on (main ruling 8). Phase 0 has no Tools install, so the tag is `unknown` and T5 is unreachable by construction. The live-harness pre-flight overwrites this file with the installed build later; build.ts reads it unless --build is given.",
+  "tag": "unknown",
+  "branch": "stable",
+  "ui_language": "unknown",
+  "recorded_by": "phase0-skeleton"
+}

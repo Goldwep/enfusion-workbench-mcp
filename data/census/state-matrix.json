@@ -1,0 +1,68 @@
+{
+  "$comment": "Declared state matrix (plan 4.3 `observed_states[]`, gate G3). `axes` are the plan's five axes; `resource_type` takes its values from the file-type rows (E09). `applies` says which containers must be enumerated in which combinations: G3 expands each entry into (container, state) pairs and fails a pair no source observed, unless the row is deferred with a reason and a work item. This first version was written by the Phase 0 ledger author from plan 4.3 and is a seed [unverified]: the main session owns this file from now on and widens or narrows `applies` as the live census learns which states change a container's content.",
+  "version": 1,
+  "axes": {
+    "mode": ["edit", "play", "prefab-edit"],
+    "selection": [
+      "none",
+      "entity",
+      "prefab-instance",
+      "shape",
+      "terrain",
+      "layer",
+      "folder",
+      "multi"
+    ],
+    "resource_type": { "from_kind": "file-type" },
+    "world_type": ["with-terrain", "without-terrain"],
+    "script_debug": ["on", "off"]
+  },
+  "applies": [
+    {
+      "kind": "context-menu",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "Plan 4.5 L05: context-menu targets are derived per state in the state matrix; the World Editor's menus depend on mode and selection"
+    },
+    {
+      "kind": "context-menu",
+      "module": "ResourceManager",
+      "axes": ["resource_type"],
+      "why": "Plan 4.5 L05: targets derived mechanically from the file-type list"
+    },
+    {
+      "kind": "menu",
+      "module": "WorldEditor",
+      "axes": ["mode"],
+      "why": "Plan 4.3: mode is an axis; edit and play mode menus are walked separately"
+    },
+    {
+      "kind": "toolbar",
+      "module": "WorldEditor",
+      "axes": ["mode"],
+      "why": "Plan 4.3: mode is an axis"
+    },
+    {
+      "kind": "debug-panel",
+      "axes": ["mode"],
+      "why": "Plan 4.5 L15: in edit mode and in play mode"
+    },
+    {
+      "kind": "diag-menu",
+      "axes": ["mode"],
+      "why": "Plan 4.5 L15: in edit mode and in play mode"
+    },
+    {
+      "kind": "menu",
+      "module": "ScriptEditor",
+      "axes": ["script_debug"],
+      "why": "Plan 4.3: Script Debug Mode is an axis"
+    },
+    {
+      "kind": "panel",
+      "module": "WorldEditor",
+      "axes": ["world_type"],
+      "why": "Plan 4.3: world type (with or without terrain) is an axis; terrain tool panels depend on it"
+    }
+  ]
+}

@@ -1,0 +1,326 @@
+{
+  "$comment": "Census safety policy. Written by the main 2.0 session only (plan 6.1). Sources: docs/v2/PLAN.md sections 1.4 (target tiers), 4.3 (vocabularies), 5.3 (live-lane rules) and Appendix B (deny-list seed). Every list here is a seed; Appendix B says the lists are regenerated from census-verified labels at the Phase 4 exit and signed off by the owner.",
+  "version": 1,
+  "tiers": ["T0", "T1", "T2", "T3", "T4", "T5"],
+  "risk_classes": ["safe", "mutating", "destructive", "credential", "external"],
+  "weak_oracle": "returned-true-only",
+  "pass_oracles": ["state-readback", "file-diff", "log-line", "returned-true-only"],
+  "dispositions": {
+    "terminal": [
+      "excluded-policy",
+      "not-automatable",
+      "blocked",
+      "absent-in-build",
+      "duplicate-of",
+      "subsumed-by"
+    ],
+    "with_reference": ["blocked", "duplicate-of", "subsumed-by"],
+    "owner_signoff_batched": ["excluded-policy", "not-automatable"],
+    "$comment": "`deferred` is a non-terminal status on an active row, never a disposition (plan 1.4). `blocked`, `duplicate-of` and `subsumed-by` carry a reference part (`blocked:<probe id>`, `duplicate-of:<id>`, `subsumed-by:<id>`)."
+  },
+  "target_tier_by_kind": {
+    "module": {
+      "target": "T5",
+      "why": "Definition of done 5: all 11 modules reachable live through wb_module or dispositioned blocked"
+    },
+    "window": {
+      "target": "T3",
+      "why": "UI container: readable means listable with its children"
+    },
+    "menu": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "menu-item": {
+      "target": "T5",
+      "why": "UI action; needs a pass oracle"
+    },
+    "toolbar": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "toolbar-button": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "dock": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "panel": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "tab": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "dialog": {
+      "target": "T3",
+      "why": "UI container; open-risk and commit-risk are split per row"
+    },
+    "control": {
+      "target": "T5",
+      "why": "UI action or state inside a container"
+    },
+    "property-group": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "property": {
+      "target": "T2",
+      "why": "Knowledge row: property field of a game class; operability lives on the parent container tool"
+    },
+    "property-editor": {
+      "target": "T3",
+      "why": "One of the 31 UIWidgets kinds; its popup is a child container"
+    },
+    "context-menu": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "context-item": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "shortcut": {
+      "target": "T2",
+      "why": "Knowledge row; driven through the action it binds"
+    },
+    "tool": {
+      "target": "T5",
+      "why": "World Editor tool: dialog-free or worker-callable ones are driven; otherwise a disposition"
+    },
+    "tool-button": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "canvas-gesture": {
+      "target": "T2",
+      "why": "Manual row: no label, slot, class or file trace (plan 4.6)"
+    },
+    "region": {
+      "target": "T2",
+      "why": "Opaque region; operations on it get their own rows"
+    },
+    "status-item": {
+      "target": "T2",
+      "why": "Informational UI; nothing to drive"
+    },
+    "hazard-dialog": {
+      "target": "T2",
+      "why": "Catalogued as met; never answered automatically"
+    },
+    "class": {
+      "target": "T2",
+      "why": "Knowledge row for the Workbench API scope"
+    },
+    "method": {
+      "target": "T5",
+      "why": "Workbench API method: T5 or a disposition"
+    },
+    "static-method": {
+      "target": "T5",
+      "why": "Workbench API static: T5 or a disposition"
+    },
+    "event": {
+      "target": "T5",
+      "why": "Workbench API event: T5 or a disposition"
+    },
+    "attribute": {
+      "target": "T2",
+      "why": "[Attribute] member (E15): own shard, schema for the container tool"
+    },
+    "enum": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "enum-value": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "plugin": {
+      "target": "T5",
+      "why": "Dialog-free or worker-callable plugins are driven; otherwise re-implemented logic, CLI or GUI path; else a disposition. RunCommandline is never called live."
+    },
+    "plugin-setting": {
+      "target": "T4",
+      "why": "Settings read and write through the plugin bridge; a live test promotes to T5"
+    },
+    "plugin-button": {
+      "target": "T5",
+      "why": "[ButtonAttribute] method: an action"
+    },
+    "plugin-cli-arg": {
+      "target": "T5",
+      "why": "CLI switch of a plugin; T5 where safe"
+    },
+    "net-function": {
+      "target": "T5",
+      "why": "Native NET function: T5 or a disposition"
+    },
+    "net-handler": {
+      "target": "T5",
+      "why": "Bohemia handler: T5 or a disposition; modal handlers (BakeInfo, EBTInfo) are excluded"
+    },
+    "net-field": {
+      "target": "T2",
+      "why": "Request or response field: knowledge row"
+    },
+    "cli-switch": {
+      "target": "T5",
+      "why": "T5 where safe; publish and login switches excluded"
+    },
+    "link-format": {
+      "target": "T5",
+      "why": "enfusion:// link forms (W8)"
+    },
+    "file-type": {
+      "target": "T3",
+      "why": "Minimum for text formats; T5 writable only where a lossless writer and engine acceptance are proven; binary formats header read or not-automatable"
+    },
+    "resource-class": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "schema-class": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "schema-key": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "setting-key": {
+      "target": "T3",
+      "why": "Readable; T4 writable only through a sandbox settings file; the registry is read-only by default (D4)"
+    },
+    "option": {
+      "target": "T5",
+      "why": "UI state: readable, drivable where settable"
+    },
+    "diag-menu": {
+      "target": "T2",
+      "why": "Knowledge row, own shard; T3/T4 where U34 finds a path"
+    },
+    "diag-option": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "blender-operator": {
+      "target": "T2",
+      "why": "Documented surface only (decision D9 default)"
+    },
+    "debug-panel": {
+      "target": "T2",
+      "why": "In-play debug panel; T3 or T4 where W8 finds a path"
+    },
+    "mcp-tool": {
+      "target": "T5",
+      "why": "The MCP's own surface: every tool action links to at least one row (G8) and has a live test"
+    },
+    "mcp-action": {
+      "target": "T5",
+      "why": "See mcp-tool"
+    },
+    "handler-action": {
+      "target": "T5",
+      "why": "See mcp-tool"
+    }
+  },
+  "risk_overrides": {
+    "$comment": "A UI action, CLI switch or handler whose risk is destructive, credential or external has target T2 plus a disposition; it is documented, walked read-only, never committed by default (plan 1.4).",
+    "destructive": {
+      "target": "T2",
+      "disposition_required": true
+    },
+    "credential": {
+      "target": "T2",
+      "disposition_required": true
+    },
+    "external": {
+      "target": "T2",
+      "disposition_required": true
+    }
+  },
+  "execute_action": {
+    "$comment": "ExecuteAction only with paths on this allow-list (plan 5.3). Entries are arrays of path segments, e.g. [\"Window\", \"Resource Browser\"]. The first battery is Window-menu dock toggles; entries are added per session queue by the main session and compiled into the probe handler (Appendix A). Never dictionary-probe.",
+    "allow_list": [],
+    "deny_list_seed": [
+      "Exit",
+      "New World",
+      "Force Save All",
+      "Clear All Settings",
+      "Publish to Workshop",
+      "Remove from Workshop",
+      "Pack Project",
+      "Reset Default Layouts"
+    ]
+  },
+  "deny_lists": {
+    "$comment": "Appendix B. Three lists because opening a dialog and committing it are different risks.",
+    "openers_main_never_invokes": {
+      "$comment": "The dialog behind each is still censused: the owner clicks the opener after an in-chat go, main reads the open dialog, the owner closes it with Cancel.",
+      "labels": [
+        "New World",
+        "Create Terrain",
+        "Save World As",
+        "Pack Project",
+        "Publish Project",
+        "Publish to Workshop",
+        "Login"
+      ]
+    },
+    "never_invoked_by_any_tool": {
+      "$comment": "A human commits. Credential fields are never typed into (plan 1.3).",
+      "labels": ["Remove from Workshop", "Publish:confirm", "Login:confirm"],
+      "cli_switches": ["-wbBackendLogin"]
+    },
+    "local_destructive_confirmation_required": {
+      "$comment": "Never invoked during the census; by tools only with an explicit confirmation parameter.",
+      "labels": [
+        "Exit",
+        "Force Save All",
+        "Clear All Settings",
+        "Reset Default Layouts",
+        "Delete",
+        "Create World:confirm",
+        "Create Terrain:confirm",
+        "Save World As:confirm",
+        "Pack Project:confirm"
+      ],
+      "cli_switches": ["-clearSettings"]
+    },
+    "never_called_on_live_instance": {
+      "api": ["RunCommandline", "Workbench.Exit"]
+    },
+    "development_only_never_shipped_enabled": {
+      "api": ["Workbench.RunCmd", "Workbench.RunProcess"],
+      "cli_switches": ["-scriptAuthorizeAll"]
+    }
+  },
+  "dry_run": {
+    "$comment": "Every live script has a dry-run mode that fails if it would issue an invoke on a menu leaf, an Enter or accelerator key, or a deny-listed path (plan 6.2 BATTERY-AUTHOR). The only exceptions are named here.",
+    "forbidden": ["invoke-menu-leaf", "key-enter", "key-accelerator", "deny-listed-path"],
+    "exceptions": [
+      {
+        "id": "modal-test-enter",
+        "script": "scripts/live/modal-test.ts",
+        "allows": "key-enter",
+        "target": {
+          "windowClassMatches": "probe dialog class recorded in DECISIONS.md after U6",
+          "titleMatches": "ECEN probe modal"
+        },
+        "why": "The modal test (U6) may post one Enter to a window whose class and title match its own probe dialog; the dry run asserts that target."
+      }
+    ]
+  },
+  "live_lane": {
+    "probe_order": ["read-only", "reversible", "mutating"],
+    "above_mutating_needs_explicit_owner_yes": true,
+    "recoveries_per_session": 3,
+    "retry_on_timeout": false,
+    "launch_args_form": ["-gproj", "<sandbox gproj>"],
+    "working_directory": "<game>"
+  }
+}

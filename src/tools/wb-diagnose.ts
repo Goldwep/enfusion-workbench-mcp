@@ -1,5 +1,52 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { WorkbenchClient } from "../workbench/client.js";
+import type { WorkbenchClient, DiagnosticReport } from "../workbench/client.js";
+import { describeLease } from "../workbench/lease.js";
+
+/** Lines for the lease / no-autolaunch section of the report. */
+function formatLeaseSection(r: DiagnosticReport): string[] {
+  const lines: string[] = ["\n### Workbench Lease and Auto-launch"];
+  if (!r.lease || !r.noAutolaunch) {
+    lines.push("- **Lease:** config not loaded");
+    return lines;
+  }
+  const c = r.lease.check;
+  switch (c.state) {
+    case "free":
+      lines.push("- **Lease:** FREE — no session holds Workbench");
+      break;
+    case "held":
+      lines.push(
+        r.lease.ours
+          ? `- **Lease:** HELD BY THIS SERVER — ${describeLease(c.lease)}`
+          : `- **Lease:** HELD BY ANOTHER SESSION — ${describeLease(c.lease)}. Live calls and launches are refused until it is released.`,
+      );
+      break;
+    case "stale":
+      lines.push(
+        `- **Lease:** STALE (heartbeat expired, Workbench pid gone; the next live call takes it over) — ${describeLease(c.lease)}`,
+      );
+      break;
+    case "orphaned":
+      lines.push(
+        r.lease.ours
+          ? `- **Lease:** HELD BY THIS SERVER (heartbeat expired; refreshed on the next live call) — ${describeLease(c.lease)}`
+          : `- **Lease:** ORPHANED (heartbeat expired but its Workbench pid is still running; owner decision needed) — ${describeLease(c.lease)}`,
+      );
+      break;
+    case "corrupt":
+      lines.push(
+        `- **Lease:** CORRUPT — ${c.reason}. Live calls are refused until the file is inspected.`,
+      );
+      break;
+  }
+  lines.push(`- **Lease file:** \`${r.lease.path}\` (this server: ${r.lease.session})`);
+  lines.push(
+    r.noAutolaunch.exists
+      ? `- **No-autolaunch marker:** PRESENT — \`${r.noAutolaunch.path}\`. Workbench is never started implicitly; wb_launch with an explicit gprojPath still works.`
+      : `- **No-autolaunch marker:** absent — \`${r.noAutolaunch.path}\``,
+  );
+  return lines;
+}
 
 export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): void {
   server.registerTool(
@@ -7,7 +54,8 @@ export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): 
     {
       description:
         "Run a full diagnostic of the EnfusionMCP ↔ Workbench connection. " +
-        "Reports config, handler script locations, and NET API status without auto-launching Workbench. " +
+        "Reports config, handler script locations, the Workbench lease holder, the no-autolaunch marker " +
+        "and NET API status without auto-launching Workbench or taking the lease. " +
         "Use this when wb_launch fails or wb_connect returns errors.",
       inputSchema: {},
     },
@@ -88,6 +136,8 @@ export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): 
           if (r.netApiError) lines.push(`  - Raw error: \`${r.netApiError}\``);
           break;
       }
+
+      lines.push(...formatLeaseSection(r));
 
       // --- Recommendations ---
       const problems: string[] = [];

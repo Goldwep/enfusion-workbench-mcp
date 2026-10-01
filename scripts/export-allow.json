@@ -1,0 +1,16 @@
+{
+  "$comment": "Public export filter for scripts/export-public.ts (plan 5.2). A tracked path at the gate tag is exported when it matches an include glob, matches no exclude glob, and carries no tag listed in excludeTags. Globs: ** spans directories, * and ? stay within one path segment. .githooks/** is included on purpose.",
+  "include": ["**"],
+  "exclude": [
+    "docs/v2/STATE.md",
+    "docs/v2/LIVE-LOG.md",
+    "docs/v2/sessions/**",
+    "docs/v2/inbox/**",
+    "data/census/evidence/**",
+    "data/census/observations/E05*/**"
+  ],
+  "tags": {
+    "executable-derived": []
+  },
+  "excludeTags": ["executable-derived"]
+}

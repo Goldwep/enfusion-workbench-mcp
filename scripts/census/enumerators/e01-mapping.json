@@ -1,0 +1,398 @@
+{
+  "$comment": "E01 recon-import mapping. Every rule here is a GUESS made without the real recon files (they are local-only, plan 2.1): header synonyms, coverage spellings, kind words and heading keywords must be checked against docs/v2/recon/*.md by the REVIEWER pass (Phase 0 item 10) and corrected here, not in the script. Matching is case-insensitive on cells with markdown emphasis and backticks removed. A header cell matches a column when it equals a synonym or starts with it followed by a space or a parenthesis.",
+  "version": 1,
+  "files": {
+    "world-editor.md": {
+      "module": "WorldEditor"
+    },
+    "resource-manager.md": {
+      "module": "ResourceManager"
+    },
+    "script-string-dialogue.md": {
+      "module": "none"
+    },
+    "anim-procanim-behavior.md": {
+      "module": "none"
+    },
+    "audio-particle-navmesh.md": {
+      "module": "none"
+    },
+    "plugins-netapi-cli.md": {
+      "module": "none"
+    },
+    "mcp-inventory.md": {
+      "module": "none"
+    },
+    "gui-census-feasibility.md": {
+      "module": "none"
+    }
+  },
+  "columns": {
+    "label": [
+      "mcp tool",
+      "tool name",
+      "feature",
+      "item",
+      "name",
+      "label",
+      "action",
+      "menu item",
+      "entry",
+      "symbol",
+      "method",
+      "tool",
+      "switch",
+      "flag",
+      "plugin",
+      "class",
+      "dock",
+      "panel",
+      "dialog",
+      "function",
+      "handler",
+      "operator",
+      "extension",
+      "setting",
+      "key",
+      "option",
+      "capability",
+      "button"
+    ],
+    "kind": ["kind", "type", "category", "surface kind"],
+    "what": ["what", "description", "purpose", "does", "effect", "notes", "note", "details"],
+    "coverage": ["coverage", "mcp coverage", "covered by mcp", "mcp", "status", "covered?"],
+    "module": ["module", "editor", "window"],
+    "risk": ["risk", "safety", "danger", "risk class"]
+  },
+  "tri_columns": {
+    "covered": ["covered", "full"],
+    "partial": ["partial", "partly"],
+    "none": ["none", "not covered", "uncovered", "missing"]
+  },
+  "tri_marks": ["x", "yes", "y", "✓", "✔", "✅", "●", "1", "true"],
+  "coverage_values": {
+    "covered": ["covered", "yes", "y", "full", "fully", "✓", "✔", "✅", "done"],
+    "partial": ["partial", "partly", "partially", "some", "~", "◐", "limited", "broken"],
+    "none": [
+      "none",
+      "no",
+      "n",
+      "not covered",
+      "uncovered",
+      "missing",
+      "—",
+      "-",
+      "✗",
+      "✘",
+      "❌",
+      "n/a"
+    ]
+  },
+  "kind_values": {
+    "menu": "menu",
+    "submenu": "menu",
+    "menu item": "menu-item",
+    "menu entry": "menu-item",
+    "toolbar": "toolbar",
+    "toolbar button": "toolbar-button",
+    "button": "toolbar-button",
+    "dock": "dock",
+    "panel": "panel",
+    "tab": "tab",
+    "dialog": "dialog",
+    "window": "window",
+    "control": "control",
+    "widget": "control",
+    "property": "property",
+    "property group": "property-group",
+    "context menu": "context-menu",
+    "context item": "context-item",
+    "context menu item": "context-item",
+    "shortcut": "shortcut",
+    "hotkey": "shortcut",
+    "tool": "tool",
+    "tool button": "tool-button",
+    "gesture": "canvas-gesture",
+    "status bar": "status-item",
+    "status item": "status-item",
+    "class": "class",
+    "method": "method",
+    "api method": "method",
+    "static": "static-method",
+    "static method": "static-method",
+    "event": "event",
+    "attribute": "attribute",
+    "enum": "enum",
+    "enum value": "enum-value",
+    "plugin": "plugin",
+    "script tool": "plugin",
+    "plugin setting": "plugin-setting",
+    "plugin button": "plugin-button",
+    "net function": "net-function",
+    "native function": "net-function",
+    "net handler": "net-handler",
+    "handler": "net-handler",
+    "net field": "net-field",
+    "cli": "cli-switch",
+    "cli switch": "cli-switch",
+    "switch": "cli-switch",
+    "flag": "cli-switch",
+    "link": "link-format",
+    "file type": "file-type",
+    "file format": "file-type",
+    "format": "file-type",
+    "resource class": "resource-class",
+    "schema class": "schema-class",
+    "schema key": "schema-key",
+    "setting": "setting-key",
+    "setting key": "setting-key",
+    "option": "option",
+    "diag menu": "diag-menu",
+    "diag option": "diag-option",
+    "blender operator": "blender-operator",
+    "debug panel": "debug-panel",
+    "mcp tool": "mcp-tool",
+    "tool action": "mcp-action",
+    "mcp action": "mcp-action",
+    "handler action": "handler-action"
+  },
+  "heading_kinds": [
+    {
+      "pattern": "context menu",
+      "kind": "context-item"
+    },
+    {
+      "pattern": "toolbar",
+      "kind": "toolbar-button"
+    },
+    {
+      "pattern": "menu",
+      "kind": "menu-item"
+    },
+    {
+      "pattern": "dock|panel",
+      "kind": "dock"
+    },
+    {
+      "pattern": "dialog",
+      "kind": "dialog"
+    },
+    {
+      "pattern": "shortcut|hotkey|keybind",
+      "kind": "shortcut"
+    },
+    {
+      "pattern": "gesture",
+      "kind": "canvas-gesture"
+    },
+    {
+      "pattern": "status bar",
+      "kind": "status-item"
+    },
+    {
+      "pattern": "plugin",
+      "kind": "plugin"
+    },
+    {
+      "pattern": "native|net ?api function",
+      "kind": "net-function"
+    },
+    {
+      "pattern": "handler",
+      "kind": "net-handler"
+    },
+    {
+      "pattern": "cli|command[- ]line|switch",
+      "kind": "cli-switch"
+    },
+    {
+      "pattern": "file types?|formats?",
+      "kind": "file-type"
+    },
+    {
+      "pattern": "diag",
+      "kind": "diag-option"
+    },
+    {
+      "pattern": "mcp tools?|tool inventory",
+      "kind": "mcp-tool"
+    },
+    {
+      "pattern": "tools?",
+      "kind": "tool"
+    },
+    {
+      "pattern": "methods?|api",
+      "kind": "method"
+    },
+    {
+      "pattern": "settings?|options?",
+      "kind": "setting-key"
+    }
+  ],
+  "file_default_kinds": {
+    "mcp-inventory.md": "mcp-tool"
+  },
+  "module_values": {
+    "world editor": "WorldEditor",
+    "worldeditor": "WorldEditor",
+    "resource manager": "ResourceManager",
+    "resourcemanager": "ResourceManager",
+    "resource browser": "ResourceManager",
+    "script editor": "ScriptEditor",
+    "scripteditor": "ScriptEditor",
+    "string editor": "LocalizationEditor",
+    "localization editor": "LocalizationEditor",
+    "localizationeditor": "LocalizationEditor",
+    "dialogue editor": "DialogueEditor",
+    "dialogueeditor": "DialogueEditor",
+    "animation editor": "AnimEditor",
+    "anim editor": "AnimEditor",
+    "animeditor": "AnimEditor",
+    "procedural animation editor": "ProcAnimEditor",
+    "procanim editor": "ProcAnimEditor",
+    "procanimeditor": "ProcAnimEditor",
+    "behavior editor": "BehaviorEditor",
+    "behaviour editor": "BehaviorEditor",
+    "behavioreditor": "BehaviorEditor",
+    "audio editor": "AudioEditor",
+    "audioeditor": "AudioEditor",
+    "particle editor": "ParticleEditor",
+    "particleeditor": "ParticleEditor",
+    "navmesh": "NavmeshGeneratorMain",
+    "navmesh generator": "NavmeshGeneratorMain",
+    "navmeshgeneratormain": "NavmeshGeneratorMain",
+    "launcher": "Launcher",
+    "shared": "Shared",
+    "all": "Shared",
+    "blender": "BlenderTools",
+    "blender tools": "BlenderTools"
+  },
+  "heading_modules": [
+    {
+      "pattern": "procedural anim|procanim",
+      "module": "ProcAnimEditor"
+    },
+    {
+      "pattern": "behaviou?r",
+      "module": "BehaviorEditor"
+    },
+    {
+      "pattern": "anim",
+      "module": "AnimEditor"
+    },
+    {
+      "pattern": "audio",
+      "module": "AudioEditor"
+    },
+    {
+      "pattern": "particle",
+      "module": "ParticleEditor"
+    },
+    {
+      "pattern": "navmesh",
+      "module": "NavmeshGeneratorMain"
+    },
+    {
+      "pattern": "script editor|script",
+      "module": "ScriptEditor"
+    },
+    {
+      "pattern": "string|locali[sz]ation",
+      "module": "LocalizationEditor"
+    },
+    {
+      "pattern": "dialogue",
+      "module": "DialogueEditor"
+    },
+    {
+      "pattern": "launcher",
+      "module": "Launcher"
+    },
+    {
+      "pattern": "blender",
+      "module": "BlenderTools"
+    }
+  ],
+  "risk_values": {
+    "safe": "safe",
+    "read-only": "safe",
+    "read only": "safe",
+    "readonly": "safe",
+    "mutating": "mutating",
+    "write": "mutating",
+    "writes": "mutating",
+    "destructive": "destructive",
+    "dangerous": "destructive",
+    "credential": "credential",
+    "credentials": "credential",
+    "login": "credential",
+    "external": "external",
+    "network": "external",
+    "publish": "external"
+  },
+  "kind_dims": {
+    "module": "ui",
+    "window": "ui",
+    "menu": "ui",
+    "menu-item": "ui",
+    "toolbar": "ui",
+    "toolbar-button": "ui",
+    "dock": "ui",
+    "panel": "ui",
+    "tab": "ui",
+    "dialog": "ui",
+    "control": "ui",
+    "property-group": "ui",
+    "property": "schema",
+    "property-editor": "ui",
+    "context-menu": "ui",
+    "context-item": "ui",
+    "shortcut": "ui",
+    "tool": "ui",
+    "tool-button": "ui",
+    "canvas-gesture": "ui",
+    "region": "ui",
+    "status-item": "ui",
+    "hazard-dialog": "ui",
+    "class": "api",
+    "method": "api",
+    "static-method": "api",
+    "event": "api",
+    "attribute": "api",
+    "enum": "api",
+    "enum-value": "api",
+    "plugin": "plugin",
+    "plugin-setting": "plugin",
+    "plugin-button": "plugin",
+    "plugin-cli-arg": "plugin",
+    "net-function": "net",
+    "net-handler": "net",
+    "net-field": "net",
+    "cli-switch": "cli",
+    "link-format": "link",
+    "file-type": "file",
+    "resource-class": "file",
+    "schema-class": "schema",
+    "schema-key": "schema",
+    "setting-key": "setting",
+    "option": "ui",
+    "diag-menu": "diag",
+    "diag-option": "diag",
+    "blender-operator": "ui",
+    "debug-panel": "ui",
+    "mcp-tool": "mcp",
+    "mcp-action": "mcp",
+    "handler-action": "mcp"
+  },
+  "aggregate_patterns": [
+    "^\\d+\\s+\\S",
+    "\\b\\d+\\s+(actions|items|entries|methods|functions|plugins|switches|flags|docks|toolbars|options|settings|keys|classes|files|tools|dialogs|panels|tabs|buttons|nodes|handlers|events|types|formats|operators|shortcuts)\\b",
+    "^all\\s",
+    "\\betc\\.?$",
+    "\\band (the )?others?\\b"
+  ],
+  "summary_labels": ["total", "totals", "sum", "subtotal", "overall"],
+  "probe_headings": "probe|unverified|open question|unknowns?",
+  "probe_columns": "probe|question|unverified|unknown|claim"
+}

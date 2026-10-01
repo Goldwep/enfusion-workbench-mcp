@@ -1,0 +1,4 @@
+{
+  "$comment": "Accepted entity-resolution decisions that are not exact-key matches (plan 4.4). Written only by scripts/census/alias.ts accept, run by the main session. `from` merges into the canonical `to`.",
+  "aliases": []
+}

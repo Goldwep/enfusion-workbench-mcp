@@ -238,11 +238,18 @@ export function registerTools(server: McpServer, config: Config): void {
   // Clean shutdown: stop watchers + close DB on SIGINT/SIGTERM so file
   // handles release (matters on Windows). One-shot guard so repeated signals
   // don't double-stop the watchers (chokidar's close() handles re-entry but
-  // we want a clean exit code regardless).
+  // we want a clean exit code regardless). The Workbench lease this server
+  // holds (if any) is released first, and again on any process exit; the
+  // release is best effort, never throws, and leaves another session's lease
+  // alone.
+  process.on("exit", () => {
+    wbClient.releaseLease();
+  });
   let shuttingDown = false;
   const handleShutdown = (): void => {
     if (shuttingDown) return;
     shuttingDown = true;
+    wbClient.releaseLease();
     logger.info(`[server] shutting down — stopping ${watchers.length} watcher(s)`);
     Promise.all(watchers.map((w) => w.stop()))
       .catch((e) => logger.debug(`[server] watcher stop error: ${e}`))

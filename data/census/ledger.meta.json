@@ -1,0 +1,100 @@
+{
+  "absent_candidates": [],
+  "build": {
+    "branch": "stable",
+    "tag": "unknown",
+    "ui_language": "unknown"
+  },
+  "counts": {
+    "aggregate": 0,
+    "by_dim": {},
+    "by_kind": {},
+    "by_module": {},
+    "by_shard": {},
+    "by_tier": {},
+    "provisional": 0,
+    "rows": 0
+  },
+  "enumerators": {
+    "done": [],
+    "pending": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E15",
+      "E16",
+      "E17",
+      "E18",
+      "E19",
+      "L01",
+      "L02",
+      "L03",
+      "L04",
+      "L05",
+      "L06",
+      "L07",
+      "L08",
+      "L09",
+      "L10",
+      "L11",
+      "L12",
+      "L13",
+      "L14",
+      "L15",
+      "L16",
+      "L17"
+    ]
+  },
+  "inputs": {
+    "aliases_sha256": "2b13f560eb3e45bca72adc2219590326e73dde8430b4793e1e35c55356695a17",
+    "live_results": [],
+    "observations": [],
+    "policy_sha256": "50eb2509501f4418edebea8c152478645538f0cee5e35f2c64f57b8ec0ab14d5",
+    "probes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "state_matrix_sha256": "bd9d1a6ab117fa62f36c113f327dac07a31adc3e6bb15179354f458f6f89a470",
+    "state_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "universes_sha256": "e2c2ea41ac4416c66faf710e83546c07392f1436c31d92c0462af623f4b23834"
+  },
+  "problems": [],
+  "rejected": [],
+  "retired": [],
+  "schema_version": 1,
+  "shards": [
+    {
+      "file": "ledger.jsonl",
+      "name": "core",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "ledger.attribute.jsonl",
+      "name": "attribute",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "ledger.schema.jsonl",
+      "name": "schema",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "ledger.diag.jsonl",
+      "name": "diag",
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "unverified_refs": {}
+}

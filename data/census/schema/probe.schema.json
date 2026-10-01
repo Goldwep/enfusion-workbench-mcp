@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "census/probe.schema.json",
+  "title": "Census probe-log line",
+  "description": "One line of the append-only data/census/probes.jsonl. Seeded by E01; outcomes appended by dispose.ts --probe with evidence.",
+  "additionalProperties": false,
+  "properties": {
+    "architecture_deciding": {
+      "type": "boolean"
+    },
+    "by": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "deferral_accepted_by_owner": {
+      "type": "boolean"
+    },
+    "evidence": {
+      "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^P-[A-Za-z0-9-]+$",
+      "type": "string"
+    },
+    "op": {
+      "enum": ["open", "outcome", "schedule"],
+      "type": "string"
+    },
+    "outcome": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "question": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "scheduled_session": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "seq": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "source": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "status": {
+      "enum": ["open", "scheduled", "resolved", "blocked", "deferred"],
+      "type": "string"
+    }
+  },
+  "required": ["seq", "id", "op", "by"],
+  "type": "object"
+}

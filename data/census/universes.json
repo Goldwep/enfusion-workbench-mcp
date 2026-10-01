@@ -1,0 +1,1146 @@
+{
+  "$comment": "Every countable set of the census (plan 4.6). One universe per kind of the plan 4.3 vocabulary (`kind:<kind>`), plus named sub-universes. `enumerators` declares, per enumerator, what it reads (`inputs`: two enumerators are independent only when their `independence_group` differs, neither lists the other and they share no input), whether it observes the installed build (T2 credit), its generator script, and its emission allow-list (`dims`, `kinds`, `id_prefixes`, `ref_pattern`); build.ts rejects every line outside it. Expected counts quote the plan (`source`); exact unless the plan states a lower bound (`at_least`) or a dispute (`candidates`). `shard_by_kind` routes knowledge kinds to their own ledger shard (main ruling 3). `g7_empty_reasons` explains empty module-by-kind cells. Generator paths, inputs and ref patterns of E02-E19 and L01-L17 are proposals for their authors [unverified]. Written first by the Phase 0 ledger author; main-owned afterwards.",
+  "version": 1,
+  "enumerators": {
+    "E01": {
+      "confidence_max": "low",
+      "dims": [
+        "ui",
+        "api",
+        "plugin",
+        "net",
+        "cli",
+        "file",
+        "schema",
+        "setting",
+        "link",
+        "diag",
+        "mcp"
+      ],
+      "generator": "scripts/census/enumerators/e01-recon-import.ts",
+      "id_prefixes": [
+        "api:",
+        "cli:",
+        "diag:",
+        "file:",
+        "link:",
+        "mcp:",
+        "net:",
+        "plugin:",
+        "schema:",
+        "setting:",
+        "ui:"
+      ],
+      "independence_group": "recon",
+      "inputs": ["recon-files"],
+      "kinds": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "property",
+        "property-editor",
+        "context-menu",
+        "context-item",
+        "shortcut",
+        "tool",
+        "tool-button",
+        "canvas-gesture",
+        "region",
+        "status-item",
+        "hazard-dialog",
+        "class",
+        "method",
+        "static-method",
+        "event",
+        "attribute",
+        "enum",
+        "enum-value",
+        "plugin",
+        "plugin-setting",
+        "plugin-button",
+        "plugin-cli-arg",
+        "net-function",
+        "net-handler",
+        "net-field",
+        "cli-switch",
+        "link-format",
+        "file-type",
+        "resource-class",
+        "schema-class",
+        "schema-key",
+        "setting-key",
+        "option",
+        "diag-menu",
+        "diag-option",
+        "blender-operator",
+        "debug-panel",
+        "mcp-tool",
+        "mcp-action",
+        "handler-action"
+      ],
+      "name": "Recon import",
+      "observes_build": false,
+      "phase": "0",
+      "provisional": true,
+      "ref_pattern": "^<repo>/docs/v2/recon/[a-z0-9-]+\\.md#L\\d+$"
+    },
+    "E02": {
+      "dims": ["api"],
+      "generator": "scripts/census/enumerators/e02-script-source.ts",
+      "id_prefixes": ["api:"],
+      "independence_group": "pak-source",
+      "inputs": ["pak-scripts"],
+      "kinds": ["class", "method", "static-method", "event", "attribute", "enum", "enum-value"],
+      "name": "Script-source index",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E03": {
+      "dims": ["plugin"],
+      "generator": "scripts/census/enumerators/e03-plugin-registry.ts",
+      "id_prefixes": ["plugin:"],
+      "independence_group": "pak-source",
+      "inputs": ["E02"],
+      "kinds": ["plugin", "plugin-setting", "plugin-button", "plugin-cli-arg", "tool"],
+      "name": "Plugin and tool registry",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E04": {
+      "dims": ["net"],
+      "generator": "scripts/census/enumerators/e04-net-surface.ts",
+      "id_prefixes": ["net:"],
+      "independence_group": "pak-source",
+      "inputs": ["pak-scripts", "E05", "blender-python"],
+      "kinds": ["net-function", "net-handler", "net-field"],
+      "name": "NET surface",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+#L\\d+|<tools>/Blender/[^#]+#L\\d+|exe:0x[0-9a-f]+)$"
+    },
+    "E05": {
+      "confidence_rules": [
+        {
+          "max": "medium",
+          "ref_matches": "^exe:adjacency:"
+        }
+      ],
+      "dims": ["ui", "cli", "net", "setting"],
+      "generator": "scripts/census/enumerators/e05-executable-tables.ts",
+      "id_prefixes": ["cli:", "net:", "setting:", "ui:"],
+      "independence_group": "executable",
+      "inputs": ["executable"],
+      "kinds": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "option",
+        "setting-key",
+        "shortcut",
+        "status-item",
+        "property-editor",
+        "cli-switch",
+        "net-function"
+      ],
+      "name": "Executable static tables",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^exe:(0x[0-9a-f]+|adjacency:0x[0-9a-f]+\\+0x[0-9a-f]+)$"
+    },
+    "E06": {
+      "dims": ["ui", "setting", "plugin"],
+      "generator": "scripts/census/enumerators/e06-settings-store.ts",
+      "id_prefixes": ["plugin:", "setting:", "ui:"],
+      "independence_group": "registry",
+      "inputs": ["registry-export", "E03"],
+      "kinds": ["shortcut", "setting-key", "option", "dock", "toolbar", "plugin-setting"],
+      "name": "Settings store",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^artifact:[0-9a-f]{64}(#.+)?$"
+    },
+    "E07": {
+      "dims": ["ui", "cli", "file", "diag", "link"],
+      "generator": "scripts/census/enumerators/e07-wiki-tables.ts",
+      "id_prefixes": ["cli:", "diag:", "file:", "link:", "ui:"],
+      "independence_group": "wiki",
+      "inputs": ["wiki-export"],
+      "kinds": [
+        "menu",
+        "menu-item",
+        "shortcut",
+        "panel",
+        "dock",
+        "toolbar",
+        "tool",
+        "dialog",
+        "control",
+        "option",
+        "file-type",
+        "cli-switch",
+        "diag-menu",
+        "diag-option",
+        "link-format",
+        "canvas-gesture",
+        "context-menu",
+        "context-item",
+        "debug-panel"
+      ],
+      "name": "Wiki tables and structure",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^wiki:[^#\\s]+(#.+)?$"
+    },
+    "E08": {
+      "dims": ["ui", "net", "cli"],
+      "generator": "scripts/census/enumerators/e08-shipped-docs.ts",
+      "id_prefixes": ["cli:", "net:", "ui:"],
+      "independence_group": "docs",
+      "inputs": ["shipped-docs"],
+      "kinds": [
+        "net-function",
+        "net-handler",
+        "net-field",
+        "menu",
+        "menu-item",
+        "shortcut",
+        "cli-switch"
+      ],
+      "name": "Shipped HTML docs",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^<tools>/Workbench/docs/[^#]+(#.+)?$"
+    },
+    "E09": {
+      "dims": ["file"],
+      "generator": "scripts/census/enumerators/e09-file-types.ts",
+      "id_prefixes": ["file:"],
+      "independence_group": "file-corpus",
+      "inputs": ["pak-listing", "wiki-export", "profile-dir"],
+      "kinds": ["file-type", "resource-class"],
+      "name": "File-type census",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+(#L\\d+)?|wiki:[^#\\s]+(#.+)?|artifact:[0-9a-f]{64}(#.+)?)$"
+    },
+    "E10": {
+      "dims": ["schema", "api", "file"],
+      "generator": "scripts/census/enumerators/e10-data-schema.ts",
+      "id_prefixes": ["api:", "file:", "schema:"],
+      "independence_group": "file-corpus",
+      "inputs": ["pak-corpus", "executable"],
+      "kinds": ["schema-class", "schema-key", "enum", "enum-value", "resource-class"],
+      "name": "Data-schema census",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+#L\\d+|exe:0x[0-9a-f]+)$"
+    },
+    "E11": {
+      "dims": ["mcp"],
+      "generator": "scripts/census/enumerators/e11-mcp-inventory.ts",
+      "id_prefixes": ["mcp:"],
+      "independence_group": "mcp-source",
+      "inputs": ["repo-source"],
+      "kinds": ["mcp-tool", "mcp-action", "handler-action"],
+      "name": "MCP self-inventory",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^<repo>/[^#]+#L\\d+$"
+    },
+    "E12": {
+      "dims": ["api"],
+      "generator": "scripts/census/enumerators/e12-api-index.ts",
+      "id_prefixes": ["api:"],
+      "independence_group": "api-index",
+      "inputs": ["api-index", "E02"],
+      "kinds": ["class", "method", "static-method", "event"],
+      "name": "API-index reconcile",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^<repo>/data/api/[^#]+#L\\d+$"
+    },
+    "E13": {
+      "dims": ["cli", "ui"],
+      "generator": "scripts/census/enumerators/e13-launch-logs.ts",
+      "id_prefixes": ["cli:", "ui:"],
+      "independence_group": "logs",
+      "inputs": ["launch-logs"],
+      "kinds": ["cli-switch", "hazard-dialog"],
+      "name": "Launch-log miner",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^artifact:[0-9a-f]{64}(#.+)?$"
+    },
+    "E14": {
+      "dims": ["diag"],
+      "generator": "scripts/census/enumerators/e14-diag-menu.ts",
+      "id_prefixes": ["diag:"],
+      "independence_group": "wiki",
+      "inputs": ["wiki-export", "pak-scripts"],
+      "kinds": ["diag-menu", "diag-option"],
+      "name": "Diag Menu",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(wiki:[^#\\s]+(#.+)?|pak:[^#]+#L\\d+)$"
+    },
+    "E15": {
+      "dims": ["api", "plugin"],
+      "generator": "scripts/census/enumerators/e15-attribute-scan.ts",
+      "id_prefixes": ["api:", "plugin:"],
+      "independence_group": "pak-source",
+      "inputs": ["E02"],
+      "kinds": ["attribute", "plugin-setting"],
+      "name": "[Attribute] scan",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E16": {
+      "dims": ["ui"],
+      "generator": "scripts/census/enumerators/e16-property-editors.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "pak-source",
+      "inputs": ["E02"],
+      "kinds": ["property-editor", "dialog"],
+      "name": "Property-editor kinds",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E17": {
+      "dims": ["link", "plugin", "ui"],
+      "generator": "scripts/census/enumerators/e17-workbench-data.ts",
+      "id_prefixes": ["link:", "plugin:", "ui:"],
+      "independence_group": "pak-data",
+      "inputs": ["pak-workbench-data"],
+      "kinds": ["link-format", "plugin-setting", "panel", "tab"],
+      "name": "Workbench-owned pak data",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+(#L\\d+)?$"
+    },
+    "E18": {
+      "dims": ["ui"],
+      "generator": "scripts/census/enumerators/e18-tool-gestures.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "pak-source",
+      "inputs": ["E02"],
+      "kinds": ["canvas-gesture", "tool"],
+      "name": "Tool gestures",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E19": {
+      "dims": ["ui"],
+      "generator": "scripts/census/enumerators/e19-blender-operators.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "blender",
+      "inputs": ["blender-python"],
+      "kinds": ["blender-operator"],
+      "name": "Blender add-on operators",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^<tools>/Blender/[^#]+#L\\d+$"
+    },
+    "L01": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l01.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": [
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "region",
+        "status-item",
+        "context-menu",
+        "context-item",
+        "tool-button",
+        "property-editor"
+      ],
+      "name": "Passive accessibility snapshot",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L02": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l02.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["menu", "menu-item", "shortcut"],
+      "name": "Menu walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L03": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l03.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": [
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "tab",
+        "status-item",
+        "panel",
+        "region",
+        "window"
+      ],
+      "name": "Toolbars, docks, tabs, status bar",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L04": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l04.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["dialog", "control", "property-group", "option"],
+      "name": "Dialog census",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L05": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l05.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["context-menu", "context-item"],
+      "name": "Context menus",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L06": {
+      "dims": ["ui", "schema"],
+      "generator": "scripts/census/live/l06.ts",
+      "id_prefixes": ["schema:", "ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["property-group", "property", "property-editor", "dialog"],
+      "name": "Property grids",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L07": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l07.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["region", "window", "panel", "dock"],
+      "name": "Screenshot lane",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L08": {
+      "dims": ["schema", "ui"],
+      "generator": "scripts/census/live/l08.ts",
+      "id_prefixes": ["schema:", "ui:"],
+      "independence_group": "live",
+      "inputs": ["live-netapi"],
+      "kinds": ["schema-class", "schema-key", "property", "module"],
+      "name": "Container and schema introspection",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L09": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l09.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-netapi"],
+      "kinds": ["menu-item", "context-item", "toolbar-button"],
+      "name": "ExecuteAction vocabulary battery",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L10": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l10.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-netapi"],
+      "kinds": ["module"],
+      "name": "Module matrix",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L11": {
+      "dims": ["plugin"],
+      "generator": "scripts/census/live/l11.ts",
+      "id_prefixes": ["plugin:"],
+      "independence_group": "live",
+      "inputs": ["live-netapi"],
+      "kinds": ["plugin"],
+      "name": "Plugin presence matrix",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L12": {
+      "dims": ["net"],
+      "generator": "scripts/census/live/l12.ts",
+      "id_prefixes": ["net:"],
+      "independence_group": "live",
+      "inputs": ["live-netapi"],
+      "kinds": ["net-function", "net-handler", "net-field"],
+      "name": "NET payload capture",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L13": {
+      "dims": ["cli"],
+      "generator": "scripts/census/live/l13.ts",
+      "id_prefixes": ["cli:"],
+      "independence_group": "live",
+      "inputs": ["live-cli"],
+      "kinds": ["cli-switch"],
+      "name": "CLI verification",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L14": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l14.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["window", "dialog", "control", "menu", "menu-item"],
+      "name": "Launcher walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L15": {
+      "dims": ["diag", "ui"],
+      "generator": "scripts/census/live/l15.ts",
+      "id_prefixes": ["diag:", "ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["diag-menu", "diag-option", "debug-panel"],
+      "name": "Diag Menu and debug-panel walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L16": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l16.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["hazard-dialog"],
+      "name": "Hazard dialogs",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L17": {
+      "dims": ["ui"],
+      "generator": "scripts/census/live/l17.ts",
+      "id_prefixes": ["ui:"],
+      "independence_group": "live",
+      "inputs": ["live-uia"],
+      "kinds": ["window", "panel", "control", "dock", "region"],
+      "name": "Qt Introspection Tool harvest",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    }
+  },
+  "g7_empty_reasons": [],
+  "shard_by_kind": {
+    "attribute": "attribute",
+    "diag-menu": "diag",
+    "diag-option": "diag",
+    "property": "schema",
+    "schema-class": "schema",
+    "schema-key": "schema"
+  },
+  "universes": [
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "L08", "L10"],
+      "id": "kind:module",
+      "kind": "module",
+      "leaf": false,
+      "what": "Every module row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "L01", "L03", "L07", "L14", "L17"],
+      "id": "kind:window",
+      "kind": "window",
+      "leaf": false,
+      "what": "Every window row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E07", "E08", "L01", "L02", "L14"],
+      "id": "kind:menu",
+      "kind": "menu",
+      "leaf": false,
+      "what": "Every menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E07", "E08", "L01", "L02", "L09", "L14"],
+      "id": "kind:menu-item",
+      "kind": "menu-item",
+      "leaf": true,
+      "what": "Every menu-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E06", "E07", "L01", "L03"],
+      "expected": {
+        "enumerator": "E06",
+        "source": "PLAN 2.1 finding 9 [recon]: 73 docks and 10 toolbars across 7 modules",
+        "value": 10
+      },
+      "id": "kind:toolbar",
+      "kind": "toolbar",
+      "leaf": false,
+      "what": "Every toolbar row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "L01", "L03", "L09"],
+      "id": "kind:toolbar-button",
+      "kind": "toolbar-button",
+      "leaf": true,
+      "what": "Every toolbar-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E06", "E07", "L01", "L03", "L07", "L17"],
+      "expected": {
+        "enumerator": "E06",
+        "source": "PLAN 2.1 finding 9 [recon]: 73 docks and 10 toolbars across 7 modules",
+        "value": 73
+      },
+      "id": "kind:dock",
+      "kind": "dock",
+      "leaf": false,
+      "what": "Every dock row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E07", "E17", "L01", "L03", "L07", "L17"],
+      "id": "kind:panel",
+      "kind": "panel",
+      "leaf": false,
+      "what": "Every panel row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E17", "L01", "L03"],
+      "id": "kind:tab",
+      "kind": "tab",
+      "leaf": false,
+      "what": "Every tab row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E07", "E16", "L01", "L04", "L06", "L14"],
+      "id": "kind:dialog",
+      "kind": "dialog",
+      "leaf": false,
+      "what": "Every dialog row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E07", "L01", "L04", "L14", "L17"],
+      "id": "kind:control",
+      "kind": "control",
+      "leaf": true,
+      "what": "Every control row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "L01", "L04", "L06"],
+      "id": "kind:property-group",
+      "kind": "property-group",
+      "leaf": false,
+      "what": "Every property-group row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["schema"],
+      "enumerators": ["E01", "L06", "L08"],
+      "id": "kind:property",
+      "kind": "property",
+      "leaf": true,
+      "what": "Every property row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E16", "L01", "L06"],
+      "expected": {
+        "enumerator": "E16",
+        "source": "PLAN 4.5 E16: UIWidgets (31 members)",
+        "value": 31
+      },
+      "id": "kind:property-editor",
+      "kind": "property-editor",
+      "leaf": false,
+      "what": "Every property-editor row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E07", "L01", "L05"],
+      "id": "kind:context-menu",
+      "kind": "context-menu",
+      "leaf": false,
+      "what": "Every context-menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E07", "L01", "L05", "L09"],
+      "id": "kind:context-item",
+      "kind": "context-item",
+      "leaf": true,
+      "what": "Every context-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "E06", "E07", "E08", "L02"],
+      "expected": {
+        "at_least": 361,
+        "enumerator": "E06",
+        "source": "PLAN 2.1 finding 9: 361 shortcut-table actions; treat it as a lower bound"
+      },
+      "id": "kind:shortcut",
+      "kind": "shortcut",
+      "leaf": true,
+      "what": "Every shortcut row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui", "plugin"],
+      "enumerators": ["E01", "E03", "E07", "E18"],
+      "id": "kind:tool",
+      "kind": "tool",
+      "leaf": false,
+      "what": "Every tool row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "L01"],
+      "id": "kind:tool-button",
+      "kind": "tool-button",
+      "leaf": true,
+      "what": "Every tool-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E07", "E18"],
+      "id": "kind:canvas-gesture",
+      "kind": "canvas-gesture",
+      "leaf": true,
+      "what": "Every canvas-gesture row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "L01", "L03", "L07", "L17"],
+      "id": "kind:region",
+      "kind": "region",
+      "leaf": true,
+      "what": "Every region row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E05", "L01", "L03"],
+      "id": "kind:status-item",
+      "kind": "status-item",
+      "leaf": true,
+      "what": "Every status-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E13", "L16"],
+      "id": "kind:hazard-dialog",
+      "kind": "hazard-dialog",
+      "leaf": true,
+      "what": "Every hazard-dialog row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "id": "kind:class",
+      "kind": "class",
+      "leaf": false,
+      "what": "Every class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "id": "kind:method",
+      "kind": "method",
+      "leaf": true,
+      "what": "Every method row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "id": "kind:static-method",
+      "kind": "static-method",
+      "leaf": true,
+      "what": "Every static-method row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "id": "kind:event",
+      "kind": "event",
+      "leaf": true,
+      "what": "Every event row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api", "plugin"],
+      "enumerators": ["E01", "E02", "E15"],
+      "id": "kind:attribute",
+      "kind": "attribute",
+      "leaf": true,
+      "what": "Every attribute row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api", "schema"],
+      "enumerators": ["E01", "E02", "E10"],
+      "id": "kind:enum",
+      "kind": "enum",
+      "leaf": false,
+      "what": "Every enum row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api", "schema"],
+      "enumerators": ["E01", "E02", "E10"],
+      "id": "kind:enum-value",
+      "kind": "enum-value",
+      "leaf": true,
+      "what": "Every enum-value row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["plugin"],
+      "enumerators": ["E01", "E03", "L11"],
+      "expected": {
+        "enumerator": "E03",
+        "source": "PLAN 4.5 E03: 148 declarations",
+        "value": 148
+      },
+      "id": "kind:plugin",
+      "kind": "plugin",
+      "leaf": false,
+      "what": "Every plugin row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["plugin"],
+      "enumerators": ["E01", "E03", "E06", "E15", "E17"],
+      "id": "kind:plugin-setting",
+      "kind": "plugin-setting",
+      "leaf": true,
+      "what": "Every plugin-setting row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["plugin"],
+      "enumerators": ["E01", "E03"],
+      "id": "kind:plugin-button",
+      "kind": "plugin-button",
+      "leaf": true,
+      "what": "Every plugin-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["plugin"],
+      "enumerators": ["E01", "E03"],
+      "id": "kind:plugin-cli-arg",
+      "kind": "plugin-cli-arg",
+      "leaf": true,
+      "what": "Every plugin-cli-arg row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["net"],
+      "enumerators": ["E01", "E04", "E05", "E08", "L12"],
+      "expected": {
+        "enumerator": "E05",
+        "source": "PLAN 2.1 finding 2: Six are named in the executable",
+        "value": 6
+      },
+      "id": "kind:net-function",
+      "kind": "net-function",
+      "leaf": true,
+      "what": "Every net-function row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["net"],
+      "enumerators": ["E01", "E04", "E08", "L12"],
+      "expected": {
+        "candidates": [33, 34],
+        "enumerator": "E04",
+        "source": "PLAN 2.3: Bohemia script NetApiHandler classes 33 vs 34, one under #ifdef DOXYGEN"
+      },
+      "id": "kind:net-handler",
+      "kind": "net-handler",
+      "leaf": false,
+      "what": "Every net-handler row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["net"],
+      "enumerators": ["E01", "E04", "E08", "L12"],
+      "id": "kind:net-field",
+      "kind": "net-field",
+      "leaf": true,
+      "what": "Every net-field row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["cli"],
+      "enumerators": ["E01", "E05", "E07", "E08", "E13", "L13"],
+      "id": "kind:cli-switch",
+      "kind": "cli-switch",
+      "leaf": true,
+      "what": "Every cli-switch row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["link"],
+      "enumerators": ["E01", "E07", "E17"],
+      "id": "kind:link-format",
+      "kind": "link-format",
+      "leaf": true,
+      "what": "Every link-format row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["file"],
+      "enumerators": ["E01", "E07", "E09"],
+      "id": "kind:file-type",
+      "kind": "file-type",
+      "leaf": true,
+      "what": "Every file-type row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["file"],
+      "enumerators": ["E01", "E09", "E10"],
+      "id": "kind:resource-class",
+      "kind": "resource-class",
+      "leaf": true,
+      "what": "Every resource-class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["schema"],
+      "enumerators": ["E01", "E10", "L08"],
+      "id": "kind:schema-class",
+      "kind": "schema-class",
+      "leaf": false,
+      "what": "Every schema-class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["schema"],
+      "enumerators": ["E01", "E10", "L08"],
+      "id": "kind:schema-key",
+      "kind": "schema-key",
+      "leaf": true,
+      "what": "Every schema-key row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["setting"],
+      "enumerators": ["E01", "E05", "E06"],
+      "id": "kind:setting-key",
+      "kind": "setting-key",
+      "leaf": true,
+      "what": "Every setting-key row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui", "setting"],
+      "enumerators": ["E01", "E05", "E06", "E07", "L04"],
+      "id": "kind:option",
+      "kind": "option",
+      "leaf": true,
+      "what": "Every option row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["diag"],
+      "enumerators": ["E01", "E07", "E14", "L15"],
+      "id": "kind:diag-menu",
+      "kind": "diag-menu",
+      "leaf": false,
+      "what": "Every diag-menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["diag"],
+      "enumerators": ["E01", "E07", "E14", "L15"],
+      "id": "kind:diag-option",
+      "kind": "diag-option",
+      "leaf": true,
+      "what": "Every diag-option row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E19"],
+      "id": "kind:blender-operator",
+      "kind": "blender-operator",
+      "leaf": true,
+      "what": "Every blender-operator row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["ui"],
+      "enumerators": ["E01", "E07", "L15"],
+      "id": "kind:debug-panel",
+      "kind": "debug-panel",
+      "leaf": false,
+      "what": "Every debug-panel row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["mcp"],
+      "enumerators": ["E01", "E11"],
+      "expected": {
+        "enumerator": "E11",
+        "source": "PLAN 4.5 E11: Must reproduce 112 tools",
+        "value": 112
+      },
+      "id": "kind:mcp-tool",
+      "kind": "mcp-tool",
+      "leaf": false,
+      "what": "Every mcp-tool row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["mcp"],
+      "enumerators": ["E01", "E11"],
+      "id": "kind:mcp-action",
+      "kind": "mcp-action",
+      "leaf": true,
+      "what": "Every mcp-action row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["mcp"],
+      "enumerators": ["E01", "E11"],
+      "id": "kind:handler-action",
+      "kind": "handler-action",
+      "leaf": true,
+      "what": "Every handler-action row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "expected": {
+        "enumerator": "E02",
+        "source": "PLAN 2.1 finding 3 [recon]: WorldEditorAPI has 124 methods",
+        "value": 124
+      },
+      "id": "api:WorldEditorAPI-methods",
+      "id_prefix": "api:WorldEditorAPI.",
+      "kind": "method",
+      "leaf": true,
+      "what": "Methods of WorldEditorAPI in the script source"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": ["api"],
+      "enumerators": ["E01", "E02", "E12"],
+      "expected": {
+        "enumerator": "E12",
+        "source": "PLAN 2.1 finding 3 [recon]: the scraped index has 96",
+        "value": 96
+      },
+      "id": "api:WorldEditorAPI-methods-index",
+      "id_prefix": "api:WorldEditorAPI.",
+      "kind": "method",
+      "leaf": true,
+      "what": "Methods of WorldEditorAPI in the scraped API index (baseline before the scraper repair)"
+    }
+  ]
+}

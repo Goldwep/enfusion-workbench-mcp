@@ -54,6 +54,14 @@ export interface Config {
    *  Set via ENFUSION_GAME_LOGS_PATH. Auto-derived when projectPath
    *  matches the standard My Games layout. */
   gameLogsPath?: string;
+  /** Machine-wide Workbench lease file (2.0 plan 5.1). Defaults to
+   *  `~/.enfusion-mcp/workbench.lease.json`. Set via ENFUSION_LEASE_PATH; a
+   *  spawned test process points it at a temporary file. */
+  leasePath?: string;
+  /** No-autolaunch marker file (2.0 plan 5.1). While it exists the server
+   *  never auto-launches Workbench. Defaults to `~/.enfusion-mcp/no-autolaunch`.
+   *  Set via ENFUSION_NO_AUTOLAUNCH_PATH. */
+  noAutolaunchPath?: string;
 }
 
 const DEFAULT_WORKBENCH_PATH =
@@ -146,6 +154,12 @@ export function loadConfig(): Config {
   }
   if (process.env.ENFUSION_GAME_LOGS_PATH) {
     config.gameLogsPath = process.env.ENFUSION_GAME_LOGS_PATH;
+  }
+  if (process.env.ENFUSION_LEASE_PATH) {
+    config.leasePath = process.env.ENFUSION_LEASE_PATH;
+  }
+  if (process.env.ENFUSION_NO_AUTOLAUNCH_PATH) {
+    config.noAutolaunchPath = process.env.ENFUSION_NO_AUTOLAUNCH_PATH;
   }
 
   // Auto-derive gamePath from workbenchPath if not explicitly set

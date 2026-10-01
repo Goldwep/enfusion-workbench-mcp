@@ -1,0 +1,5 @@
+{
+  "$comment": "G4 dismissal rules (plan 4.6): structural accessibility nodes dismissed by a named rule. Schema of a rule: {\"id\": string, \"controlType\": string (UIA control type the rule applies to), \"namePattern\": optional regular expression on the node's label, \"why\": string}. An L01 observation names a rule in `dismissed_by`; validate.ts re-applies the rule's predicate and fails a dismissal it does not match. Empty until the Phase 4 accessibility walk; main-owned.",
+  "version": 1,
+  "rules": []
+}

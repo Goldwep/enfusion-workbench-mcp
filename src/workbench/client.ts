@@ -7,6 +7,19 @@
  * call() wraps rawCall() with auto-launch: if Workbench isn't running,
  * it installs handler scripts, launches the exe, waits for the NET API,
  * and retries the original call.
+ *
+ * Guards (2.0 plan, section 5.1), active whenever the client holds a Config:
+ *   - Lease. Every call() and every ensureRunning() first takes or refreshes
+ *     the machine-wide Workbench lease (lease.ts) as session
+ *     "registered:<pid>". Another session's lease (held, orphaned or
+ *     corrupt) refuses with LEASE_HELD before any TCP traffic, handler
+ *     install or spawn. ping() and diagnose() are read-only probes and stay
+ *     lease-free.
+ *   - No fallback project. Auto-launch on a refused connection only opens
+ *     the addon named by config.defaultMod, never "the first addon found",
+ *     and never while the no-autolaunch marker exists (AUTOLAUNCH_REFUSED).
+ *   - Handler recovery asks Workbench which project is open
+ *     (GetLoadedProjects) and installs into that project only, or refuses.
  */
 
 import { Socket } from "node:net";
@@ -18,7 +31,7 @@ import {
   readFileSync,
   rmdirSync,
   rmSync,
-  writeFileSync,
+  statSync,
 } from "node:fs";
 import { createHash } from "node:crypto";
 import { findGameAcrossSteamLibraries, steamRootOf } from "../utils/steam.js";
@@ -28,16 +41,24 @@ import { spawn } from "node:child_process";
 import { encodeRequest, decodeResponse } from "./protocol.js";
 import { logger } from "../utils/logger.js";
 import type { Config } from "../config.js";
-import { generateGproj } from "../templates/gproj.js";
 import { tailLines } from "./cli-runner.js";
+import {
+  LeaseError,
+  acquireLease,
+  checkLease,
+  heartbeatLease,
+  isNoAutolaunch,
+  releaseLease as releaseLeaseFile,
+  resolveLeasePath,
+  resolveNoAutolaunchPath,
+  updateLease,
+  type LeaseCheck,
+  type LeaseDeps,
+} from "./lease.js";
 import { LaunchWatchdog } from "./launch-watchdog.js";
 import { inspectProcessWindows, nudgeEnfusionLauncher } from "./launcher-nudge.js";
 import { WorkbenchLaunchTracker, snapshotSessionDirs } from "./launch-tracker.js";
-import {
-  buildPreflightNote,
-  buildStuckReport,
-  buildTimeoutDiagnostics,
-} from "./launch-reports.js";
+import { buildPreflightNote, buildStuckReport, buildTimeoutDiagnostics } from "./launch-reports.js";
 import { checkWorkbenchVisibleDeps, type WbDepsCheck } from "./wb-deps.js";
 
 const DEFAULT_CLIENT_ID = "EnfusionMCP";
@@ -59,6 +80,12 @@ const HANDLER_RECOMPILE_POLL_MS = 2_000;
  * recovery path and diagnose() so they classify the same condition identically.
  */
 const NO_HANDLERS_ERROR = "Undefined API func";
+/** Lease holder id of this server process (plan 5.1: "registered:<pid>"). */
+const LEASE_SESSION = `registered:${process.pid}`;
+/** Lease purpose recorded by this server. */
+const LEASE_PURPOSE = "registered-server";
+/** Minimum interval between two heartbeat writes of our own lease. */
+const LEASE_HEARTBEAT_MS = 60_000;
 
 export type WorkbenchMode = "edit" | "play" | "unknown";
 
@@ -74,6 +101,13 @@ export interface DiagnosticReport {
   /** Result of the NET API probe. */
   netApi: "up_with_handlers" | "up_no_handlers" | "refused" | "timeout" | "error";
   netApiError?: string;
+  /**
+   * Workbench lease state (null when the client has no Config). `ours` is
+   * true when the lease file names this server process as the holder.
+   */
+  lease: { path: string; check: LeaseCheck; ours: boolean; session: string } | null;
+  /** No-autolaunch marker (null when the client has no Config). */
+  noAutolaunch: { path: string; exists: boolean } | null;
 }
 
 export interface WorkbenchState {
@@ -104,7 +138,21 @@ export class WorkbenchError extends Error {
        * rather than joining it — joining would report the wrong project as
        * launched. `message` names both projects.
        */
-      | "LAUNCH_MISMATCH" = "API_ERROR",
+      | "LAUNCH_MISMATCH"
+      /**
+       * The machine-wide Workbench lease belongs to another session (held,
+       * orphaned, or the lease file is corrupt). Nothing was sent to
+       * Workbench, installed or spawned. `message` carries the lease
+       * description so the caller can tell the owner who holds it.
+       */
+      | "LEASE_HELD"
+      /**
+       * Auto-launch was refused: the no-autolaunch marker exists, or no
+       * explicit project is known (no usable config.defaultMod). Nothing was
+       * installed or spawned. The remedy is wb_launch with an explicit
+       * gprojPath. `message` names the reason (and the marker path).
+       */
+      | "AUTOLAUNCH_REFUSED" = "API_ERROR",
   ) {
     super(message);
     this.name = "WorkbenchError";
@@ -175,12 +223,123 @@ export function handlerSetDigest(dir: string): string | null {
   return h.digest("hex");
 }
 
+/**
+ * The .gproj inside one addon directory: `<name>.gproj` when present,
+ * otherwise the alphabetically first .gproj (a project file need not match
+ * its folder name). Null when the directory is missing or holds none.
+ */
+function findGprojInDir(dir: string, name?: string): string | null {
+  let gprojs: string[];
+  try {
+    gprojs = readdirSync(dir, { withFileTypes: true })
+      .filter((f) => !f.isDirectory() && f.name.toLowerCase().endsWith(".gproj"))
+      .map((f) => f.name)
+      .sort();
+  } catch {
+    return null;
+  }
+  if (gprojs.length === 0) return null;
+  const preferred = name
+    ? gprojs.find((f) => f.toLowerCase() === `${name.toLowerCase()}.gproj`)
+    : undefined;
+  return join(dir, preferred ?? gprojs[0]);
+}
+
+/**
+ * The explicit auto-launch project: the .gproj of the addon that
+ * `config.defaultMod` names under `config.projectPath`. Null when either is
+ * unset or the addon holds no .gproj. Never falls back to another addon.
+ */
+export function findDefaultModGproj(config: Config | undefined): string | null {
+  const addonsDir = config?.projectPath;
+  const mod = config?.defaultMod;
+  if (!addonsDir || !mod) return null;
+  return findGprojInDir(join(addonsDir, mod), mod);
+}
+
+/** Outcome of mapping a GetLoadedProjects payload onto .gproj files on disk. */
+export interface OpenProjectResolution {
+  /** The single resolved .gproj, or null when none or several resolved. */
+  gproj: string | null;
+  /** Every distinct .gproj a loaded-project entry resolved to. */
+  candidates: string[];
+  /** The entries Workbench reported, rendered as text for messages. */
+  entries: string[];
+}
+
+/** True for a bare addon name (no separators, not "." or ".."). */
+function isPlainName(s: string): boolean {
+  return s.length > 0 && s !== "." && s !== ".." && !/[\\/]/.test(s);
+}
+
+/**
+ * Map the built-in GetLoadedProjects response onto the open project's
+ * .gproj. Live-verified shape (see tools/wb-projects.ts):
+ * `{ "Loaded Projects": ["ArmaReforger", "<addon>"] }` — names only, the
+ * base game plus the open project (and its dependencies). The `projects` /
+ * `addons` arrays and `{ name, path }` entries are the variants
+ * formatLoadedProjects() also accepts [unverified].
+ *
+ * A name resolves only to `<projectPath>/<name>/` holding a .gproj; an entry
+ * with a `path` resolves to that .gproj (or the .gproj inside that
+ * directory). Exactly one distinct result is required: several (the open
+ * project plus a user-addon dependency) are ambiguous because the entry
+ * order is [unverified], so the caller refuses rather than guesses.
+ * Exported for tests.
+ */
+export function resolveLoadedProjectGproj(
+  result: Record<string, unknown>,
+  projectPath: string | undefined,
+): OpenProjectResolution {
+  const loaded = result["Loaded Projects"];
+  const list: unknown[] = Array.isArray(loaded)
+    ? loaded
+    : Array.isArray(result.projects)
+      ? result.projects
+      : Array.isArray(result.addons)
+        ? result.addons
+        : [];
+
+  const byName = (name: string): string | null =>
+    projectPath && isPlainName(name) ? findGprojInDir(join(projectPath, name), name) : null;
+  const byPath = (p: string, name?: string): string | null => {
+    if (p.toLowerCase().endsWith(".gproj")) return existsSync(p) ? resolve(p) : null;
+    try {
+      return statSync(p).isDirectory() ? findGprojInDir(p, name) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const entries: string[] = [];
+  const found = new Map<string, string>();
+  for (const entry of list) {
+    let gproj: string | null = null;
+    if (typeof entry === "string") {
+      entries.push(entry);
+      gproj = entry.toLowerCase().endsWith(".gproj") ? byPath(entry) : byName(entry);
+    } else if (entry && typeof entry === "object") {
+      const e = entry as Record<string, unknown>;
+      const name =
+        typeof e.name === "string" ? e.name : typeof e.id === "string" ? e.id : undefined;
+      const path = typeof e.path === "string" ? e.path : undefined;
+      entries.push(JSON.stringify(entry));
+      gproj = path ? byPath(path, name) : name ? byName(name) : null;
+    } else {
+      entries.push(String(entry));
+    }
+    if (gproj) found.set(normalizeGprojKey(gproj), gproj);
+  }
+  const candidates = [...found.values()];
+  return { gproj: candidates.length === 1 ? candidates[0] : null, candidates, entries };
+}
+
 export class WorkbenchClient {
   private launchPromise: Promise<void> | null = null;
   /**
    * The .gproj the in-flight launch is opening (null while resolving, or
    * when no launch is in flight). Set from the caller's explicit request in
-   * ensureRunning() and refined to the resolved fallback inside
+   * ensureRunning() and refined to the resolved defaultMod project inside
    * launchWorkbench(), so a later ensureRunning(otherGproj) can refuse.
    */
   private launchTarget: string | null = null;
@@ -193,6 +352,11 @@ export class WorkbenchClient {
    * each launch; tools may surface them alongside their own output.
    */
   lastLaunchNotes: string[] = [];
+
+  /** Clock and liveness probe passed to the lease module; injectable for tests. */
+  leaseDeps: LeaseDeps = {};
+  /** When this client last wrote our lease's heartbeat (lease clock, ms); 0 = never. */
+  private lastHeartbeatAt = 0;
 
   /** Current cached connection state. Updated after every successful call. */
   get state(): Readonly<WorkbenchState> {
@@ -208,13 +372,17 @@ export class WorkbenchClient {
 
   /**
    * Call a Workbench NET API function.
-   * Auto-launches Workbench if not running.
+   * Takes or refreshes the Workbench lease first (LEASE_HELD when another
+   * session holds it; nothing is sent). Auto-launches Workbench if not
+   * running, but only for an explicit project (config.defaultMod) and never
+   * while the no-autolaunch marker exists (AUTOLAUNCH_REFUSED).
    */
   async call<T = Record<string, unknown>>(
     apiFunc: string,
     params: Record<string, unknown> = {},
     options: WorkbenchCallOptions = {},
   ): Promise<T> {
+    this.claimLease();
     try {
       const result = await this.rawCall<T>(apiFunc, params, options);
       this._state.connected = true;
@@ -232,9 +400,11 @@ export class WorkbenchClient {
         }
         if (!options.skipAutoLaunch && this.config) {
           if (err.code === "CONNECTION_REFUSED") {
-            // Workbench not running — install handlers, launch, retry
-            logger.info("Workbench not running, auto-launching...");
-            await this.ensureRunning();
+            // Workbench not running — launch the explicit project (or refuse),
+            // install handlers into it, retry.
+            const gproj = this.resolveAutoLaunchGproj();
+            logger.info(`Workbench not running, auto-launching ${gproj}...`);
+            await this.ensureRunning(gproj);
             const result = await this.rawCall<T>(apiFunc, params, options);
             this._state.connected = true;
             this._state.lastUpdated = Date.now();
@@ -275,7 +445,12 @@ export class WorkbenchClient {
   /**
    * Ensure Workbench is running. Installs handler scripts, launches exe,
    * and waits for NET API. Safe to call concurrently — deduplicates launches.
-   * @param gprojPath Optional .gproj file path to open directly (skips launcher).
+   * Takes the Workbench lease first (LEASE_HELD when another session holds
+   * it; nothing is installed or spawned). An explicit project works even
+   * while the no-autolaunch marker exists.
+   * @param gprojPath .gproj file path to open directly (skips launcher). When
+   *   omitted, only config.defaultMod's project is used, and only while the
+   *   no-autolaunch marker is absent; otherwise AUTOLAUNCH_REFUSED.
    */
   async ensureRunning(gprojPath?: string): Promise<void> {
     if (!this.config) {
@@ -284,6 +459,7 @@ export class WorkbenchClient {
         "LAUNCH_FAILED",
       );
     }
+    this.claimLease();
 
     // Deduplicate concurrent calls — callers that want ANY Workbench (no
     // gprojPath) or the SAME project join the in-flight launch. A caller
@@ -293,7 +469,7 @@ export class WorkbenchClient {
     if (this.launchPromise) {
       if (gprojPath && this.launchTarget && normalizeGprojKey(gprojPath) !== this.launchTarget) {
         throw new WorkbenchError(
-          `A Workbench launch is already in progress for a different project ` +
+          "A Workbench launch is already in progress for a different project " +
             `(${this.launchTargetDisplay ?? this.launchTarget}); refusing to launch ${gprojPath}. ` +
             "Wait for the in-flight launch to finish (wb_state / wb_diagnose), then stop Workbench " +
             "with wb_stop before launching another project.",
@@ -302,6 +478,10 @@ export class WorkbenchClient {
       }
       return this.launchPromise;
     }
+
+    // Record the project this session is about to open in the lease, so a
+    // reader of the lease file sees what the holder is doing.
+    if (gprojPath) this.recordLeaseLaunch({ project: resolve(gprojPath) });
 
     this.launchTarget = gprojPath ? normalizeGprojKey(gprojPath) : null;
     this.launchTargetDisplay = gprojPath ?? null;
@@ -479,6 +659,22 @@ export class WorkbenchClient {
       }
     }
 
+    // --- Lease and no-autolaunch marker (read-only; never takes the lease) ---
+    let lease: DiagnosticReport["lease"] = null;
+    let noAutolaunch: DiagnosticReport["noAutolaunch"] = null;
+    if (this.config) {
+      const leasePath = resolveLeasePath(this.config);
+      const check = checkLease(leasePath, this.leaseDeps);
+      lease = {
+        path: leasePath,
+        check,
+        ours: "lease" in check && check.lease.session === LEASE_SESSION,
+        session: LEASE_SESSION,
+      };
+      const markerPath = resolveNoAutolaunchPath(this.config);
+      noAutolaunch = { path: markerPath, exists: isNoAutolaunch(markerPath) };
+    }
+
     return {
       host,
       port,
@@ -490,7 +686,25 @@ export class WorkbenchClient {
       installedMods,
       netApi,
       netApiError,
+      lease,
+      noAutolaunch,
     };
+  }
+
+  /**
+   * Release the Workbench lease if this server process holds it. Best
+   * effort: never throws; a lease held by another session is left alone.
+   * Returns true when our lease file was removed. Called on server shutdown.
+   */
+  releaseLease(): boolean {
+    if (!this.config) return false;
+    this.lastHeartbeatAt = 0;
+    try {
+      return releaseLeaseFile(resolveLeasePath(this.config), LEASE_SESSION);
+    } catch (e) {
+      logger.debug(`Workbench lease not released: ${e instanceof Error ? e.message : String(e)}`);
+      return false;
+    }
   }
 
   /**
@@ -544,6 +758,88 @@ export class WorkbenchClient {
   }
 
   /**
+   * Take or refresh the Workbench lease before any live action.
+   *   ours (any state) → heartbeat, at most once per LEASE_HEARTBEAT_MS
+   *   free / stale     → acquired for this server (pid and project unknown)
+   *   another session's (held / orphaned) or a corrupt file → LEASE_HELD
+   * A client without a Config (unit tests, ad-hoc probes) cannot launch
+   * Workbench and does not take part in the lease.
+   */
+  private claimLease(): void {
+    if (!this.config) return;
+    const path = resolveLeasePath(this.config);
+    const now = (this.leaseDeps.now ?? Date.now)();
+    try {
+      const check = checkLease(path, this.leaseDeps);
+      if ("lease" in check && check.lease.session === LEASE_SESSION) {
+        // Our own lease: this process is alive, so an expired heartbeat is
+        // not an orphan; refresh it (throttled).
+        if (check.state !== "held" || now - this.lastHeartbeatAt >= LEASE_HEARTBEAT_MS) {
+          heartbeatLease(path, LEASE_SESSION, this.leaseDeps);
+          this.lastHeartbeatAt = now;
+        }
+        return;
+      }
+      acquireLease(path, { session: LEASE_SESSION, purpose: LEASE_PURPOSE }, this.leaseDeps);
+      this.lastHeartbeatAt = now;
+    } catch (e) {
+      if (e instanceof LeaseError) {
+        throw new WorkbenchError(
+          `Workbench lease refused (${e.code}): ${e.message} ` +
+            `Lease file: ${path}. Nothing was sent to Workbench, installed or launched.`,
+          "LEASE_HELD",
+        );
+      }
+      throw e;
+    }
+  }
+
+  /** Record pid/project in our lease. Best effort: a failure is logged, not thrown. */
+  private recordLeaseLaunch(patch: { wb_pid?: number | null; project?: string | null }): void {
+    if (!this.config) return;
+    try {
+      updateLease(resolveLeasePath(this.config), LEASE_SESSION, patch, this.leaseDeps);
+      this.lastHeartbeatAt = (this.leaseDeps.now ?? Date.now)();
+    } catch (e) {
+      logger.warn(
+        `Could not record launch in Workbench lease: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
+  /**
+   * The project an implicit auto-launch may open, or AUTOLAUNCH_REFUSED.
+   * Refuses while the no-autolaunch marker exists, and when config.defaultMod
+   * does not name an addon under config.projectPath that holds a .gproj.
+   * Never picks a fallback addon.
+   */
+  private resolveAutoLaunchGproj(): string {
+    const markerPath = resolveNoAutolaunchPath(this.config);
+    if (isNoAutolaunch(markerPath)) {
+      throw new WorkbenchError(
+        `Auto-launch refused: the no-autolaunch marker exists (${markerPath}). ` +
+          "Workbench is not running and will not be started implicitly. " +
+          "Call wb_launch with an explicit gprojPath to launch a specific project.",
+        "AUTOLAUNCH_REFUSED",
+      );
+    }
+    const gproj = findDefaultModGproj(this.config);
+    if (!gproj) {
+      const mod = this.config?.defaultMod;
+      const why = mod
+        ? `defaultMod "${mod}" has no .gproj under ${this.config?.projectPath ?? "(no projectPath)"}`
+        : "no defaultMod is configured";
+      throw new WorkbenchError(
+        `Auto-launch refused: no explicit project (${why}); refusing to pick a fallback addon. ` +
+          "Call wb_launch with an explicit gprojPath, or set ENFUSION_DEFAULT_MOD to an addon folder name.",
+        "AUTOLAUNCH_REFUSED",
+      );
+    }
+    logger.info(`Using defaultMod gproj to skip launcher: ${gproj}`);
+    return gproj;
+  }
+
+  /**
    * Recover from "not existing Net API function" errors.
    * Workbench is running but our custom handler scripts aren't compiled.
    * Installs handlers into the mod directory and waits for Workbench to
@@ -574,14 +870,11 @@ export class WorkbenchClient {
   }
 
   private async doRecoverMissingHandlers(): Promise<void> {
-    // Inject into the currently-open mod (same logic as launchWorkbench).
-    const recoveryGproj = this.findFallbackGproj();
-    if (recoveryGproj) {
-      this.installHandlerScripts(dirname(recoveryGproj), true);
-      this.cleanupStandaloneAddon();
-    } else {
-      this.installHandlerScripts(undefined, true);
-    }
+    // Inject into the project Workbench actually has open — never into
+    // defaultMod or a scanned addon, which may not be the open project.
+    const recoveryGproj = await this.resolveOpenProjectGproj();
+    this.installHandlerScripts(dirname(recoveryGproj), true);
+    this.cleanupStandaloneAddon();
 
     // Wait for Workbench to detect the new files and recompile scripts.
     // Workbench watches its script directories and recompiles automatically.
@@ -605,6 +898,52 @@ export class WorkbenchClient {
     );
   }
 
+  /**
+   * Ask the running Workbench which project is open (built-in
+   * GetLoadedProjects; works without our handlers) and return its .gproj on
+   * disk. Throws LAUNCH_FAILED when it cannot be resolved to exactly one
+   * .gproj, so recovery installs nothing rather than guessing.
+   */
+  private async resolveOpenProjectGproj(): Promise<string> {
+    const remedy =
+      "No handler scripts were installed. Call wb_launch with an explicit gprojPath " +
+      "for the project you want Workbench to have open.";
+    let result: Record<string, unknown>;
+    try {
+      result = await this.rawCall<Record<string, unknown>>(
+        "GetLoadedProjects",
+        {},
+        { skipAutoLaunch: true },
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new WorkbenchError(
+        "Handler recovery refused: could not ask Workbench which project is open " +
+          `(GetLoadedProjects failed: ${msg}). ${remedy}`,
+        "LAUNCH_FAILED",
+      );
+    }
+    const resolution = resolveLoadedProjectGproj(result, this.config?.projectPath);
+    if (resolution.gproj) {
+      logger.info(`Open project resolved for handler recovery: ${resolution.gproj}`);
+      return resolution.gproj;
+    }
+    const reported =
+      resolution.entries.length > 0
+        ? resolution.entries.join(", ")
+        : `no project list (payload keys: ${Object.keys(result).join(", ") || "none"})`;
+    const why =
+      resolution.candidates.length > 1
+        ? `several loaded projects resolve to addons on disk (${resolution.candidates.join(", ")}) ` +
+          "and which one is open cannot be told apart"
+        : `none of the loaded projects resolves to a .gproj under ${this.config?.projectPath ?? "(no projectPath)"}`;
+    throw new WorkbenchError(
+      `Handler recovery refused: the open project could not be resolved — ${why}. ` +
+        `Workbench reported: ${reported}. ${remedy}`,
+      "LAUNCH_FAILED",
+    );
+  }
+
   private async launchWorkbench(gprojPath?: string): Promise<void> {
     // 1. Check if already running (maybe it came up between the failed call and now)
     if (await this.ping()) {
@@ -617,31 +956,20 @@ export class WorkbenchClient {
     //    only compiles the active project and its declared dependencies, NOT every
     //    addon folder in the project directory.  A standalone sibling addon will
     //    never be compiled unless the user's project explicitly depends on it.
-    let resolvedGproj = gprojPath || this.findFallbackGproj();
-    if (resolvedGproj) {
-      this.installHandlerScripts(dirname(resolvedGproj));
-      // Remove any leftover standalone addon to prevent duplicate class errors.
-      // If a previous session created {projectPath}/EnfusionMCP/ it would be
-      // picked up as a sibling addon and cause compile-time class name conflicts.
-      this.cleanupStandaloneAddon();
-    } else {
-      // No project found — fall back to standalone addon as last resort and open it
-      // directly so its handlers at least compile (user's project won't be open).
-      this.installHandlerScripts();
-      const fallbackBase = this.config?.projectPath;
-      if (fallbackBase) {
-        const standaloneGproj = join(fallbackBase, HANDLER_FOLDER, `${HANDLER_FOLDER}.gproj`);
-        if (existsSync(standaloneGproj)) {
-          resolvedGproj = standaloneGproj;
-        }
-      }
-    }
+    //    Without an explicit project only config.defaultMod is used (and only
+    //    while the no-autolaunch marker is absent); otherwise AUTOLAUNCH_REFUSED.
+    //    There is no "first addon found" and no standalone-addon fallback.
+    const resolvedGproj = gprojPath || this.resolveAutoLaunchGproj();
+    if (!gprojPath) this.recordLeaseLaunch({ project: resolve(resolvedGproj) });
+    this.installHandlerScripts(dirname(resolvedGproj));
+    // Remove any leftover standalone addon to prevent duplicate class errors.
+    // If a previous session created {projectPath}/EnfusionMCP/ it would be
+    // picked up as a sibling addon and cause compile-time class name conflicts.
+    this.cleanupStandaloneAddon();
     // Record what this launch is actually opening so a concurrent
     // ensureRunning(<other gproj>) can refuse instead of joining.
-    if (resolvedGproj) {
-      this.launchTarget = normalizeGprojKey(resolvedGproj);
-      this.launchTargetDisplay = resolvedGproj;
-    }
+    this.launchTarget = normalizeGprojKey(resolvedGproj);
+    this.launchTargetDisplay = resolvedGproj;
 
     // 3. Find executable
     const exePath = this.findWorkbenchExe();
@@ -703,6 +1031,9 @@ export class WorkbenchClient {
       cwd,
     });
     proc.unref();
+    // The lease now names the Workbench process this session started, so a
+    // reader can tell a live sitting from an orphaned one.
+    if (proc.pid) this.recordLeaseLaunch({ wb_pid: proc.pid, project: resolve(resolvedGproj) });
 
     // 5. Wait for NET API — track the last error type so the timeout message is actionable
     // The deadline is enforced after EVERY sub-step (ping, watchdog tick,
@@ -815,53 +1146,6 @@ export class WorkbenchClient {
   }
 
   /**
-   * Find a .gproj to pass via -gproj so Workbench skips the launcher.
-   * Prefers config.defaultMod if set; otherwise picks first addon found.
-   * Scans for any .gproj in each addon folder (name need not match folder).
-   */
-  private findFallbackGproj(): string | null {
-    const findGprojInDir = (dir: string): string | null => {
-      try {
-        for (const f of readdirSync(dir, { withFileTypes: true })) {
-          if (!f.isDirectory() && f.name.endsWith(".gproj")) {
-            return join(dir, f.name);
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-      return null;
-    };
-
-    try {
-      const addonsDir = this.config?.projectPath;
-      if (!addonsDir || !existsSync(addonsDir)) return null;
-
-      // Prefer the configured default mod over alphabetical first-pick
-      const preferred = this.config?.defaultMod;
-      if (preferred) {
-        const gprojPath = findGprojInDir(join(addonsDir, preferred));
-        if (gprojPath) {
-          logger.info(`Using defaultMod gproj to skip launcher: ${gprojPath}`);
-          return gprojPath;
-        }
-      }
-
-      for (const entry of readdirSync(addonsDir, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        const gprojPath = findGprojInDir(join(addonsDir, entry.name));
-        if (gprojPath) {
-          logger.info(`Using fallback gproj to skip launcher: ${gprojPath}`);
-          return gprojPath;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  }
-
-  /**
    * Derive the Arma Reforger game install directory.
    * Checks ENFUSION_GAME_PATH env var first, then walks up from workbenchPath.
    * workbenchPath may point to the Tools root OR the Workbench subdirectory,
@@ -905,9 +1189,7 @@ export class WorkbenchClient {
     // the game. Without this, Workbench launches with a CWD whose ./addons
     // lacks the base-game data addon (GUID 58D0FB3206B6F859) and blocks on
     // a "Missing Addon" modal — the NET API never comes up.
-    const fromSteam = findGameAcrossSteamLibraries("Arma Reforger", [
-      steamRootOf(toolsDir),
-    ]);
+    const fromSteam = findGameAcrossSteamLibraries("Arma Reforger", [steamRootOf(toolsDir)]);
     if (fromSteam) {
       logger.info(`Using game directory from Steam library scan: ${fromSteam}`);
       return fromSteam;
@@ -921,9 +1203,9 @@ export class WorkbenchClient {
 
   /**
    * Copy handler scripts into a mod directory so they compile as part of that mod.
-   * If no modDir given, installs to default project path (standalone, less useful).
+   * Always an explicit project directory: there is no standalone-addon fallback.
    */
-  private installHandlerScripts(modDir?: string, force = false): void {
+  private installHandlerScripts(modDir: string, force = false): void {
     const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
     const bundledDir = join(packageRoot, "mod", "Scripts", "WorkbenchGame", HANDLER_FOLDER);
     if (!existsSync(bundledDir)) {
@@ -931,14 +1213,7 @@ export class WorkbenchClient {
       return;
     }
 
-    const fallbackBase = this.config?.projectPath;
-    if (!modDir && !fallbackBase) {
-      logger.warn("No modDir or projectPath configured — cannot install handler scripts.");
-      return;
-    }
-    const isFallback = !modDir;
-    const targetBase = modDir || join(fallbackBase!, HANDLER_FOLDER);
-    const targetScriptsDir = join(targetBase, "Scripts", "WorkbenchGame", HANDLER_FOLDER);
+    const targetScriptsDir = join(modDir, "Scripts", "WorkbenchGame", HANDLER_FOLDER);
 
     // Already installed AND identical to the bundled set? Skip unless
     // force-reinstalling. Compared by content digest (not just Ping.c
@@ -967,17 +1242,6 @@ export class WorkbenchClient {
     }
 
     logger.info(`Installed ${files.length} handler scripts.`);
-
-    // When using the standalone fallback path, also write a .gproj so Workbench
-    // treats the directory as a loadable addon and compiles the handler scripts.
-    if (isFallback) {
-      const gprojPath = join(targetBase, `${HANDLER_FOLDER}.gproj`);
-      if (!existsSync(gprojPath)) {
-        const gprojContent = generateGproj({ name: HANDLER_FOLDER, title: "EnfusionMCP Handlers" });
-        writeFileSync(gprojPath, gprojContent, "utf-8");
-        logger.info(`Created standalone addon .gproj at ${gprojPath}`);
-      }
-    }
   }
 
   /**

@@ -1,0 +1,27 @@
+#!/bin/sh
+# pre-commit: run the PII gate over the staged blobs (2.0 plan, section 5.2).
+#
+# Blocks the commit when the gate reports findings (exit 1) or a configuration
+# error (exit 2, e.g. the owner pattern file is missing). The gate's output is
+# always printed. POSIX sh only (runs under Git Bash).
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+# --no: never download tsx from the registry; it must come from node_modules.
+output=$(npx --no tsx scripts/pii-gate.ts --staged 2>&1)
+status=$?
+
+if [ -n "$output" ]; then
+	printf '%s\n' "$output" >&2
+fi
+
+if [ "$status" -ne 0 ]; then
+	if [ "$status" -eq 1 ]; then
+		echo "pre-commit: PII gate found personal data in the staged files; commit blocked." >&2
+	else
+		echo "pre-commit: PII gate exited $status (configuration error or gate failure); commit blocked." >&2
+	fi
+	exit 1
+fi
+exit 0

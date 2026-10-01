@@ -1,0 +1,110 @@
+{
+  "$comment": "Known-benign PII-gate matches: repo-relative path plus the exact matched text. Every entry was reviewed by hand; a real account name or home path never belongs here. See scripts/pii-gate.ts.",
+  "entries": [
+    {
+      "path": "data/wiki/export.xml",
+      "string": "C:\\Users\\John",
+      "reason": "Bohemia wiki example path (\"John Bob\") quoted in the scraped wiki; illustrative, not a real profile."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "arma3reed@gmail.com",
+      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "alphahomer15@gmail.com",
+      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "hcrt1@hotmail.com",
+      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "justinstroud@gmail.com",
+      "reason": "Third-party address quoted verbatim from a public Bohemia wiki table; not owner data; already public (see hand-off)."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "C:\\Users\\Username",
+      "reason": "Bohemia wiki placeholder profile name quoted in the scraped wiki."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "76561198200329058",
+      "reason": "Steam id in the Bohemia wiki server-config example, quoted verbatim from the public wiki; third-party, not owner data (see hand-off)."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "C:\\Users\\MyUserName",
+      "reason": "Bohemia wiki placeholder profile name quoted in the scraped wiki."
+    },
+    {
+      "path": "data/wiki/export.xml",
+      "string": "myEmail@bistudio.com",
+      "reason": "Bohemia wiki placeholder address in a command-line example."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "C:\\\\Users\\\\\\\\AppData",
+      "reason": "Bohemia wiki path whose <username> placeholder was stripped by the scraper; no profile name remains."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "C:\\\\Users\\\\John",
+      "reason": "Bohemia wiki example path (\"John Bob\") quoted in the scraped wiki; illustrative, not a real profile."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "C:\\\\Users\\\\Username",
+      "reason": "Bohemia wiki placeholder profile name quoted in the scraped wiki."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "76561198200329058",
+      "reason": "Steam id in the Bohemia wiki server-config example, quoted verbatim from the public wiki; third-party, not owner data (see hand-off)."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "C:\\\\Users\\\\MyUserName",
+      "reason": "Bohemia wiki placeholder profile name quoted in the scraped wiki."
+    },
+    {
+      "path": "data/wiki/pages.json",
+      "string": "myEmail@bistudio.com",
+      "reason": "Bohemia wiki placeholder address in a command-line example."
+    },
+    {
+      "path": "docs/TEST-PLAN-WRITE-MODE.md",
+      "string": "76561198000000000",
+      "reason": "Placeholder Steam64 id (7656119 followed by zeros) in a sample server config."
+    },
+    {
+      "path": "tests/formats/enfusion-text.test.ts",
+      "string": "C:\\\\Users\\\\test",
+      "reason": "Synthetic test fixture path with a dummy profile name."
+    },
+    {
+      "path": "tests/formats/enfusion-text.test.ts",
+      "string": "C:\\\\\\\\Users\\\\\\\\test",
+      "reason": "Synthetic test fixture path with a dummy profile name."
+    },
+    {
+      "path": "tests/tools/project-index-status.test.ts",
+      "string": "C:/Users/Test",
+      "reason": "Synthetic test fixture path with a dummy profile name."
+    },
+    {
+      "path": "tests/tools/server-redact.test.ts",
+      "string": "76561197960287930",
+      "reason": "Synthetic admin id in a redaction test fixture; not owner data."
+    },
+    {
+      "path": "tests/workbench/wb-deps.test.ts",
+      "string": "76561198000000000",
+      "reason": "Placeholder Steam64 id (7656119 followed by zeros) in a synthetic profile file name."
+    }
+  ]
+}

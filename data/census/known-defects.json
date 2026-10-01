@@ -1,0 +1,5 @@
+{
+  "$comment": "The exact list of known defects the expected-failure tests assert against (plan 4.2). Empty in Phase 0; initialised for real at Phase 1 item 4. Main-owned.",
+  "version": 1,
+  "defects": []
+}

@@ -1,0 +1,576 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "census/row.schema.json",
+  "title": "Census ledger row",
+  "description": "One derived row of data/census/ledger*.jsonl (plan 4.3). Written only by scripts/census/build.ts. Validated in code by the zod schema in src/census/schemas.ts; tests/census/schema-parity.test.ts keeps every enum and required list here equal to it.",
+  "additionalProperties": false,
+  "properties": {
+    "aggregate": {
+      "type": "boolean"
+    },
+    "build": {
+      "additionalProperties": false,
+      "properties": {
+        "first_seen": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "last_seen": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["first_seen", "last_seen"],
+      "type": "object"
+    },
+    "children_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "children_enumerated": {
+      "enum": [true, false, "n/a"]
+    },
+    "chosen_path": {
+      "enum": [
+        "net-api-handler",
+        "builtin-net-handler",
+        "execute-action",
+        "plugin-run",
+        "cli",
+        "file-format",
+        "gui-automation",
+        "none-known"
+      ],
+      "type": "string"
+    },
+    "class_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "deferred_reason": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "dim": {
+      "enum": [
+        "ui",
+        "api",
+        "plugin",
+        "net",
+        "cli",
+        "file",
+        "schema",
+        "setting",
+        "link",
+        "diag",
+        "mcp"
+      ],
+      "type": "string"
+    },
+    "disposition": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "excluded-policy",
+            "not-automatable",
+            "blocked",
+            "absent-in-build",
+            "duplicate-of",
+            "subsumed-by"
+          ],
+          "type": "string"
+        },
+        "ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "why": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["kind", "why", "evidence"],
+      "type": "object"
+    },
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "property",
+        "property-editor",
+        "context-menu",
+        "context-item",
+        "shortcut",
+        "tool",
+        "tool-button",
+        "canvas-gesture",
+        "region",
+        "status-item",
+        "hazard-dialog",
+        "class",
+        "method",
+        "static-method",
+        "event",
+        "attribute",
+        "enum",
+        "enum-value",
+        "plugin",
+        "plugin-setting",
+        "plugin-button",
+        "plugin-cli-arg",
+        "net-function",
+        "net-handler",
+        "net-field",
+        "cli-switch",
+        "link-format",
+        "file-type",
+        "resource-class",
+        "schema-class",
+        "schema-key",
+        "setting-key",
+        "option",
+        "diag-menu",
+        "diag-option",
+        "blender-operator",
+        "debug-panel",
+        "mcp-tool",
+        "mcp-action",
+        "handler-action"
+      ],
+      "type": "string"
+    },
+    "label": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "label_raw": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "locator": {
+      "additionalProperties": false,
+      "properties": {
+        "automationId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "build": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "controlType": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "menuPath": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "windowClass": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["build"],
+      "type": "object"
+    },
+    "mcp": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "pattern": "^mcp:action\\/[a-z0-9_]+\\.[A-Za-z0-9_-]+$",
+            "type": "string"
+          },
+          "role": {
+            "enum": ["read", "drive"],
+            "type": "string"
+          }
+        },
+        "required": ["action", "role"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "mcp_proposed": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "modal": {
+      "enum": ["none", "opens", "blocks"],
+      "type": "string"
+    },
+    "module": {
+      "enum": [
+        "WorldEditor",
+        "ResourceManager",
+        "ScriptEditor",
+        "LocalizationEditor",
+        "DialogueEditor",
+        "AnimEditor",
+        "ProcAnimEditor",
+        "BehaviorEditor",
+        "AudioEditor",
+        "ParticleEditor",
+        "NavmeshGeneratorMain",
+        "ResourceManager.Config",
+        "ResourceManager.Layout",
+        "ResourceManager.Imageset",
+        "ResourceManager.Model",
+        "ResourceManager.Texture",
+        "ResourceManager.Material",
+        "ResourceManager.Font",
+        "ResourceManager.Styles",
+        "Launcher",
+        "Shared",
+        "BlenderTools",
+        "none"
+      ],
+      "type": "string"
+    },
+    "notes": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "object_name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "observed_states": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "enum": ["edit", "play", "prefab-edit"],
+            "type": "string"
+          },
+          "resource_type": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "script_debug": {
+            "enum": ["on", "off"],
+            "type": "string"
+          },
+          "selection": {
+            "enum": [
+              "none",
+              "entity",
+              "prefab-instance",
+              "shape",
+              "terrain",
+              "layer",
+              "folder",
+              "multi"
+            ],
+            "type": "string"
+          },
+          "world_type": {
+            "enum": ["with-terrain", "without-terrain"],
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "origin": {
+      "pattern": "^(vanilla|addon:[A-Za-z0-9_.-]+)$",
+      "type": "string"
+    },
+    "owner_signoff": {
+      "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+      "type": "string"
+    },
+    "parent": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "paths": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+            "type": "string"
+          },
+          "path": {
+            "enum": [
+              "net-api-handler",
+              "builtin-net-handler",
+              "execute-action",
+              "plugin-run",
+              "cli",
+              "file-format",
+              "gui-automation",
+              "none-known"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "enum": ["candidate", "verified", "refuted"],
+            "type": "string"
+          }
+        },
+        "required": ["path", "status"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "provisional": {
+      "type": "boolean"
+    },
+    "recon_coverage": {
+      "enum": ["covered", "partial", "none"],
+      "type": "string"
+    },
+    "risk": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "risk_commit": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "risk_confirmed": {
+      "type": "boolean"
+    },
+    "risk_floor": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "risk_open": {
+      "enum": ["safe", "mutating", "destructive", "credential", "external"],
+      "type": "string"
+    },
+    "shard": {
+      "enum": ["core", "attribute", "schema", "diag"],
+      "type": "string"
+    },
+    "shortcut_default": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "signature": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "build": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "confidence": {
+            "enum": ["low", "medium", "high"],
+            "type": "string"
+          },
+          "enumerator": {
+            "pattern": "^[EL]\\d{2}$",
+            "type": "string"
+          },
+          "observed_state": {
+            "additionalProperties": false,
+            "properties": {
+              "mode": {
+                "enum": ["edit", "play", "prefab-edit"],
+                "type": "string"
+              },
+              "resource_type": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "script_debug": {
+                "enum": ["on", "off"],
+                "type": "string"
+              },
+              "selection": {
+                "enum": [
+                  "none",
+                  "entity",
+                  "prefab-instance",
+                  "shape",
+                  "terrain",
+                  "layer",
+                  "folder",
+                  "multi"
+                ],
+                "type": "string"
+              },
+              "world_type": {
+                "enum": ["with-terrain", "without-terrain"],
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "quote": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "ref": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["enumerator", "build", "ref", "confidence"],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "status": {
+      "enum": ["active", "deferred"],
+      "type": "string"
+    },
+    "target_tier": {
+      "enum": ["T0", "T1", "T2", "T3", "T4", "T5"],
+      "type": "string"
+    },
+    "target_tier_source": {
+      "enum": ["policy", "risk-override", "override"],
+      "type": "string"
+    },
+    "tests": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": ["contract", "negative-safety", "corpus", "live"],
+            "type": "string"
+          }
+        },
+        "required": ["id", "file", "kind"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "tier": {
+      "enum": ["T0", "T1", "T2", "T3", "T4", "T5"],
+      "type": "string"
+    },
+    "tier_evidence": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "tier": {
+            "enum": ["T0", "T1", "T2", "T3", "T4", "T5"],
+            "type": "string"
+          }
+        },
+        "required": ["tier", "ref"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "unverified": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "claim": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "cleared_by": {
+            "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+            "type": "string"
+          }
+        },
+        "required": ["claim"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "weak_only": {
+      "type": "boolean"
+    },
+    "what": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "work_item": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "shard",
+    "dim",
+    "kind",
+    "module",
+    "risk_confirmed",
+    "origin",
+    "aggregate",
+    "provisional",
+    "sources",
+    "build",
+    "children_enumerated",
+    "observed_states",
+    "status",
+    "paths",
+    "tier",
+    "target_tier",
+    "target_tier_source",
+    "tier_evidence",
+    "weak_only",
+    "mcp",
+    "mcp_proposed",
+    "tests",
+    "unverified"
+  ],
+  "type": "object"
+}

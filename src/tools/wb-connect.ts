@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { WorkbenchClient } from "../workbench/client.js";
+import { WorkbenchError, type WorkbenchClient } from "../workbench/client.js";
 import { formatConnectionStatus } from "../workbench/status.js";
 import { isHandlerError, handlerErrorResponse } from "../workbench/response.js";
 
@@ -45,6 +45,19 @@ export function registerWbConnect(server: McpServer, client: WorkbenchClient): v
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        if (e instanceof WorkbenchError && e.code === "LEASE_HELD") {
+          // Workbench answered the read-only ping, but another session holds
+          // the lease, so this server must not drive it.
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Workbench Reachable — lease held by another session**\n\n${msg}${formatConnectionStatus(client)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
         return {
           content: [
             {
