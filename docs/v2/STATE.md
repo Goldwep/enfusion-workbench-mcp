@@ -1,9 +1,9 @@
 # 2.0 state
 
 Updated: 2026-10-01 Build: unknown / stable / unknown (no Workbench observed yet) v2 @ see `git log -1` on branch `claude/v2-first-implementation-2f7ydf` Served dist: `main` @ 1dd8b28 (public) — the registered server on the owner's machine serves local `main`
-v2 working directory: `<repo>` clone in a cloud container (DEC-001); local `<v2>` worktree not created yet 2.0 sandbox project: not created yet (generator: `npx tsx scripts/live/create-sandbox.ts`)
+v2 working directory: `<repo>` clone in a cloud container (DEC-001); branch pushed to GitHub as `claude/v2-first-implementation-2f7ydf`; local `<v2>` worktree being created by a Remote Control session on the owner's PC 2.0 sandbox project: not created yet (generator: `npx tsx scripts/live/create-sandbox.ts`)
 Phase: 0 / work package: Phase 0 items 2, 3, 6, 9, 10, 11 (cloud) / step: exit gate, cloud half done; finder/refuter round applied (DEC-010)
-Next action (one line): on the owner's PC, merge this branch into a local `v2` branch from `main`, install the hooks, create the PII pattern file (OA-9), run the suite on Windows, create the sandbox (item 7), then run E01 against `docs/v2/recon/`.
+Next action (one line): the owner's PC session runs the local half (local `v2` branch + worktree with the two commits cherry-picked, hooks, OA-9 pattern file, Windows suite, guards check, sandbox, E01 on the real recon, census build/validate/report); results are recorded here afterwards.
 In flight (uncommitted work, with file list): none
 Open train: none
 Lease: free (no live sitting has happened; `~/.enfusion-mcp/workbench.lease.json` untouched on the owner's machine)
