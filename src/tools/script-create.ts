@@ -22,37 +22,64 @@ export function registerScriptCreate(
     "script_create",
     {
       description:
-        "Create a new Enforce Script (.c) file for an Arma Reforger mod. Generates a properly structured script from a template with correct class hierarchy and method stubs. When parentClass is specified and no explicit methods are given, automatically looks up overridable methods from the API index.",
+        "Create a new Enforce Script (.c) file for an Arma Reforger mod from a template, with its class hierarchy and method stubs. With parentClass and no methods, the overridable methods come from the API index. A plugin goes to Scripts/WorkbenchGame.",
       inputSchema: {
-        className: z
-          .string()
-          .min(1)
-          .describe("Full class name including prefix (e.g., 'TAG_MyComponent', 'MCM_GameMode')"),
+        className: z.string().min(1).describe("Class name with its prefix, e.g. 'TAG_MyComponent'"),
         scriptType: z
-          .enum(["modded", "component", "gamemode", "action", "entity", "manager", "basic"])
+          .enum([
+            "modded",
+            "component",
+            "gamemode",
+            "action",
+            "entity",
+            "manager",
+            "basic",
+            "plugin",
+          ])
           .describe(
-            "Script template type. 'modded' overrides an existing class. 'component' creates a ScriptComponent. 'gamemode' creates a game mode. 'action' creates an interactive UserAction. 'entity' creates a standalone entity. 'manager' creates a singleton class. 'basic' creates a plain class.",
+            "modded: override a class; component: ScriptComponent; gamemode: game mode; action: UserAction; entity: entity; manager: singleton; basic: plain class; plugin: Workbench plugin or tool.",
           ),
         parentClass: z
           .string()
           .optional()
           .describe(
-            "Parent class to extend. Required for 'modded'. Uses sensible defaults for other types (e.g., ScriptComponent for 'component').",
+            "Base class; required for modded, else a default per type. plugin: WorkbenchPlugin (default), WorldEditorPlugin, ResourceManagerPlugin, LocalizationEditorPlugin, WorldEditorTool.",
           ),
         methods: z
           .array(z.string())
           .optional()
           .describe(
-            "Method signatures to stub out (e.g., ['void OnGameStart()', 'bool CanPerform(IEntity user)']). Uses default methods per type if omitted.",
+            "Signatures to stub, e.g. ['void OnGameStart()']; per-type defaults if omitted.",
           ),
-        description: z.string().optional().describe("Description comment at the top of the file"),
+        description: z.string().optional().describe("Header comment of the file"),
+        module: z
+          .string()
+          .optional()
+          .describe(
+            "plugin on WorkbenchPlugin: wbModules module (WorldEditor, ResourceManager, ScriptEditor, LocalizationEditor).",
+          ),
+        shortcut: z.string().optional().describe("plugin: shortcut, e.g. 'Ctrl+Shift+X'."),
+        awesomeFontCode: z
+          .union([z.number().int(), z.string()])
+          .optional()
+          .describe("plugin: Font Awesome icon code, e.g. '0xF0C5'."),
         projectPath: z
           .string()
           .optional()
-          .describe("Addon root path. Uses configured default if omitted."),
+          .describe("Addon root; the configured project if omitted."),
       },
     },
-    async ({ className, scriptType, parentClass, methods, description, projectPath }) => {
+    async ({
+      className,
+      scriptType,
+      parentClass,
+      methods,
+      description,
+      module,
+      shortcut,
+      awesomeFontCode,
+      projectPath,
+    }) => {
       const basePath = projectPath || config.projectPath;
 
       try {
@@ -61,13 +88,17 @@ export function registerScriptCreate(
 
         // Resolve parent methods from API index if available and no explicit methods given
         let dynamicMethods: string[] | undefined;
-        if (!methods && searchEngine && parentClass) {
+        if (!methods && searchEngine && parentClass && scriptType !== "plugin") {
           const cls = searchEngine.getClass(parentClass);
           if (cls) {
             const allMethods = [...(cls.methods || []), ...(cls.protectedMethods || [])];
             const overridable = allMethods.filter(
               (m) =>
-                /^(On|EOn|Get|Set|Can|Handle|Do)/.test(m.name) || m.signature.includes("event"),
+                // A method the source declares only under a preprocessor guard
+                // (`#ifdef ENABLE_DIAG`) may not exist in the build the script
+                // compiles in, so an override of it may not compile.
+                !(m.origin === "pak" && m.guards && m.guards.length > 0) &&
+                (/^(On|EOn|Get|Set|Can|Handle|Do)/.test(m.name) || m.signature.includes("event")),
             );
             if (overridable.length > 0) {
               dynamicMethods = overridable.slice(0, 8).map((m) => m.signature);
@@ -82,6 +113,9 @@ export function registerScriptCreate(
           methods,
           dynamicMethods,
           description,
+          module,
+          shortcut,
+          awesomeFontCode,
         });
 
         // If a project path is available, write the file
@@ -109,7 +143,8 @@ export function registerScriptCreate(
             };
           }
 
-          writeFileSync(targetPath, code, "utf-8");
+          // A new file only: flag wx refuses one that appeared after the check (write-safety gap 20).
+          writeFileSync(targetPath, code, { encoding: "utf-8", flag: "wx" });
 
           return {
             content: [

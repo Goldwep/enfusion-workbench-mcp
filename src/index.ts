@@ -5,12 +5,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerTools } from "./server.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./utils/logger.js";
+import { VERSION } from "./version.js";
 
 const config = loadConfig();
 
 const server = new McpServer({
   name: "enfusion-mcp",
-  version: "0.7.1",
+  version: VERSION,
 });
 
 registerTools(server, config);

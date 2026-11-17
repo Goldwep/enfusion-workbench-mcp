@@ -100,7 +100,10 @@ export function tokenizeQuotedStrings(body: string): string[] {
  * a custom list to lint against a different profile (e.g. weapon prefab AGR
  * has its own canonical tag set).
  */
-export function lintWeaponPose(content: string, expectedTags: readonly string[] = DEFAULT_EXPECTED_TAGS): PoseLintResult {
+export function lintWeaponPose(
+  content: string,
+  expectedTags: readonly string[] = DEFAULT_EXPECTED_TAGS,
+): PoseLintResult {
   const body = extractGlobalTagsBody(content);
   const findings: PoseLintFinding[] = [];
 
@@ -180,7 +183,9 @@ export function formatPoseLintMarkdown(input: {
   if (result.ok && result.unknownTags.length === 0) {
     lines.push("Status: OK (all expected tags present, no unknown tags)");
   } else if (result.ok) {
-    lines.push(`Status: OK (all expected tags present; ${result.unknownTags.length} unknown tag warning(s))`);
+    lines.push(
+      `Status: OK (all expected tags present; ${result.unknownTags.length} unknown tag warning(s))`,
+    );
   } else {
     lines.push(`Status: FAILED (${result.missingTags.length} missing tag(s))`);
   }

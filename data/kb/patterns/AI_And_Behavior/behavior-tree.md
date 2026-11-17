@@ -232,3 +232,41 @@ worldEditorAPI.SetVariableValue(entitySource, path, "m_iValue", "42");
 **Critical:** `IEntitySource` must be edited via `WorldEditorAPI`. Direct BaseContainer edits only change memory — not persisted to disk.
 
 **Pitfall:** `BaseContainer` cannot be strongly `ref`-referenced in script.
+
+---
+
+## The behavior_tree tool (offline .bt reader, checker, writer and diff)
+
+The Behavior Editor's script API (`BehaviorEditor: WBModuleDef`) opens and saves a resource and nothing else: no script call reads or changes a node. The `behavior_tree` tool works on the `.bt` file instead. Every check is offline, against the shape of the vanilla trees: the engine has the last word, so open the tree in the Behavior Editor (or run it) to confirm it loads.
+
+**Actions:**
+
+- `inspect`: Outline: node paths, properties, variables and port wiring. `path` = a file, a path under the project, or a game resource path such as `AI/BehaviorTrees/Chimera/Soldier/Soldier.bt` (read from the paks).
+- `validate`: Structure (one RootNode with one child), variable and port indexes, child counts, RunBT targets, node and TEST classes against the catalog, properties and ports no vanilla node of that class carries.
+- `nodes`: The catalog: every `Node` descendant and every `BaseDecoratorTest` descendant of the build's source index (401 and 38 at 1.9.0.37), with what the vanilla trees do with each (properties with samples, variable properties, ports, child counts, TEST classes) and what the index says (parent, family, declaring file, `[Attribute]` fields). Give `type` for one class in full, or `query` for a substring.
+- `create`: A new tree from `spec`, laid out for the canvas, written under the project (`overwrite` to replace, `dry_run` to see the text).
+- `edit`: `ops` on an existing project tree, all or nothing; a file with comments or a hand layout is left alone.
+- `diff`: `path` (before) against `other` (after), node by node: added, removed, moved, changed params; variables and the header too. Paged with `cursor` and `limit`.
+
+**Spec (create):**
+
+- `spec = {path, guid?, variables?: [{name, type, flag?: input|output, desc?}], root: node}`
+- `node = {type, name?, props?, vars?: {InVariable: varName}, in?: {PortName: varName}, out?, tests?, children?}`
+- `root` is the single child of the RootNode, which the writer makes.
+- A property value is a string, number, boolean, a list of those, or `{value, quoted}`; without `quoted` the writer quotes as vanilla does for that class and key.
+
+**Ops (edit):**
+
+- `set_property {node, key, value}` and `remove_property {node, key}`
+- `rename_node {node, name}`
+- `add_node {parent, index?, node}`, `remove_node {node}`, `move_node {node, parent, index?}`
+- `add_variable {variable}`
+- `connect {node, port, variable|null}` (null disconnects)
+
+A node is addressed by its path from `inspect` (`"root"`, `"0"`, `"0/2"`: child indexes from the RootNode) or by a unique name. Children run left to right.
+
+**Diff matching.** A `.bt` node has no id, so the diff matches nodes by class and name where that pair is unique, then by class and name among the children of matched parents, then by the same path and class (a renamed node), then by what is left in tree order. A class change reads as a removal plus an addition. A node has moved when its parent changed or its order among matched siblings changed; an insertion does not mark its siblings as moved. Canvas positions (`EditorPos`) and groups are not compared.
+
+**After a write.** The Workbench registers a new file (and writes its `.meta`) when it next scans the project. An open Behavior Editor tab keeps its own copy: reopen the tree there, and do not save the old tab over the file.
+
+**Catalog upkeep.** `scripts/gen-bt-catalog.ts` rebuilds `data/behavior-tree/catalog.json` from the build's source index (census E02) and the game's vanilla trees, and fails when a class a vanilla tree uses is missing from the index's list.

@@ -9,13 +9,17 @@ import {
   buildStuckReport,
   buildTimeoutDiagnostics,
   buildValidateArgs,
+  registerWbValidateScripts,
   matchValidationVerdict,
   extractErrorLines,
   extractObsoleteLines,
   snapshotSessionDirs,
   findNewSessionDir,
 } from "../../src/tools/wb-validate-scripts.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { Config } from "../../src/config.js";
 import { runWorkbench, validateArgs } from "../../src/workbench/cli-runner.js";
+import { VALIDATE_SUCCESS_LINE, type WorkbenchClient } from "../../src/workbench/client.js";
 import { LaunchWatchdog } from "../../src/workbench/launch-watchdog.js";
 import type { NudgeOutcome } from "../../src/workbench/launcher-nudge.js";
 import type { WbDepsCheck } from "../../src/workbench/wb-deps.js";
@@ -24,32 +28,87 @@ const SPACEY_GPROJ =
   "C:\\Users\\<you>\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Test1\\addon.gproj";
 
 describe("wb-validate-scripts: buildValidateArgs", () => {
-  it("passes -wbProjectPath and the path as separate argv entries", () => {
+  it("names the project with -gproj and the path as its own argv entry", () => {
     const args = buildValidateArgs(SPACEY_GPROJ, "PC");
-    const flagIdx = args.indexOf("-wbProjectPath");
-    expect(flagIdx).toBeGreaterThanOrEqual(0);
-    expect(args[flagIdx + 1]).toBe(SPACEY_GPROJ);
+    expect(args).toEqual([
+      "-gproj",
+      SPACEY_GPROJ,
+      "-wbModule=ScriptEditor",
+      "-validate=PC",
+      "-scriptAuthorizeAll",
+    ]);
   });
 
-  it("never emits the single-token -wbProjectPath=<path> form", () => {
-    // The engine re-tokenizes the raw command line and truncates a
-    // whole-token-quoted `-wbProjectPath=<path with spaces>` at the
-    // first space (live-repro 2026-08-20).
+  it("opens the Script Editor ahead of -validate (without it 1.9 never validates, 2026-11-14)", () => {
+    const args = buildValidateArgs(SPACEY_GPROJ, "PC");
+    expect(args.indexOf("-wbModule=ScriptEditor")).toBe(args.indexOf("-validate=PC") - 1);
+  });
+
+  it("never emits the phantom project switch, -config=, -logCRC or -noPause", () => {
     const args = buildValidateArgs(SPACEY_GPROJ, "HEADLESS");
-    expect(args.some((a) => a.startsWith("-wbProjectPath="))).toBe(false);
+    const joined = args.join(" ").toLowerCase();
+    for (const bad of ["wbprojectpath", "-config", "logcrc", "nopause"]) {
+      expect(joined).not.toContain(bad);
+    }
   });
 
   it("survives validateArgs against the tool's own allow-list", () => {
     const args = buildValidateArgs(SPACEY_GPROJ, "PC");
     expect(() => validateArgs(args, ALLOWED_FLAGS)).not.toThrow();
+    expect(ALLOWED_FLAGS).toEqual(["-gproj", "-wbModule", "-validate", "-scriptAuthorizeAll"]);
+  });
+});
+
+describe("wb-validate-scripts: the success line", () => {
+  it("matches the client's VALIDATE_SUCCESS_LINE", () => {
+    expect(
+      matchValidationVerdict(`12:00:00.000  SCRIPT : ${VALIDATE_SUCCESS_LINE}
+`),
+    ).toBe("successful");
+  });
+});
+
+describe("wb_validate_scripts alias", () => {
+  it("forwards to wb_scripts validate with the configuration", async () => {
+    const calls: Array<[string, Record<string, unknown>]> = [];
+    const client = {
+      queue: { inFlight: () => null },
+      lastBuildCheck: null,
+      ping: async () => true,
+      probe: async (fn: string) => {
+        calls.push([fn, {}]);
+        return { ScriptsCompiled: true };
+      },
+      call: async (fn: string, params: Record<string, unknown>) => {
+        calls.push([fn, params]);
+        return { Success: true, Errors: 0, Warnings: 1 };
+      },
+    } as unknown as WorkbenchClient;
+    let handler: ((a: Record<string, unknown>) => Promise<{ content: { text: string }[] }>) | null =
+      null;
+    const server = {
+      registerTool: (_n: string, _d: unknown, h: typeof handler) => {
+        handler = h;
+      },
+    } as unknown as McpServer;
+    registerWbValidateScripts(server, {} as Config, client);
+    const res = await handler!({ config: "PC" });
+    const body = JSON.parse(res.content[0].text);
+    expect(body.ok).toBe(true);
+    expect(body.action).toBe("validate");
+    expect(body.readback).toMatchObject({ configuration: "PC", success: true, warnings: 1 });
+    expect(calls.find(([f]) => f === "ValidateScripts")?.[1]).toEqual({ Configuration: "PC" });
   });
 
-  it("carries the platform config and -noPause", () => {
-    const args = buildValidateArgs(SPACEY_GPROJ, "HEADLESS");
-    expect(args).toContain("-config=HEADLESS");
-    expect(args).toContain("-noPause");
-    expect(args).toContain("-validate");
-    expect(args).toContain("-wbModule=ScriptEditor");
+  it("says so when it was registered without the client", async () => {
+    let handler: ((a: Record<string, unknown>) => Promise<{ isError?: boolean }>) | null = null;
+    const server = {
+      registerTool: (_n: string, _d: unknown, h: typeof handler) => {
+        handler = h;
+      },
+    } as unknown as McpServer;
+    registerWbValidateScripts(server, {} as Config);
+    expect((await handler!({ config: "PC" })).isError).toBe(true);
   });
 });
 
@@ -61,9 +120,9 @@ describe("wb-validate-scripts: matchValidationVerdict", () => {
   });
 
   it("detects a failed verdict", () => {
-    expect(
-      matchValidationVerdict("20:20:57.799  SCRIPT       : Script validation failed.\n"),
-    ).toBe("failed");
+    expect(matchValidationVerdict("20:20:57.799  SCRIPT       : Script validation failed.\n")).toBe(
+      "failed",
+    );
   });
 
   it("returns null while no verdict has been logged", () => {
@@ -72,11 +131,9 @@ describe("wb-validate-scripts: matchValidationVerdict", () => {
   });
 
   it("returns the LAST verdict when the idle GUI recompiled later", () => {
-    const failedThenFixed =
-      "Script validation failed.\n...\nScript validation successful.\n";
+    const failedThenFixed = "Script validation failed.\n...\nScript validation successful.\n";
     expect(matchValidationVerdict(failedThenFixed)).toBe("successful");
-    const okThenBroken =
-      "Script validation successful.\n...\nScript validation failed.\n";
+    const okThenBroken = "Script validation successful.\n...\nScript validation failed.\n";
     expect(matchValidationVerdict(okThenBroken)).toBe("failed");
   });
 });
@@ -88,7 +145,7 @@ describe("wb-validate-scripts: error/obsolete extraction", () => {
     "20:20:51.438  SCRIPT    (E): Scripts/Game/VON/EC29_RadioRegistrationProbe.c(149): error: Too many parameters for 'Format' method",
     "20:20:53.045  SCRIPT    (E): Scripts/Game/VON/EC29_RadioRegistrationProbe.c(149): error: Too many parameters for 'Format' method",
     "20:20:54.605  SCRIPT    (E): Scripts/Game/VON/EC29_RadioRegistrationProbe.c(149): error: Too many parameters for 'Format' method",
-    "20:20:49.872    SCRIPT    (E): Can't compile \"Game\" script module!",
+    '20:20:49.872    SCRIPT    (E): Can\'t compile "Game" script module!',
     "20:23:32.240    SCRIPT    (W): @\"Scripts/Game/Settings/EC29_RFPropagationSettings.c,57\": 'SCR_JsonLoadContext' is obsolete: Use JsonLoadContext instead.",
     "20:23:34.007  SCRIPT    (W): Scripts/Game/Settings/EC29_RFPropagationSettings.c(57): warning: 'SCR_JsonLoadContext' is obsolete: Use JsonLoadContext instead.",
     "20:23:35.673  SCRIPT    (W): Scripts/Game/Settings/EC29_RFPropagationSettings.c(57): warning: 'SCR_JsonLoadContext' is obsolete: Use JsonLoadContext instead.",
@@ -141,9 +198,7 @@ describe("wb-validate-scripts: log-session discovery", () => {
     const snap = snapshotSessionDirs(logsRoot);
     mkdirSync(join(logsRoot, "logs_2026-08-20_20-23-24"));
     mkdirSync(join(logsRoot, "logs_2026-08-20_20-25-00"));
-    expect(findNewSessionDir(logsRoot, snap)).toBe(
-      join(logsRoot, "logs_2026-08-20_20-25-00"),
-    );
+    expect(findNewSessionDir(logsRoot, snap)).toBe(join(logsRoot, "logs_2026-08-20_20-25-00"));
   });
 
   it("both helpers tolerate a missing logs root", () => {

@@ -149,6 +149,22 @@ export interface PagedFilter {
 /** 16-hex GUID matcher — used to strip braces from `parent_inherit`. */
 const GUID_PREFIX = /^\{([0-9A-Fa-f]{16})\}/;
 
+/** ORDER BY term: user rows before workshop before core (for duplicate GUIDs). */
+const SOURCE_PREFERENCE =
+  "CASE source WHEN 'user' THEN 0 WHEN 'workshop' THEN 1 ELSE 2 END";
+
+/**
+ * Resources `find_unused_resources` may list. Excluded by design:
+ *   - `GameProject` (.gproj): only another addon's Dependencies names it, so
+ *     "no inbound reference" says nothing about whether it is used.
+ *   - Resources the index does not parse (`root_type` is the file extension,
+ *     e.g. `.edds`, `.xob`): their references often live in files the index
+ *     cannot read (a mesh names its materials inside the binary .xob), so a
+ *     missing inbound row is no evidence they are unused.
+ */
+const UNUSED_CANDIDATE_CLAUSE =
+  "r.root_type <> 'GameProject' AND r.root_type NOT LIKE '.%'";
+
 export class ProjectIndex {
   constructor(private readonly db: Database.Database) {}
 
@@ -192,17 +208,40 @@ export class ProjectIndex {
   }
 
   /**
-   * Look up a single resource by its 16-hex GUID. Returns null when the
+   * Look up a single resource by its 16-hex resource GUID (the `.meta` Name
+   * GUID, or a `.gproj` GUID — never an entity id). Returns null when the
    * GUID isn't in the project-index.
+   *
+   * Schema v4: one row per file, so a GUID can appear more than once (a
+   * forked addon, a copied asset with its copied .meta). The pick is
+   * deterministic: user before workshop before core, then project id, then
+   * path. {@link resolveGuidAll} returns every claimant.
    */
   resolveGuid(normalizedGuid: string): ResourceRow | null {
-    const row = this.db
+    return this.resolveGuidAll(normalizedGuid)[0] ?? null;
+  }
+
+  /** Every resource row claiming `normalizedGuid`, in {@link resolveGuid}'s preference order. */
+  resolveGuidAll(normalizedGuid: string): ResourceRow[] {
+    return this.db
       .prepare(
-        "SELECT guid, file_path, root_type, class_name, parent_inherit, source, last_indexed " +
-          "FROM resources WHERE guid = ?",
+        `SELECT guid, file_path, root_type, class_name, parent_inherit, source, last_indexed,
+                project_id, entity_id
+           FROM resources WHERE guid = ?
+          ORDER BY ${SOURCE_PREFERENCE}, project_id, file_path`,
       )
-      .get(normalizedGuid) as ResourceRow | undefined;
-    return row ?? null;
+      .all(normalizedGuid) as ResourceRow[];
+  }
+
+  /**
+   * Absolute on-disk path of the resource file `filePath` in `projectId`,
+   * or null when that project is not indexed.
+   */
+  resolveAbsPath(projectId: string, filePath: string): string | null {
+    const row = this.db
+      .prepare("SELECT root_path FROM projects WHERE id = ?")
+      .get(projectId) as { root_path: string } | undefined;
+    return row ? resolve(row.root_path, filePath) : null;
   }
 
   /**
@@ -225,6 +264,8 @@ export class ProjectIndex {
            FROM resources r
            JOIN projects p ON p.id = r.project_id
           WHERE r.guid = ?
+          ORDER BY CASE r.source WHEN 'user' THEN 0 WHEN 'workshop' THEN 1 ELSE 2 END,
+                   r.project_id, r.file_path
           LIMIT 1`,
       )
       .get(guid) as { root_path: string; file_path: string } | undefined;
@@ -238,26 +279,32 @@ export class ProjectIndex {
    *
    * Filterable by source so callers can scope to user-mod content (the
    * common use case) without seeing every unreferenced core resource.
+   *
+   * Only parsed Enfusion text resources other than `.gproj` are candidates
+   * (see UNUSED_CANDIDATE_CLAUSE, audit refactor-index-02). Rows carry
+   * `project_id` so callers can resolve the file against its own project.
    */
   findUnusedResources(filter: PagedFilter): PagedResult<ResourceRow> {
     const sourceClause = filter.source ? " AND r.source = ?" : "";
     const args: (string | number)[] = filter.source ? [filter.source] : [];
+    const where = `ref.target_guid IS NULL AND ${UNUSED_CANDIDATE_CLAUSE}${sourceClause}`;
 
     const countRow = this.db
       .prepare(
         `SELECT COUNT(*) AS n FROM resources r
          LEFT JOIN resource_refs ref ON ref.target_guid = r.guid
-         WHERE ref.target_guid IS NULL${sourceClause}`,
+         WHERE ${where}`,
       )
       .get(...args) as { n: number };
 
     const rows = this.db
       .prepare(
-        `SELECT r.guid, r.file_path, r.root_type, r.class_name, r.parent_inherit, r.source, r.last_indexed
+        `SELECT r.guid, r.file_path, r.root_type, r.class_name, r.parent_inherit, r.source, r.last_indexed,
+                r.project_id, r.entity_id
          FROM resources r
          LEFT JOIN resource_refs ref ON ref.target_guid = r.guid
-         WHERE ref.target_guid IS NULL${sourceClause}
-         ORDER BY r.guid
+         WHERE ${where}
+         ORDER BY r.guid, r.project_id, r.file_path
          LIMIT ? OFFSET ?`,
       )
       .all(...args, filter.limit, filter.offset) as ResourceRow[];
@@ -401,7 +448,7 @@ export class ProjectIndex {
         `SELECT guid, file_path, root_type, class_name, parent_inherit, source, last_indexed
          FROM resources
          ${whereClause}
-         ORDER BY guid
+         ORDER BY guid, project_id, file_path
          LIMIT ? OFFSET ?`,
       )
       .all(...args, filter.limit, filter.offset) as ResourceRow[];
@@ -417,12 +464,19 @@ export class ProjectIndex {
   listDependencies(projectId: string): DependencyRow[] {
     return this.db
       .prepare(
+        // Schema v4: a GUID may have several rows; join the preferred one
+        // only, so each declared dep yields exactly one line.
         `SELECT pd.dep_guid,
                 r.file_path AS file_path,
                 r.root_type AS root_type,
                 r.source AS source
          FROM project_deps pd
-         LEFT JOIN resources r ON r.guid = pd.dep_guid
+         LEFT JOIN resources r ON r.rowid = (
+           SELECT r2.rowid FROM resources r2
+            WHERE r2.guid = pd.dep_guid
+            ORDER BY CASE r2.source WHEN 'user' THEN 0 WHEN 'workshop' THEN 1 ELSE 2 END,
+                     r2.project_id, r2.file_path
+            LIMIT 1)
          WHERE pd.project_id = ?
          ORDER BY pd.dep_guid`,
       )

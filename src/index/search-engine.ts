@@ -8,6 +8,7 @@ import type {
   GroupInfo,
 } from "./types.js";
 import { levenshtein, trigramSimilarity } from "../utils/fuzzy.js";
+import { normalizeClassName } from "../scraper/signature.js";
 
 export interface MethodSearchResult {
   className: string;
@@ -48,7 +49,23 @@ export interface ComponentSearchResult {
 
 export class SearchEngine {
   private classByName: Map<string, ClassInfo> = new Map();
+  /**
+   * Classes whose stored name is a raw Doxygen page title
+   * (`Tuple2< Class T1, Class T2 > Interface Template Reference`), by their
+   * lowercased normalised name (`tuple2`): `getClass` falls back to it, so the
+   * normalised names the children lists emit resolve.
+   */
+  private classByNormalizedName: Map<string, ClassInfo> = new Map();
   private classNames: string[] = [];
+  /**
+   * Direct children by lowercased normalised class name: the stored
+   * `children`, plus every class that names the class among its `parents`
+   * (the classes the source backfill added name their parents, but the
+   * Doxygen parents' `children` do not list them). Names are emitted
+   * normalised (`normalizeClassName`: no page-title suffix, no template
+   * parameter list) and compared case-insensitively, so a class appears once.
+   */
+  private childrenByKey: Map<string, string[]> = new Map();
   private methodIndex: Map<string, MethodSearchResult[]> = new Map();
   private enumIndex: Map<string, EnumSearchResult[]> = new Map();
   private propertyIndex: Map<string, PropertySearchResult[]> = new Map();
@@ -76,6 +93,11 @@ export class SearchEngine {
       const key = cls.name.toLowerCase();
       this.classByName.set(key, cls);
       this.classNames.push(cls.name);
+      const normalized = normalizeClassName(cls.name);
+      if (normalized !== cls.name) {
+        const normKey = normalized.toLowerCase();
+        if (!this.classByNormalizedName.has(normKey)) this.classByNormalizedName.set(normKey, cls);
+      }
 
       // Index methods (public + protected + static)
       const allMethods = [
@@ -152,6 +174,8 @@ export class SearchEngine {
       }
     }
 
+    this.buildChildren(allClasses);
+
     // Detect enum-like classes (0 methods, 4+ properties) and index as synthetic enums
     for (const cls of allClasses) {
       const methodCount =
@@ -220,10 +244,11 @@ export class SearchEngine {
       if (this.classByName.has(baseName.toLowerCase())) {
         const tree = this.getClassTree(baseName);
         for (const name of tree.descendants) {
-          const key = name.toLowerCase();
+          // Descendant names are normalised; the class keeps its stored name.
+          const cls = this.getClass(name);
+          const key = (cls?.name ?? name).toLowerCase();
           if (!componentKeys.has(key)) {
             componentKeys.add(key);
-            const cls = this.classByName.get(key);
             if (cls) this.componentIndex.push(cls);
           }
         }
@@ -244,8 +269,47 @@ export class SearchEngine {
     this.loaded = true;
   }
 
+  private buildChildren(allClasses: ClassInfo[]): void {
+    const seen = new Map<string, Set<string>>();
+    const add = (parent: string, child: string): void => {
+      const key = normalizeClassName(parent).toLowerCase();
+      let names = seen.get(key);
+      let list = this.childrenByKey.get(key);
+      if (!names || !list) {
+        names = new Set();
+        list = [];
+        seen.set(key, names);
+        this.childrenByKey.set(key, list);
+      }
+      const name = normalizeClassName(child);
+      const childKey = name.toLowerCase();
+      if (names.has(childKey)) return;
+      names.add(childKey);
+      list.push(name);
+    };
+    for (const cls of allClasses) for (const child of cls.children || []) add(cls.name, child);
+    for (const cls of allClasses) for (const parent of cls.parents || []) add(parent, cls.name);
+  }
+
+  /**
+   * A class by name, case-insensitively. A name no class holds is read through
+   * `normalizeClassName`: `array< Class T >` finds `array`, and `Tuple2` (or
+   * `Tuple2< Class T1, Class T2 >`) finds the class stored under its raw page
+   * title.
+   */
   getClass(name: string): ClassInfo | undefined {
-    return this.classByName.get(name.toLowerCase());
+    const exact = this.classByName.get(name.toLowerCase());
+    if (exact) return exact;
+    const normKey = normalizeClassName(name).toLowerCase();
+    return this.classByName.get(normKey) ?? this.classByNormalizedName.get(normKey);
+  }
+
+  /**
+   * Direct children of a class: its stored `children` and every class that
+   * names it as a parent, once each, under their normalised names.
+   */
+  getChildren(name: string): string[] {
+    return this.childrenByKey.get(normalizeClassName(name).toLowerCase()) ?? [];
   }
 
   searchClasses(
@@ -321,6 +385,9 @@ export class SearchEngine {
   ): MethodSearchResult[] {
     const q = query.toLowerCase();
     const results: Array<{ result: MethodSearchResult; score: number }> = [];
+    // Index keys (lowercased names) the strict pass matched: the fuzzy pass
+    // must not add their entries a second time.
+    const matched = new Set<string>();
 
     for (const [methodName, entries] of this.methodIndex) {
       let score = 0;
@@ -333,6 +400,7 @@ export class SearchEngine {
       }
 
       if (score > 0) {
+        matched.add(methodName);
         for (const entry of entries) {
           if (source !== "all" && entry.classSource !== source) continue;
           results.push({ result: entry, score });
@@ -342,9 +410,8 @@ export class SearchEngine {
 
     // Fuzzy fallback: only activate when strict matching returns < 3 results
     if (results.length < 3) {
-      const seen = new Set(results.map((r) => r.result.method.name));
       for (const [methodName, entries] of this.methodIndex) {
-        if (seen.has(methodName)) continue;
+        if (matched.has(methodName)) continue;
         const dist = levenshtein(q, methodName);
         let fuzzyScore = 0;
         if (dist <= 1) {
@@ -589,7 +656,8 @@ export class SearchEngine {
 
   /**
    * Get the full inheritance tree for a class.
-   * Walks up through parents[] and down through children[].
+   * Walks up through parents[] and down through the children `getChildren`
+   * gives (stored children plus the classes that name the class as parent).
    */
   getClassTree(name: string): { ancestors: string[]; descendants: string[] } {
     const ancestors: string[] = [];
@@ -612,9 +680,8 @@ export class SearchEngine {
     // Walk down to descendants
     visited.clear();
     const walkDown = (className: string) => {
-      const cls = this.getClass(className);
-      if (!cls) return;
-      for (const child of cls.children) {
+      if (!this.getClass(className)) return;
+      for (const child of this.getChildren(className)) {
         if (visited.has(child.toLowerCase())) continue;
         visited.add(child.toLowerCase());
         descendants.push(child);
@@ -676,8 +743,11 @@ export class SearchEngine {
         ...(cls.protectedMethods || []),
         ...(cls.staticMethods || []),
       ]) {
-        if (seenMethods.has(method.name)) continue;
-        seenMethods.add(method.name);
+        // Overloads share a name: a nearer ancestor's method hides one with
+        // the same name and parameter types, not every overload of the name.
+        const key = `${method.name}(${(method.params || []).map((p) => p.type).join(",")})`;
+        if (seenMethods.has(key)) continue;
+        seenMethods.add(key);
         methods.push({
           className: cls.name,
           classSource: cls.source,
@@ -838,7 +908,8 @@ export class SearchEngine {
     const allMethods = [...(cls.methods || []), ...(cls.protectedMethods || [])];
 
     for (const method of allMethods) {
-      if (/^(EOn|On)[A-Z]/.test(method.name)) {
+      // Overloads share a name; a handler is listed once.
+      if (/^(EOn|On)[A-Z]/.test(method.name) && !handlers.includes(method.name)) {
         handlers.push(method.name);
       }
     }

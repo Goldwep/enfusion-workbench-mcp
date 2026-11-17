@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "census/state-patch.schema.json",
+  "title": "Census state patch",
+  "description": "One line of the append-only data/census/state.jsonl (main ruling 5). Written only by promote.ts and dispose.ts; the evidence id must resolve to data/census/evidence/<id>.json.",
+  "additionalProperties": false,
+  "properties": {
+    "at": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "by": {
+      "enum": ["promote.ts", "dispose.ts"],
+      "type": "string"
+    },
+    "evidence": {
+      "pattern": "^EV-[A-Za-z0-9][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*-\\d{3,}$",
+      "type": "string"
+    },
+    "fields": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "op": {
+      "enum": ["set", "append", "clear"],
+      "type": "string"
+    },
+    "seq": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "session": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": ["seq", "id", "op", "fields", "evidence", "session", "at", "by"],
+  "type": "object"
+}

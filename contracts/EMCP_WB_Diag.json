@@ -1,0 +1,373 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Diag",
+  "tool": "wb_diag",
+  "purpose": "Diag Menu options by script id (read, runtime set, select) and Workbench environment reads.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Diag.c",
+  "request": [
+    "action",
+    "menu",
+    "cursor",
+    "limit",
+    "names",
+    "kinds",
+    "module",
+    "cmdNames",
+    "name",
+    "kind",
+    "value",
+    "menuId"
+  ],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "next",
+    "total",
+    "nextCursor",
+    "rows",
+    "values",
+    "missing",
+    "gameMode",
+    "userName",
+    "cwd",
+    "executable",
+    "projectFile",
+    "projectSettingsClass",
+    "utcTime",
+    "scriptModules",
+    "cmdLine",
+    "previous",
+    "readback",
+    "changed",
+    "applied",
+    "selected"
+  ],
+  "actions": [
+    {
+      "name": "catalog",
+      "summary": "(TS) menus and options: path, enum name, kind",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "Served by the TS tool from the census diag rows and the DiagMenu registration calls in the pak scripts; the handler refuses it INVALID_ARGUMENT.",
+      "params": [
+        {
+          "key": "menu",
+          "type": "string",
+          "required": false,
+          "note": "menu path prefix, e.g. AI/AIScript"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "path;enumName;kind;values"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "get",
+      "summary": "Option values by enum name",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "DIAG_UNKNOWN when no name is an enum value; INVALID_ARGUMENT; UNPROVEN for range until P-W8-07 and engine kinds until P-W8-08",
+      "params": [
+        {
+          "key": "names",
+          "type": "array<string>",
+          "required": true,
+          "note": "SCR_DebugMenuID or EDiagMenu names"
+        },
+        {
+          "key": "kinds",
+          "type": "array<string>",
+          "required": false,
+          "note": "bool|value|range|engine|engineRange"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "note": "name=value; floats as text"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>",
+          "note": "names with no enum value"
+        },
+        {
+          "key": "gameMode",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "info",
+      "summary": "User, cwd, exe, project, UTC time, command line",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "MODULE_NOT_OPEN; INVALID_ARGUMENT for an unknown module or a bad cmdNames entry",
+      "params": [
+        {
+          "key": "module",
+          "type": "string",
+          "required": false,
+          "note": "module of cmdNames; default WorldEditor"
+        },
+        {
+          "key": "cmdNames",
+          "type": "array<string>",
+          "required": false,
+          "note": "GetCmdLine names, max 20"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "userName",
+          "type": "string",
+          "note": "redacted by the TS side"
+        },
+        {
+          "key": "cwd",
+          "type": "string"
+        },
+        {
+          "key": "executable",
+          "type": "string"
+        },
+        {
+          "key": "projectFile",
+          "type": "string"
+        },
+        {
+          "key": "projectSettingsClass",
+          "type": "string"
+        },
+        {
+          "key": "utcTime",
+          "type": "string",
+          "note": "YYYY-MM-DD hh:mm:ss"
+        },
+        {
+          "key": "scriptModules",
+          "type": "array<string>",
+          "note": "WB and WBGame module present"
+        },
+        {
+          "key": "cmdLine",
+          "type": "array<string>",
+          "note": "name=value; absent names left out"
+        },
+        {
+          "key": "gameMode",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "set",
+      "summary": "One allow-listed option, runtime; previous and read-back",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "DIAG_UNKNOWN; INVALID_ARGUMENT; UNPROVEN for range until P-W8-07 and engine kinds until P-W8-08; the allow-list is checked by the TS tool",
+      "params": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "note": "enum name"
+        },
+        {
+          "key": "kind",
+          "type": "string",
+          "required": false,
+          "note": "bool|value|range|engine|engineRange"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "int, 0/1 or float as text"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "previous",
+          "type": "string"
+        },
+        {
+          "key": "readback",
+          "type": "string"
+        },
+        {
+          "key": "changed",
+          "type": "bool"
+        },
+        {
+          "key": "applied",
+          "type": "bool",
+          "note": "read-back equals the asked value"
+        },
+        {
+          "key": "gameMode",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "select",
+      "summary": "Show a menu page by name or id",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "WRONG_MODE outside play mode; DIAG_UNKNOWN for a menuId that is no SCR_DebugMenuID value; INVALID_ARGUMENT",
+      "params": [
+        {
+          "key": "menu",
+          "type": "string",
+          "required": false,
+          "note": "menu name as registered"
+        },
+        {
+          "key": "menuId",
+          "type": "int",
+          "required": false,
+          "note": "SCR_DebugMenuID value"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "selected",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

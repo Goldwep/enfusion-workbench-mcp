@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contracts/_schema/contract.schema.json",
+  "title": "Enforce handler contract, keyed per action (phase3-tool-surface.md section 5)",
+  "description": "One file per NetApiHandler. request/response are the flat RegV key lists of the handler's structs (the ECEN_Probe.json prototype); actions[] narrows them per action. Enforced at load time by src/manifest/contract.ts, which mirrors this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["handler", "tool", "purpose", "source", "request", "response", "actions"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "handler": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9_]*$" },
+    "tool": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "purpose": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative path of the Enforce handler file."
+    },
+    "request": { "$ref": "#/$defs/keyList", "contains": { "const": "action" } },
+    "response": { "$ref": "#/$defs/keyList" },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/action" }
+    }
+  },
+  "$defs": {
+    "key": { "type": "string", "pattern": "^[a-zA-Z][A-Za-z0-9_]*$" },
+    "keyList": { "type": "array", "items": { "$ref": "#/$defs/key" }, "uniqueItems": true },
+    "enforceType": { "enum": ["string", "bool", "int", "float", "array<string>", "array<int>"] },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "required"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "type": { "$ref": "#/$defs/enforceType" },
+        "required": { "type": "boolean" },
+        "note": { "type": "string", "maxLength": 40 }
+      }
+    },
+    "responseField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "type": { "$ref": "#/$defs/enforceType" },
+        "note": { "type": "string", "maxLength": 40 }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "summary", "mutating", "projectOnly", "params", "response", "paging"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][A-Za-z0-9_]*$" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "mutating": { "type": "boolean" },
+        "projectOnly": { "type": "boolean" },
+        "refuses": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Present when the handler answers this action with an error by design."
+        },
+        "params": { "type": "array", "items": { "$ref": "#/$defs/param" } },
+        "response": { "type": "array", "items": { "$ref": "#/$defs/responseField" } },
+        "paging": { "type": "boolean" }
+      }
+    }
+  }
+}

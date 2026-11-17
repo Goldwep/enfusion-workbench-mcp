@@ -1,0 +1,579 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Anim",
+  "tool": "wb_anim",
+  "purpose": "Anim, Behavior, ProcAnim editors: engine check of a file; TXA tracks via TxaExporter.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Anim.c",
+  "request": [
+    "action",
+    "addon",
+    "profile",
+    "path",
+    "hint",
+    "propNames",
+    "cursor",
+    "limit",
+    "target",
+    "source",
+    "frames",
+    "fps",
+    "channelCount",
+    "keyData",
+    "diffData",
+    "confirm",
+    "op",
+    "eventType",
+    "index",
+    "fields",
+    "values",
+    "propName",
+    "propValue"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "profiles",
+    "total",
+    "warnings",
+    "channels",
+    "errCode",
+    "errMsg",
+    "path",
+    "eventCount",
+    "events",
+    "props",
+    "nextCursor",
+    "openedIn",
+    "result",
+    "marker",
+    "docClass",
+    "target",
+    "dryRun",
+    "written",
+    "registered",
+    "rebuilt",
+    "before",
+    "after"
+  ],
+  "actions": [
+    {
+      "name": "txaProfiles",
+      "summary": "Export profiles (.apr) in the loaded addons",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "RESOURCE_NOT_FOUND with owner step OI-W4-1 in next while no .apr is in a loaded addon (DEC-067)",
+      "params": [
+        {
+          "key": "addon",
+          "type": "string",
+          "required": false,
+          "note": "addon id; default every loaded addon"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "profiles",
+          "type": "array<string>",
+          "note": "name|channels|path"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "txaChannels",
+      "summary": "Channels of one profile",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "RESOURCE_NOT_FOUND with owner step OI-W4-1 in next while no .apr is in a loaded addon (DEC-067)",
+      "params": [
+        {
+          "key": "profile",
+          "type": "string",
+          "required": true,
+          "note": "$addon:path, path or profile name"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "channels",
+          "type": "array<string>",
+          "note": "index|name|genFn"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "errCode",
+          "type": "int",
+          "note": "TxaErrCode: 0 ok, 1 warning, 2 error"
+        },
+        {
+          "key": "errMsg",
+          "type": "string",
+          "note": "TxaExporter.ErrMsg"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "txaRead",
+      "summary": "Events and custom properties of a .txa",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "RESOURCE_NOT_FOUND with owner step OI-W4-1 in next while no .apr is in a loaded addon (DEC-067)",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": ".txa path, project-relative"
+        },
+        {
+          "key": "hint",
+          "type": "string",
+          "required": false,
+          "note": "source file hint for TrackLoad"
+        },
+        {
+          "key": "propNames",
+          "type": "array<string>",
+          "required": false,
+          "note": "custom properties to read"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "events per page, default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "path",
+          "type": "string"
+        },
+        {
+          "key": "eventCount",
+          "type": "int"
+        },
+        {
+          "key": "events",
+          "type": "array<string>",
+          "note": "index|class|var=value;..."
+        },
+        {
+          "key": "props",
+          "type": "array<string>",
+          "note": "name=value"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "errCode",
+          "type": "int",
+          "note": "TxaErrCode: 0 ok, 1 warning, 2 error"
+        },
+        {
+          "key": "errMsg",
+          "type": "string",
+          "note": "TxaExporter.ErrMsg"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "check",
+      "summary": "Open in its owning editor; errors read from the log",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "MODAL_HAZARD until probe P-W4-14 (GATED): nothing is opened; MODULE_NOT_SUPPORTED outside the Anim, Behavior, ProcAnim editors",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project or game path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "path",
+          "type": "string"
+        },
+        {
+          "key": "openedIn",
+          "type": "string",
+          "note": "module that took the file"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "open call return"
+        },
+        {
+          "key": "marker",
+          "type": "string",
+          "note": "log marker pair id"
+        },
+        {
+          "key": "docClass",
+          "type": "string",
+          "note": "class of the opened container"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "txaExport",
+      "summary": "New .txa from keys; register and rebuild",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "RESOURCE_NOT_FOUND with owner step OI-W4-1 in next while no .apr is in a loaded addon (DEC-067); an existing target is refused",
+      "params": [
+        {
+          "key": "profile",
+          "type": "string",
+          "required": true,
+          "note": "$addon:path, path or profile name"
+        },
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "new .txa, project-relative"
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": false,
+          "note": "source file name kept in the track"
+        },
+        {
+          "key": "frames",
+          "type": "int",
+          "required": true,
+          "note": "keyframe count"
+        },
+        {
+          "key": "fps",
+          "type": "int",
+          "required": true,
+          "note": "frames per second"
+        },
+        {
+          "key": "channelCount",
+          "type": "int",
+          "required": true,
+          "note": "must equal the profile's count"
+        },
+        {
+          "key": "keyData",
+          "type": "array<string>",
+          "required": true,
+          "note": "floats as strings (P-W4-04 layout)"
+        },
+        {
+          "key": "diffData",
+          "type": "array<string>",
+          "required": false,
+          "note": "floats as strings"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "registered",
+          "type": "bool"
+        },
+        {
+          "key": "rebuilt",
+          "type": "bool"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        },
+        {
+          "key": "errCode",
+          "type": "int",
+          "note": "TxaErrCode: 0 ok, 1 warning, 2 error"
+        },
+        {
+          "key": "errMsg",
+          "type": "string",
+          "note": "TxaExporter.ErrMsg"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "txaEdit",
+      "summary": "Edit events or properties of a .txa",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "RESOURCE_NOT_FOUND with owner step OI-W4-1 in next while no .apr is in a loaded addon (DEC-067); confirm refuses UNPROVEN until P-W4-06",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": ".txa in the project"
+        },
+        {
+          "key": "op",
+          "type": "string",
+          "required": true,
+          "note": "add|edit|erase|setProp|clearProps"
+        },
+        {
+          "key": "eventType",
+          "type": "string",
+          "required": false,
+          "note": "generic|audio|weighted (op add)"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false,
+          "note": "event index"
+        },
+        {
+          "key": "fields",
+          "type": "array<string>",
+          "required": false,
+          "note": "event vars to set"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "required": false,
+          "note": "values, same order as fields"
+        },
+        {
+          "key": "propName",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "propValue",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "path",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "event or props before"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "read back after"
+        },
+        {
+          "key": "eventCount",
+          "type": "int"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "errCode",
+          "type": "int",
+          "note": "TxaErrCode: 0 ok, 1 warning, 2 error"
+        },
+        {
+          "key": "errMsg",
+          "type": "string",
+          "note": "TxaExporter.ErrMsg"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

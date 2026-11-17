@@ -76,7 +76,7 @@ export function validateExtraArgs(extraArgs: readonly string[]): void {
  * here — the server will reject a malformed scenarioId at startup with a
  * better error than we can produce. We DO reject anything that starts with
  * '-' (flag-smuggle guard) and anything containing shell metacharacters
- * (because the scenario id is passed verbatim into argv).
+ * (the id lands in the PID file and the tool's reply).
  */
 export function validateScenarioId(scenarioId: string): void {
   if (typeof scenarioId !== "string" || scenarioId.length === 0) {
@@ -122,24 +122,51 @@ export function probeServerExe(
  * Build the argv that would be passed to spawn(). Deliberately a pure
  * function so tests can assert the exact argv without invoking spawn.
  *
- * argv layout follows BI's documented CLI:
- *   ArmaReforgerServer.exe -config <path> -scenarioId <id> [extra...]
+ * argv layout:
+ *   ArmaReforgerServer.exe -config <path> [extra...]
+ *
+ * The scenario rides in the server.json (`game.scenarioId`, Bohemia's
+ * "Arma Reforger:Server Config" page, data/wiki/pages.json), not on the
+ * command line: no measured source (E05, E08, the wiki's startup-parameter
+ * page) knows a scenario switch, so the 1.x argv's scenario switch was
+ * KD-005 and is gone. `resolveScenarioId` checks the scenario the caller
+ * asked for against the file.
  *
  * The caller is responsible for having validated each input via
- * `validateExtraArgs`, `validateScenarioId`, and `rejectFlagLikePath`.
+ * `validateExtraArgs` and `rejectFlagLikePath`.
  */
 export function buildLaunchArgv(input: {
   serverConfigPath: string;
-  scenarioId: string;
   extraArgs: readonly string[];
 }): string[] {
-  return [
-    "-config",
-    input.serverConfigPath,
-    "-scenarioId",
-    input.scenarioId,
-    ...input.extraArgs,
-  ];
+  return ["-config", input.serverConfigPath, ...input.extraArgs];
+}
+
+/**
+ * The scenario the server will load: `game.scenarioId` of the server.json.
+ * A requested scenario must equal it (the tool never rewrites the file); a
+ * file without one is refused, since the command line cannot carry it.
+ */
+export function resolveScenarioId(
+  requested: string | undefined,
+  fromConfig: string | undefined,
+): string {
+  const inFile = typeof fromConfig === "string" ? fromConfig.trim() : "";
+  if (inFile === "") {
+    throw new Error(
+      "server.json has no game.scenarioId: the dedicated server reads the scenario from the config file. " +
+        "Set game.scenarioId there (server_config or server_scenario_picker), then launch again.",
+    );
+  }
+  validateScenarioId(inFile);
+  if (requested !== undefined && requested !== inFile) {
+    throw new Error(
+      `scenario_id ${JSON.stringify(requested)} differs from the server.json's game.scenarioId ` +
+        `${JSON.stringify(inFile)}: the server loads the file's scenario. Edit game.scenarioId in the ` +
+        "server.json, or omit scenario_id to launch the file's scenario.",
+    );
+  }
+  return inFile;
 }
 
 /**
@@ -149,15 +176,16 @@ export function buildLaunchArgv(input: {
  */
 export function prepareLaunchInputs(input: {
   serverConfigPath: string;
-  scenarioId: string;
+  /** Optional: the scenario the caller expects; checked against the file by `resolveScenarioId`. */
+  scenarioId?: string;
   extraArgs?: readonly string[];
 }): {
   absoluteConfigPath: string;
-  scenarioId: string;
+  scenarioId: string | undefined;
   extraArgs: readonly string[];
 } {
   rejectFlagLikePath(input.serverConfigPath, "server_config_path");
-  validateScenarioId(input.scenarioId);
+  if (input.scenarioId !== undefined) validateScenarioId(input.scenarioId);
   const extraArgs = input.extraArgs ?? [];
   validateExtraArgs(extraArgs);
   const absoluteConfigPath = resolve(input.serverConfigPath);

@@ -1,0 +1,129 @@
+{
+  "$comment": "Redacted slice of S-F sf-15-context-walk.json (owner right-click on a Resource Browser item, passive read): the popup tree only, walker fields L05 reads; the sandbox name is a placeholder.",
+  "tree": {
+    "controlType": "Window",
+    "name": "Arma Reforger Workbench",
+    "automationId": "Arma4WorkbenchApp.QMenu",
+    "className": "QMenu",
+    "enabled": true,
+    "children": [
+      {
+        "controlType": "MenuItem",
+        "automationId": "Arma4WorkbenchApp.QMenu.QWidgetAction",
+        "className": "QWidgetAction",
+        "enabled": true
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Show in Explorer",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Expand All",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": true
+      },
+      {
+        "controlType": "Separator",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "automationId": "Arma4WorkbenchApp.QMenu.QWidgetAction",
+        "className": "QWidgetAction",
+        "enabled": true
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Register",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Edit Properties",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "Separator",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Delete",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Rename",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "Separator",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "automationId": "Arma4WorkbenchApp.QMenu.QWidgetAction",
+        "className": "QWidgetAction",
+        "enabled": true
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Transfer to '<sandbox>'",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": true
+      },
+      {
+        "controlType": "Separator",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "automationId": "Arma4WorkbenchApp.QMenu.QWidgetAction",
+        "className": "QWidgetAction",
+        "enabled": true
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Copy Resource Name(s)",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "MenuItem",
+        "name": "Copy Resource GUID(s)",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      },
+      {
+        "controlType": "Separator",
+        "automationId": "Arma4WorkbenchApp.QMenu.QAction",
+        "className": "QAction",
+        "enabled": false
+      }
+    ]
+  }
+}

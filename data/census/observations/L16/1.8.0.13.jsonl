@@ -1,0 +1,2 @@
+{"$header":1,"build":"1.8.0.13","enumerator":"L16","generator":"hand-recorded by main from evidence (DEC-056 ruling 8)","provisional":false,"row_count":1}
+{"confidence":"high","dim":"ui","key":{"path":["Enfusion engine"]},"kind":"hazard-dialog","label":"Enfusion engine","module":"WorldEditor","origin":"vanilla","parent_key":null,"quote":"engine assertion box, window class #32770, title \"Enfusion engine\" (EV-P4-1-025, EV-P4-5-021)","ref":"ev:EV-P4-1-025","risk_hint":"safe","unverified":["buttons not read: the box was closed by WM_CLOSE, so its children are a frontier"]}

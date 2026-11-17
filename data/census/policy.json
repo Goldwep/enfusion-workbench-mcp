@@ -1,0 +1,1196 @@
+{
+  "$comment": "Census safety policy. Written by the main 2.0 session only (plan 6.1). Sources: docs/v2/PLAN.md sections 1.4 (target tiers), 4.3 (vocabularies), 5.3 (live-lane rules) and Appendix B (deny-list seed). Every list here is a seed; Appendix B says the lists are regenerated from census-verified labels at the Phase 4 exit and signed off by the owner.",
+  "version": 1,
+  "tiers": ["T0", "T1", "T2", "T3", "T4", "T5"],
+  "risk_classes": ["safe", "mutating", "destructive", "credential", "external"],
+  "weak_oracle": "returned-true-only",
+  "pass_oracles": ["state-readback", "file-diff", "log-line", "returned-true-only"],
+  "dispositions": {
+    "terminal": [
+      "excluded-policy",
+      "not-automatable",
+      "blocked",
+      "absent-in-build",
+      "duplicate-of",
+      "subsumed-by"
+    ],
+    "with_reference": ["blocked", "duplicate-of", "subsumed-by"],
+    "owner_signoff_batched": ["excluded-policy", "not-automatable"],
+    "$comment": "`deferred` is a non-terminal status on an active row, never a disposition (plan 1.4). `blocked`, `duplicate-of` and `subsumed-by` carry a reference part (`blocked:<probe id>`, `duplicate-of:<id>`, `subsumed-by:<id>`)."
+  },
+  "target_tier_by_kind": {
+    "module": {
+      "target": "T5",
+      "why": "Definition of done 5: all 11 modules reachable live through wb_module or dispositioned blocked"
+    },
+    "window": {
+      "target": "T3",
+      "why": "UI container: readable means listable with its children"
+    },
+    "menu": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "menu-item": {
+      "target": "T5",
+      "why": "UI action; needs a pass oracle"
+    },
+    "toolbar": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "toolbar-button": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "dock": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "panel": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "tab": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "dialog": {
+      "target": "T3",
+      "why": "UI container; open-risk and commit-risk are split per row"
+    },
+    "control": {
+      "target": "T5",
+      "why": "UI action or state inside a container"
+    },
+    "property-group": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "property": {
+      "target": "T2",
+      "why": "Knowledge row: property field of a game class; operability lives on the parent container tool"
+    },
+    "property-editor": {
+      "target": "T3",
+      "why": "One of the 31 UIWidgets kinds; its popup is a child container"
+    },
+    "context-menu": {
+      "target": "T3",
+      "why": "UI container"
+    },
+    "context-item": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "shortcut": {
+      "target": "T2",
+      "why": "Knowledge row; driven through the action it binds"
+    },
+    "tool": {
+      "target": "T5",
+      "why": "World Editor tool: dialog-free or worker-callable ones are driven; otherwise a disposition"
+    },
+    "tool-button": {
+      "target": "T5",
+      "why": "UI action"
+    },
+    "canvas-gesture": {
+      "target": "T2",
+      "why": "Manual row: no label, slot, class or file trace (plan 4.6)"
+    },
+    "region": {
+      "target": "T2",
+      "why": "Opaque region; operations on it get their own rows"
+    },
+    "status-item": {
+      "target": "T2",
+      "why": "Informational UI; nothing to drive"
+    },
+    "hazard-dialog": {
+      "target": "T2",
+      "why": "Catalogued as met; never answered automatically"
+    },
+    "class": {
+      "target": "T2",
+      "why": "Knowledge row for the Workbench API scope"
+    },
+    "method": {
+      "target": "T5",
+      "why": "Workbench API method: T5 or a disposition"
+    },
+    "static-method": {
+      "target": "T5",
+      "why": "Workbench API static: T5 or a disposition"
+    },
+    "event": {
+      "target": "T5",
+      "why": "Workbench API event: T5 or a disposition"
+    },
+    "attribute": {
+      "target": "T2",
+      "why": "[Attribute] member (E15): own shard, schema for the container tool"
+    },
+    "enum": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "enum-value": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "plugin": {
+      "target": "T5",
+      "why": "Dialog-free or worker-callable plugins are driven; otherwise re-implemented logic, CLI or GUI path; else a disposition. RunCommandline is never called live."
+    },
+    "plugin-setting": {
+      "target": "T4",
+      "why": "Settings read and write through the plugin bridge; a live test promotes to T5"
+    },
+    "plugin-button": {
+      "target": "T5",
+      "why": "[ButtonAttribute] method: an action"
+    },
+    "plugin-cli-arg": {
+      "target": "T5",
+      "why": "CLI switch of a plugin; T5 where safe"
+    },
+    "net-function": {
+      "target": "T5",
+      "why": "Native NET function: T5 or a disposition"
+    },
+    "net-handler": {
+      "target": "T5",
+      "why": "Bohemia handler: T5 or a disposition; modal handlers (BakeInfo, EBTInfo) are excluded"
+    },
+    "net-field": {
+      "target": "T2",
+      "why": "Request or response field: knowledge row"
+    },
+    "cli-switch": {
+      "target": "T5",
+      "why": "T5 where safe; publish and login switches excluded"
+    },
+    "link-format": {
+      "target": "T5",
+      "why": "enfusion:// link forms (W8)"
+    },
+    "file-type": {
+      "target": "T3",
+      "why": "Minimum for text formats; T5 writable only where a lossless writer and engine acceptance are proven; binary formats header read or not-automatable"
+    },
+    "resource-class": {
+      "target": "T2",
+      "why": "Knowledge row"
+    },
+    "schema-class": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "schema-key": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "setting-key": {
+      "target": "T3",
+      "why": "Readable; T4 writable only through a sandbox settings file; the registry is read-only by default (D4)"
+    },
+    "option": {
+      "target": "T5",
+      "why": "UI state: readable, drivable where settable"
+    },
+    "diag-menu": {
+      "target": "T2",
+      "why": "Knowledge row, own shard; T3/T4 where U34 finds a path"
+    },
+    "diag-option": {
+      "target": "T2",
+      "why": "Knowledge row, own shard"
+    },
+    "blender-operator": {
+      "target": "T2",
+      "why": "Documented surface only (decision D9 default)"
+    },
+    "debug-panel": {
+      "target": "T2",
+      "why": "In-play debug panel; T3 or T4 where W8 finds a path"
+    },
+    "mcp-tool": {
+      "target": "T5",
+      "why": "The MCP's own surface: every tool action links to at least one row (G8) and has a live test"
+    },
+    "mcp-action": {
+      "target": "T5",
+      "why": "See mcp-tool"
+    },
+    "handler-action": {
+      "target": "T5",
+      "why": "See mcp-tool"
+    }
+  },
+  "row_defaults": {
+    "$comment": "Defaults a ledger row takes when no observation and no state patch states its risk or a candidate path (DEC-023). They let a measured row reach T1. They are never a confirmation: risk_confirmed stays false until a state patch confirms it, and a default path has status candidate. risk_name_rules are tried in order on the row's own name (method, action, switch or label) before risk_by_kind; patterns are case-sensitive regular expressions. Destructive is never assigned by a name rule: it comes from an observation, a state patch or the deny lists below.",
+    "risk_by_kind": {
+      "module": "safe",
+      "window": "safe",
+      "menu": "safe",
+      "toolbar": "safe",
+      "dock": "safe",
+      "panel": "safe",
+      "tab": "safe",
+      "dialog": "safe",
+      "property-group": "safe",
+      "property": "safe",
+      "property-editor": "safe",
+      "context-menu": "safe",
+      "region": "safe",
+      "status-item": "safe",
+      "hazard-dialog": "safe",
+      "class": "safe",
+      "attribute": "safe",
+      "enum": "safe",
+      "enum-value": "safe",
+      "net-field": "safe",
+      "link-format": "safe",
+      "file-type": "safe",
+      "resource-class": "safe",
+      "schema-class": "safe",
+      "schema-key": "safe",
+      "diag-menu": "safe",
+      "debug-panel": "safe",
+      "mcp-tool": "safe",
+      "menu-item": "mutating",
+      "toolbar-button": "mutating",
+      "control": "mutating",
+      "context-item": "mutating",
+      "shortcut": "mutating",
+      "tool": "mutating",
+      "tool-button": "mutating",
+      "canvas-gesture": "mutating",
+      "method": "mutating",
+      "static-method": "mutating",
+      "event": "mutating",
+      "plugin": "mutating",
+      "plugin-setting": "mutating",
+      "plugin-button": "mutating",
+      "plugin-cli-arg": "mutating",
+      "net-function": "mutating",
+      "net-handler": "mutating",
+      "cli-switch": "mutating",
+      "setting-key": "mutating",
+      "option": "mutating",
+      "diag-option": "mutating",
+      "blender-operator": "mutating",
+      "mcp-action": "mutating",
+      "handler-action": "mutating"
+    },
+    "risk_name_rules": [
+      {
+        "kinds": [
+          "method",
+          "static-method",
+          "handler-action",
+          "mcp-action",
+          "net-function",
+          "net-handler",
+          "plugin",
+          "plugin-button",
+          "menu-item",
+          "context-item",
+          "toolbar-button",
+          "control",
+          "cli-switch"
+        ],
+        "pattern": "(Login|login|Password|password|Credential|credential)",
+        "risk": "credential"
+      },
+      {
+        "kinds": [
+          "method",
+          "static-method",
+          "handler-action",
+          "mcp-action",
+          "net-function",
+          "net-handler",
+          "plugin",
+          "plugin-button",
+          "menu-item",
+          "context-item",
+          "toolbar-button",
+          "control",
+          "cli-switch"
+        ],
+        "pattern": "(Publish|publish|Upload|upload|Workshop|workshop)",
+        "risk": "external"
+      },
+      {
+        "kinds": ["method", "static-method"],
+        "pattern": "^(Get|Is|Has|Can|Are|Find|Count|Contains|Exists|Query|Calc|Compare|Trace|TryGet|TryFind|To)([A-Z0-9_]|$)",
+        "risk": "safe"
+      },
+      {
+        "kinds": ["handler-action", "mcp-action"],
+        "pattern": "^(list|get|inspect|find|status|locate|search|read|query|describe|count|diff|ping|is[A-Z]|has[A-Z])",
+        "risk": "safe"
+      },
+      {
+        "kinds": ["net-function"],
+        "pattern": "^Is[A-Z]",
+        "risk": "safe"
+      }
+    ],
+    "paths_by_kind": {
+      "module": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: Workbench.GetModule / OpenModule from a handler (unverified for seven modules, U8)."
+        },
+        {
+          "path": "builtin-net-handler",
+          "reason": "Policy default: native BringModuleWindowToFront and OpenResource take a module name."
+        }
+      ],
+      "window": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "menu": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "toolbar": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "dock": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "panel": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "tab": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "dialog": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "property-group": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "property-editor": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "context-menu": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "region": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "status-item": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "hazard-dialog": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "control": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "shortcut": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "canvas-gesture": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "tool-button": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "debug-panel": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "diag-menu": [
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "menu-item": [
+        {
+          "path": "execute-action",
+          "reason": "Policy default: WBModuleDef.ExecuteAction takes a menu path (rules unverified, U9)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "context-item": [
+        {
+          "path": "execute-action",
+          "reason": "Policy default: ExecuteAction may reach context-only actions (unverified, U9)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "toolbar-button": [
+        {
+          "path": "execute-action",
+          "reason": "Policy default: ExecuteAction may reach toolbar-only actions (unverified, U9)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "property": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: a property field is read and written through the container API on its owner."
+        }
+      ],
+      "class": [
+        {
+          "path": "none-known",
+          "reason": "A declaration: nothing to drive on its own; its members carry the paths."
+        }
+      ],
+      "enum": [
+        {
+          "path": "none-known",
+          "reason": "A declaration: nothing to drive."
+        }
+      ],
+      "enum-value": [
+        {
+          "path": "none-known",
+          "reason": "A declaration: nothing to drive."
+        }
+      ],
+      "attribute": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: an editor-exposed member is read and written through the container API on its owner (unverified, U8, U16)."
+        }
+      ],
+      "method": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: a script API member is callable from a WorkbenchGame handler."
+        }
+      ],
+      "static-method": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: a script API member is callable from a WorkbenchGame handler."
+        }
+      ],
+      "event": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: an event is observed by a handler or plugin that overrides it (unverified, U32)."
+        }
+      ],
+      "plugin": [
+        {
+          "path": "plugin-run",
+          "reason": "Policy default: GetPlugin and a dialog-free entry point (unverified, U10); never RunCommandline on a live instance."
+        }
+      ],
+      "tool": [
+        {
+          "path": "plugin-run",
+          "reason": "Policy default: tool instance through GetPlugin (unverified, U10)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "plugin-setting": [
+        {
+          "path": "plugin-run",
+          "reason": "Policy default: attribute read and write on the plugin instance (unverified, U10)."
+        }
+      ],
+      "plugin-button": [
+        {
+          "path": "plugin-run",
+          "reason": "Policy default: the button's method on the plugin instance (unverified, U10)."
+        }
+      ],
+      "plugin-cli-arg": [
+        {
+          "path": "cli",
+          "reason": "Policy default: read by the plugin's RunCommandline on a -plugin= launch."
+        }
+      ],
+      "net-function": [
+        {
+          "path": "builtin-net-handler",
+          "reason": "Policy default: a native function of the NET API port."
+        }
+      ],
+      "net-handler": [
+        {
+          "path": "builtin-net-handler",
+          "reason": "Policy default: a Bohemia handler on the NET API port."
+        }
+      ],
+      "net-field": [
+        {
+          "path": "builtin-net-handler",
+          "reason": "Policy default: a request or response field of its handler."
+        }
+      ],
+      "cli-switch": [
+        {
+          "path": "cli",
+          "reason": "Policy default: a startup parameter."
+        }
+      ],
+      "link-format": [
+        {
+          "path": "cli",
+          "reason": "Policy default: an enfusion:// link is handed over at start or forwarded to a running instance (unverified, U29)."
+        }
+      ],
+      "file-type": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: read and written as a file; text formats through the lossless parser once it exists."
+        }
+      ],
+      "resource-class": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: a .meta configuration class, edited as a file or through MetaFile."
+        }
+      ],
+      "schema-class": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: a block class of a text document format."
+        }
+      ],
+      "schema-key": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: a key of a text document format."
+        }
+      ],
+      "setting-key": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: written only to a scratch settings file given with -forceSettings (decision D4; unverified, U12, U22)."
+        }
+      ],
+      "option": [
+        {
+          "path": "file-format",
+          "reason": "Policy default: an Options value, written only to a scratch settings file (decision D4)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "diag-option": [
+        {
+          "path": "net-api-handler",
+          "reason": "Policy default: DiagMenu.GetValue / SetValue from a handler (unverified, U34)."
+        },
+        {
+          "path": "gui-automation",
+          "reason": "Policy default: a UI element with no script path established; reachable through the accessibility tree at best (plan 4.7)."
+        }
+      ],
+      "blender-operator": [
+        {
+          "path": "none-known",
+          "reason": "Documented surface only: the Blender add-on is evidence, never driven (decision D9)."
+        }
+      ],
+      "mcp-tool": [
+        {
+          "path": "none-known",
+          "reason": "An MCP tool is the automation, not a target."
+        }
+      ],
+      "mcp-action": [
+        {
+          "path": "none-known",
+          "reason": "An MCP action is the automation, not a target."
+        }
+      ],
+      "handler-action": [
+        {
+          "path": "net-api-handler",
+          "reason": "This project's own handler on the NET API port."
+        }
+      ]
+    }
+  },
+  "risk_overrides": {
+    "$comment": "A UI action, CLI switch or handler whose risk is destructive, credential or external has target T2 plus a disposition; it is documented, walked read-only, never committed by default (plan 1.4).",
+    "destructive": {
+      "target": "T2",
+      "disposition_required": true
+    },
+    "credential": {
+      "target": "T2",
+      "disposition_required": true
+    },
+    "external": {
+      "target": "T2",
+      "disposition_required": true
+    }
+  },
+  "cli_run": {
+    "$comment": "wb_cli_run v2 (DEC-048 package B) runs only the verbs and CLI plugins listed here; every other run verb is NOT_ALLOWLISTED; packAddon and publishAddon are prepare-only (argv shown, nothing spawned) and bypass the list by design. Written by the main session. Entries: verb:openProject (-gproj with -exitAfterInit: exits by itself, DEC-033 U1), verb:buildScripts (-gproj -wbModule=ScriptEditor -validate=<CFG>: the harness ends the process on 'Script validation successful.', DEC-035), plugin:AddonBuildInfoTool (-wbModule=ResourceManager -plugin=AddonBuildInfoTool with -addonPath= in one token, DEC-037). Without the -wbModule switch neither runs on 1.9.0.37: Workbench idles to the timeout (2026-11-14, docs/v2/inbox/phase7/cli-battery-1.9.md). Not listed until measured: navmeshGenerate, forceSaveAll, -buildData (unresolved, DEC-047 L7). Publish and Workshop verbs are never listed (plan 5.7).",
+    "allow_list": ["verb:openProject", "verb:buildScripts", "plugin:AddonBuildInfoTool"],
+    "plugin_args": {
+      "$comment": "The argument keys wb_cli_run may pass to a listed CLI plugin as -key=value (DEC-048 package B, review finding B-1: a key is never a Workbench switch). AddonBuildInfoTool: addonPath and ciInfoDst, the two keys S-A-9 and S-A-10 passed (DEC-036, DEC-037). Both are required and path-ruled in wb-cli-run.ts PLUGIN_PATH_RULES (total audit live-client-03): addonPath is the project folder itself, ciInfoDst an absolute .json file under the artifacts folder.",
+      "AddonBuildInfoTool": ["addonPath", "ciInfoDst"]
+    }
+  },
+  "plugin_run_allow_list": {
+    "$comment": "wb_plugin run drives only these (module, class) pairs. DEC-103: the three classes whose Run() was read by hand in the pak and only logs or moves the editor camera (docs/v2/inbox/phase6/plugin-safety-review.md); SCR_LocStatusPlugin is held (it unlocks rows for editing).",
+    "allow_list": [
+      ["WorldEditor", "CameraOrientationTool"],
+      ["LocalizationEditor", "SCR_LocLengthPlugin"],
+      ["ResourceManager", "SCR_CheckRuinModelsAndUsagePlugin"]
+    ]
+  },
+  "plugin_read_allow_list": {
+    "$comment": "EMCP_WB_Plugin describe/getSettings (DEC-048 3.3) resolve only these typenames (module, class). Read live in S-D (DEC-042 U10: GetPlugin instance and attribute reads answered for three plugins; the call brings the module window to the front). Written by the main session; setSettings and run stay GATED whatever this list says.",
+    "allow_list": [
+      ["WorldEditor", "SCR_SnapAndOrientToTerrainPlugin"],
+      ["ScriptEditor", "SCR_CopyClassAndMethodPlugin"],
+      ["ScriptEditor", "SCR_DebugLinePlugin"]
+    ]
+  },
+  "execute_action": {
+    "$comment": "ExecuteAction only with paths on this allow-list (plan 5.3). Entries are arrays of path segments, e.g. [\"Window\", \"Resource Browser\"]; the handler matches every segment exactly (no case folding, no mnemonic stripping) and the generator derives no variant. DEC-100 (main, 2026-11-14; narrows DEC-092 and DEC-095): allow_list holds ONLY paths with a passing live result. That is 8 of the 9 entries before DEC-092 (S-D U9's Window > Hierarchy and Log Console with their mnemonic and lower-case forms; U19's Edit > Undo, moved to S-E by DEC-040, the sandbox's tiny world only; S-F U31's Utilities > Qt Introspection Tool; the ninth, P-W8-22's refusal item File > Options..., left the list after the Phase 7 total audit, live-tools-b-1: a dialog opener on the compiled list let wb_module action open the modal Options dialog, so no dialog opener is compiled and both wb_menu run and wb_module action refuse a trailing ellipsis MODAL_HAZARD), plus the 50 paths W9 runs 1 to 3 toggled and restored (tests/live/w9.live.ts W9.1, live results in the sittings' w9-live-*.jsonl, promoted by EV-W9-013, EV-W9-027 and EV-W9-039), plus the 2 view items whose effect W9 run 3 read and restored (Entities > Focus Selection and Select Layer, W9.2): 58 entries. The path list is not module-scoped: a path proven in one module is listed for every module. candidates holds the other 48 paths DEC-092 and DEC-095 had added from an offline classification (no live run proved them). No shipped tool or handler reads candidates: scripts/gen-action-allowlist.ts never compiles them into EMCP_WB_ActionAllowList.c, so wb_menu run and wb_module action refuse them NOT_ALLOWLISTED. scripts/live/gen-probe-allowlist.ts compiles them into the development-only probe pack (mod-dev/probe/ECEN_ProbeAllowList.c Candidates, never shipped), whose executeAction runs one only when the request says candidate: true and the open project is the 2.0 sandbox; only a live battery passes it (w9.live.ts --candidates, with the read-only probe pack installed for the sitting). dialog_openers holds the paths a live run observed opening a dialog: such a path is never on allow_list or candidates (both generators refuse it; tests/scripts/gen-action-allowlist.test.ts asserts it). Window > Manage Layouts opened the Manage Layouts dialog in W8 regress1 (w8-50-p22-menu-runs, EV-W8-277), with no trailing ellipsis. live_lane.dialog_openers.paths is a different list: the openers a dialog census step may open on purpose. Never dictionary-probe. The 263 safe-state rows wait for a second ruling (docs/v2/inbox/phase6/menu-safe-state-review.md).",
+    "allow_list": [
+      ["Edit", "Undo"],
+      ["Window", "Hierarchy"],
+      ["Window", "Log Console"],
+      ["&Window", "Hierarchy"],
+      ["&Window", "Log Console"],
+      ["window", "hierarchy"],
+      ["window", "log console"],
+      ["Utilities", "Qt Introspection Tool"],
+      ["Window", "Animation Sets"],
+      ["Window", "Channel Curves"],
+      ["Window", "Controls"],
+      ["Window", "Debug Controls"],
+      ["Window", "Errors"],
+      ["Window", "File Browser"],
+      ["Window", "Graph"],
+      ["Window", "IkTestings Debug"],
+      ["Window", "Live Debug"],
+      ["Window", "Preview"],
+      ["Window", "Properties"],
+      ["Window", "Workspace"],
+      ["Window", "Analyzers"],
+      ["Window", "Emitter Simulation"],
+      ["Window", "Item Detail"],
+      ["Window", "Item Explorer"],
+      ["Window", "Listener Setup"],
+      ["Window", "Output Analyzer"],
+      ["Window", "Playlist"],
+      ["Window", "Resource Browser"],
+      ["Window", "Signal Simulation"],
+      ["Window", "Variable Simulation"],
+      ["Window", "Breakpoints"],
+      ["Window", "Debug"],
+      ["Window", "Nodes palette"],
+      ["Window", "View"],
+      ["Window", "Resource Browser 2"],
+      ["Window", "Bookmarks"],
+      ["Window", "Callstack"],
+      ["Window", "Find Entity"],
+      ["Window", "Find File"],
+      ["Window", "Find Results"],
+      ["Window", "Find Symbol"],
+      ["Window", "Outline"],
+      ["Window", "Output"],
+      ["Window", "Projects"],
+      ["Window", "Remote Console"],
+      ["Window", "Text Search"],
+      ["Window", "Watch"],
+      ["Window", "Basic Tools"],
+      ["Window", "Cinematic Timeline"],
+      ["Window", "Current Tool"],
+      ["Window", "Main Toolbar"],
+      ["Window", "Object Properties"],
+      ["Window", "Prefab Library"],
+      ["Window", "Ragdoll Editor"],
+      ["Window", "Scripted Tools"],
+      ["Window", "Terrain Minimap"],
+      ["Entities", "Focus Selection"],
+      ["Entities", "Select Layer"]
+    ],
+    "candidates": [
+      ["Window", "Go to...", "Show Anim Sets"],
+      ["Window", "Go to...", "Show Controls"],
+      ["Window", "Go to...", "Show Debug Controls"],
+      ["Window", "Go to...", "Show Errors"],
+      ["Window", "Go to...", "Show Graph Window"],
+      ["Window", "Go to...", "Show Properties"],
+      ["Window", "Go to...", "Show Workspace"],
+      ["Window", "Layout", "default"],
+      ["Window", "Layout", "edit"],
+      ["Window", "Output Tracker"],
+      ["Window", "Reopen Closed Tab"],
+      ["View", "Hex View", "16 bytes"],
+      ["View", "Hex View", "32 bytes"],
+      ["View", "Hex View", "8 bytes"],
+      ["View", "Normal view"],
+      ["View", "Text view"],
+      ["Window", "Cycle Tabs"],
+      ["Window", "Next Tab"],
+      ["Window", "Prev Tab"],
+      ["Window", "Previous Tab"],
+      ["Window", "Toggle Fullscreen Mode"],
+      ["Window", "Navigate To File"],
+      ["Window", "Switch Active View"],
+      ["View", "Cycle Prefab Library"],
+      ["View", "Permanent Entity Visualizers"],
+      ["View", "Toggle Visualizers"],
+      ["View", "Transformation Gizmo", "Axes Only"],
+      ["View", "Transformation Gizmo", "Normal"],
+      ["View", "Transformation Gizmo", "Planes Only"],
+      ["View", "World Bounds"],
+      ["Window", "Toggle Fullscreen Mode (F11)"],
+      ["Track", "Stop"],
+      ["Properties Tab", "Property Grid Options", "Collapse all groups"],
+      ["Properties Tab", "Property Grid Options", "Expand all groups"],
+      ["Properties Tab", "Property Grid Options", "Show only modified properties"],
+      ["Edit", "Locate File in Resource Browser"],
+      ["Bookmarks", "Next Bookmark"],
+      ["Bookmarks", "Previous Bookmark"],
+      ["Edit", "Navigate Back"],
+      ["Edit", "Navigate Forward"],
+      ["Entities", "Locate Nested Prefab"],
+      ["Entities", "Locate Prefab"],
+      ["Entities", "Locate Prefab in Library"],
+      ["Entities", "Select Children"],
+      ["Entities", "Select Parent"],
+      ["Entities", "Select Prefab Instance Members"],
+      ["Entities", "Select Prefab Instance Root"],
+      ["Entities", "Select Siblings"]
+    ],
+    "dialog_openers": [
+      ["Window", "Manage Layouts"]
+    ],
+    "deny_list_seed": [
+      "Exit",
+      "New World",
+      "Force Save All",
+      "Clear All Settings",
+      "Publish to Workshop",
+      "Remove from Workshop",
+      "Pack Project",
+      "Reset Default Layouts"
+    ]
+  },
+  "probe": {
+    "$comment": "Lists compiled into the read-only probe pack (mod-dev/probe/ECEN_ProbeAllowList.c) by scripts/live/gen-probe-allowlist.ts (plan 5.4 item 7). diag_read_engine_ids: entries {id, ledger_row}, the engine diag options diagRead may read by id; empty, so diagRead reads script options by name only.",
+    "diag_read_engine_ids": []
+  },
+  "probe_mut": {
+    "$comment": "Lists compiled into the mutating probe pack (mod-dev/probe-mut/ECEN_ProbeMutLists.c) by scripts/live/gen-probe-allowlist.ts. plugin_run_allow_list: entries {module, class, ledger_row, evidence}, the plugins pluginRunDialogFree may Run(); diag_set_allow_list: entries {key, ledger_row}, the diag options diagSet may change. One entry each for sitting S-E on the owner's ruling of 2026-10-08 (Q8), on the condition that every value is set back in the same step; the step restores the diag option and the plugin's empty entity action is undone or left unsaved.",
+    "plugin_run_allow_list": [
+      {
+        "module": "WorldEditor",
+        "class": "SCR_SnapAndOrientToTerrainPlugin",
+        "ledger_row": "P-U10",
+        "evidence": "pak:scripts/WorkbenchGame/WorldEditor/SCR_SnapAndOrientToTerrainPlugin.c#L13-L60 read 2026-10-08: Run() opens no dialog; it returns on a missing module, API or world, then BeginEntityAction, a loop over the selected entities (empty when nothing is selected) and EndEntityAction; its only writes are SetVariableValue on selected entities, so with an empty selection it writes nothing."
+      }
+    ],
+    "diag_set_allow_list": [
+      {
+        "key": "script:DEBUGUI_AI_PRINT_DEBUG",
+        "ledger_row": "P-U34"
+      }
+    ]
+  },
+  "deny_lists": {
+    "$comment": "Appendix B. Three lists because opening a dialog and committing it are different risks.",
+    "openers_main_never_invokes": {
+      "$comment": "The dialog behind each is still censused: the owner clicks the opener after an in-chat go, main reads the open dialog, the owner closes it with Cancel.",
+      "labels": [
+        "New World",
+        "Create Terrain",
+        "Save World As",
+        "Pack Project",
+        "Publish Project",
+        "Publish to Workshop",
+        "Login"
+      ]
+    },
+    "never_invoked_by_any_tool": {
+      "$comment": "A human commits. Credential fields are never typed into (plan 1.3).",
+      "labels": ["Remove from Workshop", "Publish:confirm", "Login:confirm"],
+      "cli_switches": ["-wbBackendLogin"]
+    },
+    "local_destructive_confirmation_required": {
+      "$comment": "Never invoked during the census; by tools only with an explicit confirmation parameter.",
+      "labels": [
+        "Exit",
+        "Force Save All",
+        "Clear All Settings",
+        "Reset Default Layouts",
+        "Delete",
+        "Create World:confirm",
+        "Create Terrain:confirm",
+        "Save World As:confirm",
+        "Pack Project:confirm"
+      ],
+      "cli_switches": ["-clearSettings"]
+    },
+    "never_called_on_live_instance": {
+      "api": ["RunCommandline", "Workbench.Exit"]
+    },
+    "development_only_never_shipped_enabled": {
+      "api": ["Workbench.RunCmd", "Workbench.RunProcess"],
+      "cli_switches": ["-scriptAuthorizeAll"]
+    }
+  },
+  "dry_run": {
+    "$comment": "Every live script has a dry-run mode that fails if it would issue an invoke on a menu leaf, an Enter or accelerator key, or a deny-listed path (plan 6.2 BATTERY-AUTHOR). The only exceptions are named here.",
+    "forbidden": ["invoke-menu-leaf", "key-enter", "key-accelerator", "deny-listed-path"],
+    "exceptions": [
+      {
+        "id": "p4-d14-options-cancel",
+        "script": "scripts/census/live/L04-dialogs.ts",
+        "allows": "uia-dialog-cancel-not-allow-listed",
+        "target": {
+          "windowClassMatches": "Qt683QWindowIcon",
+          "titleMatches": "Options"
+        },
+        "why": "D14 and owner ruling 1 (2026-10-10): the one watched test of a scripted Cancel, on the Options dialog L04 opens itself (sf-26: owned, title Options, window class Qt683QWindowIcon). Further dialogs get their own exception only after this test passes."
+      }
+    ]
+  },
+  "live_lane": {
+    "modal_watchdog": {
+      "$comment": "src/gui/modal-watchdog.ts (DEC-048 3.5) answers a detected dialog only by a rule listed here; an empty list is the design's default, report and wait (design section 6, DEC-042 U6). It never answers 'Script Authorization Required' whatever this list says. Written by the main session.",
+      "answers": []
+    },
+    "probe_order": ["read-only", "reversible", "mutating"],
+    "above_mutating_needs_explicit_owner_yes": true,
+    "recoveries_per_session": 3,
+    "retry_on_timeout": false,
+    "launch_args_form": ["-gproj", "<sandbox gproj>"],
+    "working_directory": "<game>",
+    "uia_read": {
+      "maxDepth": 200,
+      "maxNodes": 100000,
+      "budgetMs": 600000,
+      "rowSample": 1000,
+      "maxChildren": 10000,
+      "countCap": 100000,
+      "callTimeoutMs": 30000,
+      "slowCallMs": 60000,
+      "maxConsecutiveErrors": 50
+    },
+    "uia_menu": {
+      "$comment": "Caps and title allow-list of the active menu tool tools/uia/menus.py (S-F B4), read by the uia-menu kind of scripts/live/dry-run.ts. titles: the eight application menu-bar titles S-C's walk read (u7-walk.json of 2026-10-07T00-53-19-167Z, DEC-040); the ninth menu item of that walk, System (the title-bar system menu in its own MenuBar, which holds Close), is left out on purpose. calls: the only UIA pattern calls the tool makes. titles_by_module (Phase 4, D11, corrected by the design refutation): the titles per census module a uia-menu naming its module may expand: the World Editor has nine (File, Edit, View, Game, Tools, Window, Plugins, Entities, Help), the Resource Manager the eight above; a uia-menu naming a module may expand at most that module's count (maxMenus applies to plans that name no module). A module enters with the titles its first passive walk reads, by main. Launcher is listed empty on purpose (the entries must be title arrays, so the note lives here): the first L14 walk fills it, and until then L14 plans no uia-menu. titles stays for plans that name no module (the S-F script).",
+      "titles": ["File", "Editors", "View", "Edit", "Window", "Utilities", "Plugins", "Help"],
+      "$comment_sub_editors": "P4-9 (DEC-056 ruling 9): a ResourceManager.<X> sub-editor is a tab of the Resource Manager window, so its list names only the menus the tab adds to the shared menubar (recon from exe strings, unverified: Layout Preview, Imageset ImageSet, Styles WidgetStyle). The five sub-editors with no known tab menu have no entry and their L02 stays blocked; main adds the titles their L01 walk shows and re-emits the P4-9 queue. The RM menubar itself was walked in P4-1 under ResourceManager. The eight Resource Browser targets of uia_context are P4-9's L05 stretch block, one file per sub-editor.",
+      "titles_by_module": {
+        "ResourceManager.Layout": ["Preview"],
+        "ResourceManager.Imageset": ["ImageSet"],
+        "ResourceManager.Styles": ["WidgetStyle"],
+        "WorldEditor": [
+          "File",
+          "Edit",
+          "View",
+          "Game",
+          "Tools",
+          "Window",
+          "Plugins",
+          "Entities",
+          "Help"
+        ],
+        "ResourceManager": [
+          "File",
+          "Editors",
+          "View",
+          "Edit",
+          "Window",
+          "Utilities",
+          "Plugins",
+          "Help"
+        ],
+        "Launcher": [],
+        "LocalizationEditor": ["File", "Edit", "Table", "Columns", "Window", "Plugins", "Help"],
+        "BehaviorEditor": ["File", "Edit", "Debug", "Window", "Help"],
+        "AudioEditor": ["File", "Edit", "Debug", "Tools", "Window", "Help"],
+        "AnimEditor": ["File", "Edit", "Track", "Tools", "Window", "Help"],
+        "ProcAnimEditor": ["File", "Edit", "Debug", "Window", "Help"],
+        "ScriptEditor": ["File", "Edit", "Build", "Debug", "Window", "Bookmarks", "Plugins", "Help"]
+      },
+      "maxMenus": 8,
+      "maxDepth": 1,
+      "perMenuMs": 10000,
+      "totalMs": 320000,
+      "calls": ["Expand", "Collapse"]
+    },
+    "uia_context": {
+      "$comment": "Caps and target list of the uia-context kind of scripts/live/dry-run.ts (Phase 4 L05, design 2.2): ShowContextMenu then Collapse on one right-click target. targets: {module?, path:[labels]} entries, written by main from E09 extensions and entity kinds; empty until the first L05 dry run proposes them. Whether Qt answers IUIAutomationElement3::ShowContextMenu is unverified; the first L05 step tests it.",
+      "perTargetMs": 15000,
+      "targets": [
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "inputCommon.conf"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "ManualCameraCrosshair.layout"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "ScrollbarRectangles.imageset"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "NESW.xob"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "ScrollBarRectangles.edds"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "lightSourceDefault.emat"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "Roboto_Regular.fnt"]
+        },
+        {
+          "module": "ResourceManager",
+          "path": ["Resource Browser", "editor.styles"]
+        },
+        {
+          "module": "WorldEditor",
+          "path": ["Hierarchy", "unnamed"]
+        },
+        {
+          "module": "WorldEditor",
+          "path": ["Hierarchy", "default"]
+        },
+        {
+          "module": "WorldEditor",
+          "path": ["Hierarchy", "EMCP_P4_Rock"]
+        },
+        {
+          "module": "WorldEditor",
+          "path": ["Viewport"]
+        }
+      ]
+    },
+    "dialog_openers": {
+      "$comment": "Phase 4 L04 (design 2.2): execute-action paths that open a dialog (the action carries opensDialog: true). Never an Appendix B list 1 opener (Create World, Create Terrain, Save World As, Pack Project, Publish, Login): the owner clicks those. Main lists the allow-listed openers; File > Options... is the D14 opener (World Editor and Resource Manager; the WE path is [unverified] until the first L04 run, and the handler-side allow list must list it too).",
+      "paths": [["File", "Options..."]]
+    }
+  },
+  "mcp_link_exempt": [
+    {
+      "action": "mcp:action/api_search.run",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/component_search.run",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/project.browse",
+      "reason": "generic file browse, read or write under the project: no single census row"
+    },
+    {
+      "action": "mcp:action/project.read",
+      "reason": "generic file browse, read or write under the project: no single census row"
+    },
+    {
+      "action": "mcp:action/project.write",
+      "reason": "generic file browse, read or write under the project: no single census row"
+    },
+    {
+      "action": "mcp:action/server_health_probe.run",
+      "reason": "process or network action on the dedicated server, not a Workbench surface"
+    },
+    {
+      "action": "mcp:action/server_stop.run",
+      "reason": "process or network action on the dedicated server, not a Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_bi.callMutating",
+      "reason": "gated until the Bohemia battery opens it (callMutating)"
+    },
+    {
+      "action": "mcp:action/wb_census.describe",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_census.find",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_census.howto",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_census.scanProject",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_census.status",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_gui.context",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.dismiss",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.expand",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.find",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.invoke",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.modals",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.read",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.screenshot",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.select",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.setValue",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.toggle",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_gui.tree",
+      "reason": "GUI read or gated write over any window: no single census row (the GUI write battery opens the gated ones)"
+    },
+    {
+      "action": "mcp:action/wb_knowledge.run",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_menu.describe",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_menu.list",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wb_settings.options",
+      "reason": "gated until P-W8-05 maps the Options pages to their ini keys; its rows link when it opens"
+    },
+    {
+      "action": "mcp:action/wb_settings.shortcuts",
+      "reason": "gated until P-W8-06 finds the shortcut store; its rows link when it opens"
+    },
+    {
+      "action": "mcp:action/wiki_read.run",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    },
+    {
+      "action": "mcp:action/wiki_search.run",
+      "reason": "reads the census, knowledge base, wiki or API index: no Workbench surface"
+    }
+  ],
+  "terrain_edit": {
+    "$comment": "W7 (DEC-075 OD-5, OI-W7-6): a confirmed terrain write on a world outside a _throwaway/ folder refuses GATED until any_world and EMCP_WB_TerrainEdit.ANY_WORLD_OPEN are both true. terrain_write_route stays absent until U18 (P-W7-01 or P-W7-09) settles it.",
+    "any_world": false
+  },
+  "gui": {
+    "$comment": "W8 (DEC-076, rule 1.2.7): wb_gui drive actions and rows, filled only from P-W8-01, P-W8-02 and P-W8-03 evidence.",
+    "actions_enabled": [],
+    "rows_enabled": []
+  },
+  "diag": {
+    "$comment": "W8 (DEC-076 OD-6): wb_diag set names, filled only from P-W8-07 evidence; separate from probe_mut.diag_set_allow_list.",
+    "set_allow_list": []
+  }
+}

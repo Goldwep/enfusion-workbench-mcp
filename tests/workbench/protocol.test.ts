@@ -227,9 +227,21 @@ describe("protocol", () => {
       expect(() => decodeResponse(buf)).toThrow(/no payload/i);
     });
 
-    it("should throw when status is Ok but payload is empty string", () => {
+    it("decodes an Ok status with an empty payload string as {} (KD-006 fixed)", () => {
       const buf = Buffer.concat([encodePascalString("Ok"), encodePascalString("")]);
-      expect(() => decodeResponse(buf)).toThrow(/empty payload/i);
+      expect(decodeResponse(buf)).toEqual({});
+      expect(decodeResponse(buf, { allowEmptyPayload: true })).toEqual({});
+      expect(decodeResponse(buf, { allowEmptyPayload: false })).toEqual({});
+    });
+
+    it("still throws on an error status followed by an empty payload string", () => {
+      const buf = Buffer.concat([encodePascalString("Undefined API func"), encodePascalString("")]);
+      expect(() => decodeResponse(buf)).toThrow(/Undefined API func/);
+    });
+
+    it("still throws when the empty payload's length prefix is cut short", () => {
+      const buf = Buffer.concat([encodePascalString("Ok"), Buffer.from([0, 0])]);
+      expect(() => decodeResponse(buf)).toThrow(/Buffer too short|out of range|offset/i);
     });
   });
 });

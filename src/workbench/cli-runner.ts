@@ -8,11 +8,14 @@
  *
  * Enfusion arg gotcha: the engine re-tokenizes the raw Windows command
  * line itself and only honors quotes around a standalone value token.
- * Pass path values as their own argv entry (`"-flag", path` — Node then
+ * Pass path values as their own argv entry (`"-gproj", path` — Node then
  * quotes just the value) — never as a single `-flag=<path>` token, which
  * Node must whole-token-quote and the engine truncates at the first
- * space (live-verified 2026-08-20: `-wbProjectPath=C:\...\My Games\...`
- * arrived as `C:\Users\<you>\Documents\My`).
+ * space (live-verified 2026-08-20 with a flag that is not a Workbench
+ * parameter: the value under `Documents\My Games\...` arrived cut at `My`).
+ *
+ * Refused switches (DEC-047 L7, plan 5.7): `runWorkbench` rejects an argv
+ * that carries one of {@link REFUSED_SWITCHES} before anything is spawned.
  *
  * Timeouts (review 2026-09 H11): the default wall-clock budget is 100 s
  * so a call fits inside a typical MCP client window; tools expose
@@ -28,6 +31,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { findGameAcrossSteamLibraries, steamRootOf } from "../utils/steam.js";
 import { logger } from "../utils/logger.js";
+import { checkLease, leaseBlocker, resolveLeasePath } from "./lease.js";
+import { LEASE_SESSION } from "./client.js";
+import type { Config } from "../config.js";
 
 const WORKBENCH_EXE = "ArmaReforgerWorkbenchSteamDiag.exe";
 
@@ -137,7 +143,21 @@ export function runningWorkbenchPids(
  * open editor session was lost and a different recent project was opened).
  * Returns a user-facing refusal message, or null when it is safe to spawn.
  */
-export function headlessSpawnBlocker(pids: number[] = runningWorkbenchPids()): string | null {
+export function headlessSpawnBlocker(
+  pids: number[] = runningWorkbenchPids(),
+  config?: Pick<Config, "leasePath">,
+): string | null {
+  // Plan 5.1: no headless launch while another session holds the Workbench lease.
+  if (config) {
+    // A stale lease (expired heartbeat, no running Workbench) blocks nobody.
+    const who = leaseBlocker(checkLease(resolveLeasePath(config)), LEASE_SESSION);
+    if (who !== null) {
+      return (
+        "Refusing to start a headless Workbench run: the Workbench lease is held by another " +
+        `session (${who}). Wait for that session to end or ask the owner.`
+      );
+    }
+  }
   if (pids.length === 0) return null;
   return (
     `Refusing to start a headless Workbench run: ${WORKBENCH_IMAGE} is already running ` +
@@ -211,6 +231,25 @@ export function killProcessTree(pid: number): Promise<void> {
 }
 
 /**
+ * Switches no tool of this server passes to Workbench, lower case and without
+ * the dash (so this file holds no switch literal): `wbprojectpath` is not a
+ * Workbench parameter (KD-001, DEC-047 L7); `clearsettings` wipes the user's
+ * registry settings. `scriptauthorizeall` left this list on 2026-11-06: every
+ * launch carries it (the 2.0 release standard, `SCRIPT_AUTHORIZE_ALL` in client.ts).
+ */
+export const REFUSED_SWITCHES: readonly string[] = ["wbprojectpath", "clearsettings"];
+
+/** Throws when an argv entry is a refused switch, in any letter case and with or without `=value`. */
+export function assertNoRefusedSwitches(args: readonly string[]): void {
+  for (const a of args) {
+    const m = /^--?([A-Za-z][A-Za-z0-9]*)(=.*)?$/.exec(a);
+    if (m && REFUSED_SWITCHES.includes(m[1].toLowerCase())) {
+      throw new Error(`Refusing to pass '${a}' to Workbench: switch is on the refused list`);
+    }
+  }
+}
+
+/**
  * Validate that no positional argument looks like a smuggled flag.
  * Args starting with `-` are only allowed when explicitly listed in
  * `knownFlagPrefixes` (curated allow-list per tool).
@@ -235,6 +274,11 @@ export function validateArgs(args: string[], knownFlagPrefixes: string[]): void 
  * stderr (bounded), reports exit code, and applies a wall-clock timeout.
  */
 export function runWorkbench(opts: RunOptions): Promise<RunResult> {
+  try {
+    assertNoRefusedSwitches(opts.args);
+  } catch (e) {
+    return Promise.reject(e);
+  }
   const exePath = opts.exePath ?? join(opts.workbenchPath, "Workbench", WORKBENCH_EXE);
   if (!existsSync(exePath)) {
     return Promise.reject(

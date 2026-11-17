@@ -69,6 +69,21 @@ class EMCP_WB_DeleteEntity : NetApiHandler
 			return resp;
 		}
 
+		// The guard of the W-wave edit handlers (DEC-058, EditApi of EMCP_WB_Entity.c): the project
+		// is found, the editor is not in play mode.
+		if (!EMCP_WB_Guard.IsProjectFound())
+		{
+			resp.status = "error";
+			resp.message = EMCP_WB_Guard.NOT_IN_PROJECT + ": mutating actions need the handlers installed in the open project; nothing was changed";
+			return resp;
+		}
+		if (api.IsGameMode())
+		{
+			resp.status = "error";
+			resp.message = "WRONG_MODE: the World Editor is in play mode; nothing was changed - stop play first (wb_world stop)";
+			return resp;
+		}
+
 		IEntitySource entSrc = EMCP_WB_Common.FindEntityByName(api, req.name);
 		if (!entSrc)
 		{

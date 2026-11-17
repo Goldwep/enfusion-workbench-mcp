@@ -1,0 +1,491 @@
+{
+  "handler": "EMCP_WB_Navmesh",
+  "tool": "wb_navmesh",
+  "purpose": "Navmesh of the open world via its AIWorld: tile state, tile load, reachable point, in-memory rebuilds.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Navmesh.c",
+  "request": [
+    "action",
+    "project",
+    "step",
+    "cursor",
+    "limit",
+    "position",
+    "distance",
+    "min",
+    "max",
+    "confirm",
+    "entity"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "aiWorld",
+    "aiWorldClass",
+    "aiWorldFrom",
+    "project",
+    "projects",
+    "component",
+    "boundsMin",
+    "boundsMax",
+    "step",
+    "rows",
+    "total",
+    "count",
+    "nextCursor",
+    "position",
+    "loaded",
+    "valid",
+    "requested",
+    "found",
+    "point",
+    "min",
+    "max",
+    "dryRun",
+    "entity",
+    "areas"
+  ],
+  "actions": [
+    {
+      "name": "status",
+      "summary": "AIWorld, navmesh projects, paged tile grid",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "project",
+          "type": "string",
+          "required": false,
+          "note": "declared navmesh project; default first"
+        },
+        {
+          "key": "step",
+          "type": "string",
+          "required": false,
+          "note": "m as text; default 24, grid <= 40000"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "opaque; from nextCursor"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 100, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "aiWorld",
+          "type": "string",
+          "note": "entity ref; empty without an id"
+        },
+        {
+          "key": "aiWorldClass",
+          "type": "string"
+        },
+        {
+          "key": "aiWorldFrom",
+          "type": "string",
+          "note": "game or editor (entity scan)"
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "note": "the project used; empty without one"
+        },
+        {
+          "key": "projects",
+          "type": "array<string>",
+          "note": "declared NavmeshProject names"
+        },
+        {
+          "key": "component",
+          "type": "bool"
+        },
+        {
+          "key": "boundsMin",
+          "type": "string",
+          "note": "terrain bounds; empty without"
+        },
+        {
+          "key": "boundsMax",
+          "type": "string"
+        },
+        {
+          "key": "step",
+          "type": "string",
+          "note": "grid step used, m as text"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "x|z|loaded|valid|requested (1/0)"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "grid points"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "rows on this page"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        }
+      ],
+      "paging": true,
+      "refuses": "NO_WORLD; WRONG_MODE in prefab edit or play mode; NO_AI_WORLD; NO_NAVMESH_COMPONENT for a project the AIWorld does not declare; STALE_CURSOR"
+    },
+    {
+      "name": "tile",
+      "summary": "Tile state at one position",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "position",
+          "type": "string",
+          "required": true,
+          "note": "x y z as text, inside the terrain"
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "required": false,
+          "note": "declared navmesh project; default first"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "position",
+          "type": "string"
+        },
+        {
+          "key": "loaded",
+          "type": "bool"
+        },
+        {
+          "key": "valid",
+          "type": "bool"
+        },
+        {
+          "key": "requested",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "as status"
+    },
+    {
+      "name": "load",
+      "summary": "Load the tile at a position (memory)",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "position",
+          "type": "string",
+          "required": true,
+          "note": "x y z as text, inside the terrain"
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "required": false,
+          "note": "declared navmesh project; default first"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "position",
+          "type": "string"
+        },
+        {
+          "key": "requested",
+          "type": "bool",
+          "note": "LoadTileIn result"
+        },
+        {
+          "key": "loaded",
+          "type": "bool",
+          "note": "IsTileLoaded after; may lag frames"
+        }
+      ],
+      "paging": false,
+      "refuses": "as status"
+    },
+    {
+      "name": "reachable",
+      "summary": "Nearest reachable navmesh point",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "position",
+          "type": "string",
+          "required": true,
+          "note": "x y z as text, inside the terrain"
+        },
+        {
+          "key": "distance",
+          "type": "string",
+          "required": true,
+          "note": "m as text, above 0, at most 500"
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "required": false,
+          "note": "declared navmesh project; default first"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "position",
+          "type": "string"
+        },
+        {
+          "key": "found",
+          "type": "bool"
+        },
+        {
+          "key": "point",
+          "type": "string",
+          "note": "empty unless written back (P-W5-14)"
+        }
+      ],
+      "paging": false,
+      "refuses": "as status; the point waits on P-W5-14 (the vector has no out marker), found is answered either way"
+    },
+    {
+      "name": "rebuild",
+      "summary": "Rebuild a box in memory (confirm)",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "min",
+          "type": "string",
+          "required": true,
+          "note": "x y z as text"
+        },
+        {
+          "key": "max",
+          "type": "string",
+          "required": true,
+          "note": "x y z as text; side <= 512 m"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "false: dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "min",
+          "type": "string"
+        },
+        {
+          "key": "max",
+          "type": "string"
+        },
+        {
+          "key": "requested",
+          "type": "bool",
+          "note": "call made; weak oracle (P-W5-15)"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NOT_IN_PROJECT unless the open world is the project's; BOX_TOO_LARGE above 512 m per side; NO_AI_WORLD; nothing is saved"
+    },
+    {
+      "name": "rebuildEntity",
+      "summary": "Rebuild around an entity in memory (confirm)",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "false: dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "areas",
+          "type": "int",
+          "note": "GetNavmeshRebuildAreas count"
+        },
+        {
+          "key": "requested",
+          "type": "bool",
+          "note": "call made; weak oracle (P-W5-15)"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NOT_IN_PROJECT; ENTITY_NOT_FOUND; NOT_SCR_AI_WORLD when the AIWorld is not SCR_AIWorld; BOX_TOO_LARGE for an area above 512 m per side"
+    }
+  ]
+}

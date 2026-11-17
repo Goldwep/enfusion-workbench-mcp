@@ -9,24 +9,15 @@ export function registerWbComponent(server: McpServer, client: WorkbenchClient):
     "wb_component",
     {
       description:
-        "Manage components on an entity in the World Editor. Add, remove, or list components attached to an entity. Add/remove only work in edit mode.",
+        "Add, remove or list an entity's components in the World Editor (add/remove in edit mode).",
       inputSchema: {
-        entityName: z.string().describe("Name of the target entity"),
-        action: z
-          .enum(["add", "remove", "list"])
-          .describe(
-            "Action to perform: add a new component, remove an existing one, or list all components",
-          ),
-        componentClass: z
-          .string()
-          .optional()
-          .describe(
-            "Component class name (required for add/remove, e.g., 'RigidBody', 'MeshObject')",
-          ),
+        entityName: z.string(),
+        action: z.enum(["add", "remove", "list"]),
+        componentClass: z.string().optional().describe("required for add/remove"),
         componentIndex: z
           .number()
           .optional()
-          .describe("Component index for removal when multiple components of the same class exist"),
+          .describe("which one to remove when the class repeats"),
       },
     },
     async ({ entityName, action, componentClass, componentIndex }) => {

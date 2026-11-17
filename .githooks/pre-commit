@@ -1,0 +1,3 @@
+#!/bin/sh
+# pre-commit: no-op since DEC-060 removed the PII gate; kept so installed hook paths do not break.
+exit 0

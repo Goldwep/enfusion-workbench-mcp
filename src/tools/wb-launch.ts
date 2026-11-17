@@ -3,7 +3,19 @@ import { z } from "zod";
 import { basename, dirname, join, resolve } from "node:path";
 import { existsSync, readdirSync } from "node:fs";
 import type { Config } from "../config.js";
-import { WorkbenchError, type WorkbenchClient } from "../workbench/client.js";
+import {
+  LEASE_SESSION,
+  WorkbenchError,
+  findDefaultModGproj,
+  type WorkbenchClient,
+} from "../workbench/client.js";
+import {
+  checkLease,
+  isNoAutolaunch,
+  leaseBlocker,
+  resolveLeasePath,
+  resolveNoAutolaunchPath,
+} from "../workbench/lease.js";
 import { formatConnectionStatus } from "../workbench/status.js";
 import { handlerErrorMessage } from "../workbench/response.js";
 import { openResourceFailed } from "./wb-editor.js";
@@ -44,8 +56,12 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
         "human click on Open, often minimized), the launch auto-confirms it by restoring the window and " +
         "posting Enter; a genuine block (picker or 'Missing Addon Dependencies' modal) fails fast with a " +
         "diagnosis and dependency remedies instead of the full launch timeout. " +
-        "All other wb_* tools call this automatically if Workbench is not running, so you rarely need to " +
-        "call this directly. IMPORTANT: When done working with Workbench, call wb_cleanup to remove the " +
+        "Requires a project: pass gprojPath, or have ENFUSION_DEFAULT_MOD name an addon folder (with a " +
+        ".gproj) under the project path; without either the launch is refused and no addon is guessed. " +
+        "An explicit gprojPath works even while the no-autolaunch marker exists. Launching takes the " +
+        "machine-wide Workbench lease and is refused while another session holds it. Other wb_* tools " +
+        "auto-launch only the ENFUSION_DEFAULT_MOD project, and never while the no-autolaunch marker " +
+        "exists. IMPORTANT: When done working with Workbench, call wb_cleanup to remove the " +
         "handler scripts from the mod before the user publishes.",
       inputSchema: {
         gprojPath: z
@@ -54,7 +70,8 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
           .describe(
             "Path to a .gproj file to open directly. Skips the Workbench launcher screen. " +
               "Handler scripts are copied into the mod so all wb_* tools work. " +
-              "If omitted, Workbench opens to its launcher.",
+              "If omitted, the ENFUSION_DEFAULT_MOD addon's .gproj is used; with no default mod " +
+              "configured the launch is refused, so pass the project you want opened.",
           ),
         world: z
           .string()
@@ -65,35 +82,147 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
               "have nothing to operate on. If omitted and the mod contains exactly one .ent file, " +
               "that world is opened automatically; with several, they are listed instead.",
           ),
+        forceSettings: z
+          .string()
+          .optional()
+          .describe(
+            "Absolute path of a scratch settings ini to launch with (`-forceSettings <ini>`), so " +
+              "the session does not touch the user's Workbench settings. Used only when this call " +
+              "launches Workbench.",
+          ),
       },
     },
-    async ({ gprojPath, world }) => {
+    async ({ gprojPath, world, forceSettings }) => {
       try {
-        // Remember which addon was requested so other tools default to it
-        if (gprojPath) {
-          config.defaultMod = basename(dirname(resolve(gprojPath)));
+        // An explicit project, or the configured default mod's project. Never
+        // a guessed addon: without either, a LAUNCH is refused. A Workbench
+        // that is already running needs no project to be opened, so the
+        // refusal applies only when something would actually be launched.
+        const explicitGproj = gprojPath ?? findDefaultModGproj(config);
+        // A lease held by another session refuses even the read-only probe
+        // below: that Workbench belongs to someone else (plan 5.1). A stale
+        // lease does not: the launch below takes it over.
+        const who = leaseBlocker(checkLease(resolveLeasePath(config)), LEASE_SESSION);
+        if (who !== null) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  `**Launch Refused — Workbench lease held by another session**\n\n${who}\n\n` +
+                  "Nothing was probed, installed or launched. Wait for that session to end, or ask the owner.",
+              },
+            ],
+            isError: true,
+          };
         }
-        const modDir = gprojPath ? dirname(resolve(gprojPath)) : null;
+        // Only a refused connection means "not running" (live-client-02): a
+        // Workbench that answers without our handlers, or too slowly, is up,
+        // and a second spawn would hijack it through the Steam launcher.
+        const status = await client.pingStatus();
+        if (status.kind === "timeout" || status.kind === "error") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  "**Launch Refused — Workbench is running but not answering**\n\n" +
+                  `Ping: ${status.message}\n\nNo second Workbench was started (Steam's launcher would ` +
+                  "forward the arguments to the open one and drop its session). Retry when it is idle " +
+                  "(wb_connect), or close it first." +
+                  formatConnectionStatus(client),
+              },
+            ],
+            isError: true,
+          };
+        }
+        let recoveredNote = "";
+        if (status.kind === "no_handlers") {
+          // Running without our handlers: install them into the project it has
+          // open (the call() recovery), after checking it is the one asked for.
+          if (gprojPath) await client.assertProjectLoaded(gprojPath);
+          await client.recoverHandlers();
+          recoveredNote =
+            "\n\nWorkbench was running without the EnfusionMCP handlers: they were installed into " +
+            "its open project and compiled. No second Workbench was started.";
+        }
+        const alreadyRunning = status.kind !== "refused";
+        if (alreadyRunning && gprojPath && status.kind === "up") {
+          // live-client-04: never report success for a project that is not open.
+          await client.assertProjectLoaded(gprojPath);
+        }
+        if (!alreadyRunning && !gprojPath) {
+          // Only an explicit gprojPath may launch while the no-autolaunch
+          // marker exists; the default mod is an implicit choice (plan 5.1).
+          const markerPath = resolveNoAutolaunchPath(config);
+          if (isNoAutolaunch(markerPath)) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text:
+                    "**Launch Refused — no-autolaunch marker present**\n\n" +
+                    `The marker ${markerPath} exists, so Workbench is launched only for an explicit ` +
+                    "`gprojPath`. The configured default mod does not count as explicit." +
+                    formatConnectionStatus(client),
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+        if (!explicitGproj && !alreadyRunning) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text:
+                  "**Launch Refused — no project given**\n\n" +
+                  "Pass `gprojPath` (the .gproj of the addon Workbench should open). " +
+                  (config.defaultMod
+                    ? `The configured default mod "${config.defaultMod}" has no .gproj under ${config.projectPath}, so it cannot be used. `
+                    : "No ENFUSION_DEFAULT_MOD is configured. ") +
+                  "No addon is picked automatically." +
+                  formatConnectionStatus(client),
+              },
+            ],
+            isError: true,
+          };
+        }
+        const modDir = explicitGproj ? dirname(resolve(explicitGproj)) : null;
+        // The default mod's world is auto-opened in a running Workbench only
+        // when that mod is loaded there (an explicit gprojPath was checked above).
+        let worldModDir = modDir;
+        if (alreadyRunning && !gprojPath && explicitGproj) {
+          if ((await client.openProjectMatch(explicitGproj)).match !== "loaded") worldModDir = null;
+        }
 
         // No world requested: if the mod has exactly one .ent, open it —
         // Workbench itself never auto-opens a world, so a bare launch strands
         // the editor at the home screen with no world loaded.
         let worldNote = "";
-        if (!world && modDir) {
-          const ents = findWorldFiles(modDir);
+        if (!world && worldModDir) {
+          const ents = findWorldFiles(worldModDir);
           if (ents.length === 1) {
             world = ents[0];
           } else if (ents.length > 1) {
             worldNote =
               `\n\nThis mod has ${ents.length} worlds — none opened automatically. ` +
-              `Open one with \`wb_open_resource\`:\n` +
+              "Open one with `wb_open_resource`:\n" +
               ents.map((w) => `- ${w}`).join("\n");
           }
         }
 
-        const alreadyRunning = await client.ping();
         if (!alreadyRunning) {
-          await client.ensureRunning(gprojPath);
+          await client.ensureRunning(explicitGproj ?? undefined, {
+            ...(forceSettings ? { forceSettings } : {}),
+            ...(gprojPath ? { requireProject: true } : {}),
+          });
+        }
+        // Remember which addon was requested so other tools default to it
+        // (only once the launch was not refused).
+        if (gprojPath && modDir) {
+          config.defaultMod = basename(modDir);
         }
 
         let worldFailed = false;
@@ -119,17 +248,16 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
             content: [
               {
                 type: "text" as const,
-                text: `**Workbench Already Running** — NET API is responding. All \`wb_*\` tools are available.${worldNote}${formatConnectionStatus(client)}`,
+                text: `**Workbench Already Running** — NET API is responding. All \`wb_*\` tools are available.${recoveredNote}${worldNote}${formatConnectionStatus(client)}`,
               },
             ],
             ...(worldFailed ? { isError: true } : {}),
           };
         }
 
-        const note = modDir
-          ? `\n\nNote: Handler scripts were copied to ${modDir}/Scripts/WorkbenchGame/EnfusionMCP/. ` +
-            "Call **wb_cleanup** with the mod directory path when done to remove them before publishing."
-          : "";
+        const note =
+          `\n\nNote: Handler scripts were copied to ${modDir}/Scripts/WorkbenchGame/EnfusionMCP/. ` +
+          "Call **wb_cleanup** with the mod directory path when done to remove them before publishing.";
 
         // Launch-time observations (launcher picker auto-confirmed,
         // dependency visibility warnings) recorded by the client.
@@ -149,6 +277,47 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
+        if (e instanceof WorkbenchError && e.code === "LEASE_HELD") {
+          // Another session holds the Workbench lease. Nothing was installed
+          // or started for this request.
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Launch Refused — Workbench lease held by another session**\n\n${msg}${formatConnectionStatus(client)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (e instanceof WorkbenchError && e.code === "AUTOLAUNCH_REFUSED") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Launch Refused — no explicit project**\n\n${msg}${formatConnectionStatus(client)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (
+          e instanceof WorkbenchError &&
+          e.code === "LAUNCH_MISMATCH" &&
+          !client.inFlightLaunchTarget
+        ) {
+          // The running Workbench does not have the requested project loaded
+          // (live-client-04). Nothing was installed, opened or launched.
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `**Launch Refused — Workbench has another project open**\n\n${msg}${formatConnectionStatus(client)}`,
+              },
+            ],
+            isError: true,
+          };
+        }
         if (e instanceof WorkbenchError && e.code === "LAUNCH_MISMATCH") {
           // A launch for a different .gproj is already in flight (M2). Nothing
           // was copied or started for this request — say so without the

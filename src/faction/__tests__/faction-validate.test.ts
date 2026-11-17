@@ -20,148 +20,107 @@ function setup(files: Record<string, string>): string {
 
 afterEach(() => rmSync(TMP, { recursive: true, force: true }));
 
-function goodFactionConf(key = "US", name = "United States Army"): string {
+/** Vanilla shape (Configs/Factions/CIV.conf, Dummy.conf): FactionKey, FactionColor floats, UIInfo.Name. */
+function goodFactionConf(key = "US", name = "United States Army", color = "0.04 0.08 0.12 1"): string {
   return [
-    `SCR_Faction "SCR_Faction" {`,
-    ` m_sFactionKey "${key}"`,
-    ` m_sFactionName "${name}"`,
-    ` m_FactionColor {`,
-    `  R 10`,
-    `  G 20`,
-    `  B 30`,
-    `  A 1`,
+    `SCR_Faction {`,
+    ` FactionKey "${key}"`,
+    ` FactionColor ${color}`,
+    ` UIInfo SCR_FactionUIInfo "{56B49118D8D0A9C5}" {`,
+    `  Name "${name}"`,
     ` }`,
     `}`,
   ].join("\n");
 }
 
 describe("validateFactionFile — F1 required fields", () => {
-  it("flags missing m_sFactionKey", () => {
+  it("flags missing FactionKey", () => {
+    const findings = validateFactionFile(
+      "test.conf",
+      [`SCR_Faction {`, ` FactionColor 0 0 0 1`, `}`].join("\n"),
+    );
+    const keyErr = findings.find((f) => f.path === "FactionKey");
+    expect(keyErr?.severity).toBe("error");
+  });
+
+  it("warns on missing UIInfo and FactionColor on a non-inheriting file", () => {
+    const findings = validateFactionFile(
+      "test.conf",
+      [`SCR_Faction {`, ` FactionKey "US"`, `}`].join("\n"),
+    );
+    expect(findings.find((f) => f.path === "UIInfo")?.severity).toBe("warning");
+    expect(findings.find((f) => f.path === "FactionColor")?.severity).toBe("warning");
+  });
+
+  it("accepts an inheriting file without color or UIInfo (vanilla US.conf pattern)", () => {
     const findings = validateFactionFile(
       "test.conf",
       [
-        `SCR_Faction {`,
-        ` m_sFactionName "Foo"`,
-        ` m_FactionColor { R 0 G 0 B 0 A 1 }`,
+        `SCR_Faction : "{E7B7EA4823DD81F0}Configs/Factions/BLUFOR.conf" {`,
+        ` FactionKey "US"`,
         `}`,
       ].join("\n"),
     );
-    const keyErr = findings.find((f) => f.path === "m_sFactionKey");
-    expect(keyErr).toBeDefined();
-    expect(keyErr!.severity).toBe("error");
+    expect(findings).toEqual([]);
   });
 
-  it("flags missing m_sFactionName", () => {
+  it("flags the member-style names the engine ignores", () => {
     const findings = validateFactionFile(
       "test.conf",
       [
-        `SCR_Faction {`,
-        ` m_sFactionKey "US"`,
-        ` m_FactionColor { R 0 G 0 B 0 A 1 }`,
-        `}`,
-      ].join("\n"),
-    );
-    const nameErr = findings.find((f) => f.path === "m_sFactionName");
-    expect(nameErr).toBeDefined();
-    expect(nameErr!.severity).toBe("error");
-  });
-
-  it("flags missing m_FactionColor", () => {
-    const findings = validateFactionFile(
-      "test.conf",
-      [
-        `SCR_Faction {`,
+        `SCR_Faction "SCR_Faction" {`,
         ` m_sFactionKey "US"`,
         ` m_sFactionName "United States"`,
+        ` m_FactionColor {`,
+        `  R 10`,
+        ` }`,
         `}`,
       ].join("\n"),
     );
-    const colorErr = findings.find((f) => f.path === "m_FactionColor");
-    expect(colorErr).toBeDefined();
-    expect(colorErr!.severity).toBe("error");
+    for (const bad of ["m_sFactionKey", "m_sFactionName", "m_FactionColor"]) {
+      const f = findings.find((x) => x.path === bad);
+      expect(f?.severity).toBe("error");
+      expect(f?.message).toMatch(/ignores/);
+    }
+    expect(findings.find((f) => f.path === "FactionKey")?.severity).toBe("error");
   });
 
   it("is clean on a well-formed faction", () => {
-    const findings = validateFactionFile("test.conf", goodFactionConf());
-    const errors = findings.filter((f) => f.severity === "error");
-    expect(errors).toEqual([]);
+    expect(validateFactionFile("test.conf", goodFactionConf())).toEqual([]);
   });
 });
 
 describe("validateFactionFile — F2 key shape", () => {
   it("flags lowercase key", () => {
     const findings = validateFactionFile("test.conf", goodFactionConf("us"));
-    const keyErr = findings.find(
-      (f) => f.path === "m_sFactionKey" && f.message.includes("/^"),
-    );
-    expect(keyErr).toBeDefined();
-    expect(keyErr!.severity).toBe("error");
+    const keyErr = findings.find((f) => f.path === "FactionKey" && f.message.includes("/^"));
+    expect(keyErr?.severity).toBe("error");
   });
 
   it("flags too-long key", () => {
-    const findings = validateFactionFile(
-      "test.conf",
-      goodFactionConf("A".repeat(17)),
-    );
-    const keyErr = findings.find(
-      (f) => f.path === "m_sFactionKey" && f.message.includes("/^"),
-    );
-    expect(keyErr).toBeDefined();
+    const findings = validateFactionFile("test.conf", goodFactionConf("A".repeat(17)));
+    expect(findings.find((f) => f.path === "FactionKey" && f.message.includes("/^"))).toBeDefined();
   });
 
   it("accepts FIA, US, USSR", () => {
     for (const k of ["FIA", "US", "USSR"]) {
       const findings = validateFactionFile("test.conf", goodFactionConf(k));
-      const shapeErr = findings.find(
-        (f) => f.path === "m_sFactionKey" && f.message.includes("/^"),
-      );
-      expect(shapeErr).toBeUndefined();
+      expect(findings.find((f) => f.path === "FactionKey")).toBeUndefined();
     }
   });
 });
 
-describe("validateFactionFile — F3 color range", () => {
-  it("flags out-of-range channel", () => {
-    const content = [
-      `SCR_Faction {`,
-      ` m_sFactionKey "US"`,
-      ` m_sFactionName "United States"`,
-      ` m_FactionColor { R 300 G 20 B 30 A 1 }`,
-      `}`,
-    ].join("\n");
-    const findings = validateFactionFile("test.conf", content);
-    const rErr = findings.find((f) => f.path === "m_FactionColor.R");
-    expect(rErr).toBeDefined();
-    expect(rErr!.severity).toBe("error");
-    expect(rErr!.message).toMatch(/out of range/);
+describe("validateFactionFile — F3 color", () => {
+  it("flags a 0-255 channel", () => {
+    const findings = validateFactionFile("test.conf", goodFactionConf("US", "X", "255 0 0 1"));
+    const err = findings.find((f) => f.path === "FactionColor");
+    expect(err?.severity).toBe("error");
+    expect(err?.message).toMatch(/outside \[0, 1\]/);
   });
 
-  it("flags non-integer channel", () => {
-    const content = [
-      `SCR_Faction {`,
-      ` m_sFactionKey "US"`,
-      ` m_sFactionName "United States"`,
-      ` m_FactionColor { R "1.5" G 20 B 30 A 1 }`,
-      `}`,
-    ].join("\n");
-    const findings = validateFactionFile("test.conf", content);
-    const rErr = findings.find((f) => f.path === "m_FactionColor.R");
-    expect(rErr).toBeDefined();
-    expect(rErr!.severity).toBe("error");
-  });
-
-  it("warns on missing channel", () => {
-    const content = [
-      `SCR_Faction {`,
-      ` m_sFactionKey "US"`,
-      ` m_sFactionName "United States"`,
-      ` m_FactionColor { R 10 G 20 A 1 }`,
-      `}`,
-    ].join("\n");
-    const findings = validateFactionFile("test.conf", content);
-    const bWarn = findings.find((f) => f.path === "m_FactionColor.B");
-    expect(bWarn).toBeDefined();
-    expect(bWarn!.severity).toBe("warning");
+  it("flags a color that is not four numbers", () => {
+    const findings = validateFactionFile("test.conf", goodFactionConf("US", "X", "0.1 0.2 0.3"));
+    expect(findings.find((f) => f.path === "FactionColor")?.severity).toBe("error");
   });
 });
 
@@ -173,9 +132,9 @@ describe("validateFaction (project-wide F4 duplicate)", () => {
     });
     const findings = validateFaction(root);
     const dup = findings.find((f) => f.message.includes("Duplicate faction key"));
-    expect(dup).toBeDefined();
-    expect(dup!.severity).toBe("error");
+    expect(dup?.severity).toBe("error");
     expect(dup!.message).toContain("US");
+    expect(dup!.path).toMatch(/:FactionKey$/);
   });
 
   it("does not flag distinct keys", () => {
@@ -184,8 +143,7 @@ describe("validateFaction (project-wide F4 duplicate)", () => {
       "Configs/Factions/USSR.conf": goodFactionConf("USSR", "Soviet Union"),
     });
     const findings = validateFaction(root);
-    const dup = findings.find((f) => f.message.includes("Duplicate faction key"));
-    expect(dup).toBeUndefined();
+    expect(findings.find((f) => f.message.includes("Duplicate faction key"))).toBeUndefined();
   });
 });
 
@@ -194,10 +152,8 @@ describe("validateFaction (project-wide F5 orphan)", () => {
     const root = setup({
       "Configs/Factions/US.conf": goodFactionConf("US", "United States"),
     });
-    const findings = validateFaction(root);
-    const orphan = findings.find((f) => f.message.includes("Orphan faction"));
-    expect(orphan).toBeDefined();
-    expect(orphan!.severity).toBe("warning");
+    const orphan = validateFaction(root).find((f) => f.message.includes("Orphan faction"));
+    expect(orphan?.severity).toBe("warning");
   });
 
   it("does NOT warn when at least one entity declares the key", () => {
@@ -213,8 +169,7 @@ describe("validateFaction (project-wide F5 orphan)", () => {
         `}`,
       ].join("\n"),
     });
-    const findings = validateFaction(root);
-    const orphan = findings.find((f) => f.message.includes("Orphan faction"));
+    const orphan = validateFaction(root).find((f) => f.message.includes("Orphan faction"));
     expect(orphan).toBeUndefined();
   });
 });
@@ -222,38 +177,24 @@ describe("validateFaction (project-wide F5 orphan)", () => {
 describe("validateFaction — file targeting", () => {
   it("validates a single .conf when pointed at the file directly", () => {
     const root = setup({
-      "Configs/Factions/Bad.conf": [
-        `SCR_Faction {`,
-        ` m_sFactionKey "lowercase"`,
-        ` m_sFactionName "Bad"`,
-        `}`,
-      ].join("\n"),
+      "Configs/Factions/Bad.conf": [`SCR_Faction {`, ` FactionKey "lowercase"`, `}`].join("\n"),
     });
-    const findings = validateFaction(
-      join(root, "Configs", "Factions", "Bad.conf"),
-    );
-    // Should surface: missing color (F1) + key shape (F2)
+    const findings = validateFaction(join(root, "Configs", "Factions", "Bad.conf"));
     expect(
-      findings.find((f) => f.message.includes("/^") && f.path.includes("m_sFactionKey")),
+      findings.find((f) => f.message.includes("/^") && f.path.includes("FactionKey")),
     ).toBeDefined();
-    expect(
-      findings.find((f) => f.path.includes("m_FactionColor")),
-    ).toBeDefined();
+    expect(findings.find((f) => f.path.includes("FactionColor"))).toBeDefined();
   });
 
   it("returns error for non-.conf file", () => {
-    const root = setup({
-      "test.txt": "not a faction",
-    });
+    const root = setup({ "test.txt": "not a faction" });
     const findings = validateFaction(join(root, "test.txt"));
     expect(findings[0].severity).toBe("error");
     expect(findings[0].message).toContain(".conf");
   });
 
   it("returns error for missing path", () => {
-    const findings = validateFaction(
-      resolve(TMP, "does-not-exist", "X.conf"),
-    );
+    const findings = validateFaction(resolve(TMP, "does-not-exist", "X.conf"));
     expect(findings[0].severity).toBe("error");
     expect(findings[0].message).toContain("not found");
   });

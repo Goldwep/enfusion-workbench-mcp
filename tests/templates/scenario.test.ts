@@ -101,13 +101,17 @@ describe("generateConflictScenario", () => {
       expect(missionConf).toContain("MOB_US");
     });
 
-    it("includes saving enabled flag", () => {
+    // SCR_MissionHeader m_eSaveTypes (Attribute default 15, every save type) is the engine's
+    // saving switch; m_bIsSavingEnabled is in no 1.9.0.37 script or file.
+    it("leaves saving at the header default when enabled", () => {
       const { missionConf } = generateConflictScenario(MINIMAL_OPTS);
-      expect(missionConf).toContain("m_bIsSavingEnabled 1");
+      expect(missionConf).not.toContain("m_eSaveTypes");
+      expect(missionConf).not.toContain("m_bIsSavingEnabled");
     });
 
-    it("omits saving flag when disabled", () => {
+    it("turns every save type off when saving is disabled", () => {
       const { missionConf } = generateConflictScenario({ ...MINIMAL_OPTS, savingEnabled: false });
+      expect(missionConf).toContain("m_eSaveTypes 0");
       expect(missionConf).not.toContain("m_bIsSavingEnabled");
     });
   });
@@ -198,9 +202,27 @@ describe("generateConflictScenario", () => {
       expect(basesLayer).toContain("m_bIsSupplyHub 1");
     });
 
-    it("marks MOBs as m_bExcludeFromRandomization", () => {
-      const { basesLayer } = generateConflictScenario(MINIMAL_OPTS);
-      expect(basesLayer).toContain("m_bExcludeFromRandomization 1");
+    it("writes none of the names 1.9.0.37 does not hold", () => {
+      const all = generateConflictScenario({
+        ...MINIMAL_OPTS,
+        bases: [
+          ...MINIMAL_OPTS.bases,
+          { name: "Port", position: "0 0 0", faction: "US", type: "major" as const },
+        ],
+      });
+      const text = [all.missionConf, all.defaultLayer, all.basesLayer].join("\n");
+      for (const name of [
+        "m_bIsSavingEnabled",
+        "m_bHideBasesOutsideRadioRange",
+        "m_bRequiresCaptureAndHoldAreas",
+        "m_iAreaThreshold",
+        "m_aCaptureAndHoldAreaNames",
+        "m_RequiredGroupTypes",
+        "m_fRadioAntennaServiceRange",
+        "m_bExcludeFromRandomization",
+      ]) {
+        expect(text, name).not.toContain(name);
+      }
     });
 
     it("includes spawn protection area on MOB", () => {
@@ -239,34 +261,28 @@ describe("generateConflictScenario", () => {
       expect(basesLayer).not.toContain("AmbientPatrolSpawnpoint_Base.et");
     });
 
-    it("uses correct radio range default of 1470", () => {
-      const opts = {
-        scenarioName: "Test",
-        worldName: "Everon",
-        bases: [{ name: "Base1", position: "0 0 0", faction: "US" }],
-      };
-      const { basesLayer } = generateConflictScenario(opts);
-      expect(basesLayer).toContain("m_fRadioAntennaServiceRange 1470");
-    });
-
-    it("respects custom radioRange", () => {
+    it("accepts radioRange and writes no radio range (no such base property on 1.9.0.37)", () => {
       const opts = {
         scenarioName: "Test",
         worldName: "Everon",
         bases: [{ name: "Base1", position: "0 0 0", faction: "US", radioRange: 2500 }],
       };
       const { basesLayer } = generateConflictScenario(opts);
-      expect(basesLayer).toContain("m_fRadioAntennaServiceRange 2500");
+      expect(basesLayer).not.toContain("2500");
     });
 
-    it("major type sets m_bRequiresCaptureAndHoldAreas", () => {
+    it("major type sets the vanilla seizing m_iRadius", () => {
       const opts = {
         scenarioName: "Test",
         worldName: "Everon",
         bases: [{ name: "Port", position: "0 0 0", faction: "US", type: "major" as const }],
       };
       const { basesLayer } = generateConflictScenario(opts);
-      expect(basesLayer).toContain("m_bRequiresCaptureAndHoldAreas 1");
+      const seizing = basesLayer.slice(
+        basesLayer.indexOf("SCR_CampaignSeizingComponent"),
+        basesLayer.indexOf("SCR_CoverageRadioComponent"),
+      );
+      expect(seizing).toContain("m_iRadius 200");
     });
 
     it("excludes harbor type from $grp block", () => {

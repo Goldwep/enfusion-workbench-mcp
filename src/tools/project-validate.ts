@@ -73,6 +73,15 @@ function validateMod(targetPath: string): ValidationFinding[] {
 
 // ── Scope: scenario ──────────────────────────────────────────────────────────
 
+/** Keys accepted as the scenario's world link, native `World` first. */
+const SCENARIO_WORLD_KEYS = [
+  "World",
+  "m_sWorld",
+  "m_sWorldFile",
+  "m_WorldFile",
+  "m_sWorldResourceName",
+];
+
 function validateScenario(targetPath: string): ValidationFinding[] {
   if (extname(targetPath).toLowerCase() !== ".conf") {
     return [
@@ -108,17 +117,14 @@ function validateScenario(targetPath: string): ValidationFinding[] {
       message: `Root type '${root.type}' isn't recognized as a Reforger game mode (expected SCR_*)`,
     });
   }
-  const worldProp = root.properties.find(
-    (p) =>
-      p.key === "m_sWorld" ||
-      p.key === "m_WorldFile" ||
-      p.key === "m_sWorldResourceName",
-  );
+  // `World` is the native MissionHeader property (what vanilla headers and
+  // config_create write); the m_s* keys are accepted for mods that use them.
+  const worldProp = root.properties.find((p) => SCENARIO_WORLD_KEYS.includes(p.key));
   if (!worldProp || typeof worldProp.value !== "string" || worldProp.value.length === 0) {
     findings.push({
       severity: "error",
-      path: "m_sWorld",
-      message: "Scenario does not declare a world (m_sWorld / m_WorldFile / m_sWorldResourceName)",
+      path: "World",
+      message: `Scenario does not declare a world (${SCENARIO_WORLD_KEYS.join(" / ")})`,
     });
   }
   return findings;

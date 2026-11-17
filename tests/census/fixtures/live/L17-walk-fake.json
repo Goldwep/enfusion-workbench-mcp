@@ -1,0 +1,255 @@
+{
+  "_note": "FAKE tree for the L17 test: the shape and node mix come from the sf-26 Options walk (S-F run 2026-10-10, 43 nodes, sliced; rects dropped, data containers cut to 3 rows), the root renamed. The real Qt Introspection Tool window has never been read.",
+  "source_sha256": "467577f5857cba1da425905bc6231a1a0b292ed8c87c070b0eb7d4f48d1ae195",
+  "target": {
+    "className": "Qt683QWindowIcon"
+  },
+  "tree": {
+    "controlType": "Window",
+    "name": "Qt Introspection Tool",
+    "automationId": "Arma4WorkbenchApp.QtIntrospectionTool",
+    "className": "QtIntrospectionTool",
+    "patterns": ["Invoke", "Value", "Window", "Transform", "LegacyIAccessible"],
+    "childCount": 7,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "patterns": ["Value", "LegacyIAccessible"],
+        "childCount": 2,
+        "legacyDescription": "Displays the name of the window and contains controls to manipulate it",
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "patterns": ["LegacyIAccessible"],
+            "childCount": 1,
+            "legacyDescription": "Contains commands to manipulate the window",
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "patterns": ["Invoke", "ExpandCollapse", "LegacyIAccessible"],
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "childCount": 0,
+            "legacyDescription": "Closes the window",
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "List",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+        "className": "QListWidget",
+        "patterns": ["Value", "Selection", "LegacyIAccessible"],
+        "childCount": 7,
+        "sampled": {
+          "kept": 3,
+          "rule": "data-container"
+        },
+        "children": [
+          {
+            "controlType": "ListItem",
+            "name": "General",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "ListItem",
+            "name": "World Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Animation Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Custom",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget",
+        "className": "QStackedWidget",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "childCount": 1,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel",
+            "className": "ShortcutsOptionsPanel",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "childCount": 4,
+            "children": [
+              {
+                "controlType": "Tree",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                "className": "PropertyGrid",
+                "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                "childCount": 19,
+                "sampled": {
+                  "kept": 3,
+                  "rule": "data-container"
+                },
+                "children": [
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Camera",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "patterns": [
+                      "Invoke",
+                      "ExpandCollapse",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Forward",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Backward",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Button",
+                "name": "Reset All",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.QPushButton",
+                "className": "QPushButton",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.WBEditBox",
+                "className": "WBEditBox",
+                "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.WBEditBox.QLineEditIconButton",
+                    "className": "QLineEditIconButton",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.QPushButton",
+                "className": "QPushButton",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "controlType": "Button",
+        "name": "OK",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "childCount": 0,
+        "children": []
+      },
+      {
+        "controlType": "Button",
+        "name": "Cancel",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "childCount": 0,
+        "children": []
+      },
+      {
+        "controlType": "Button",
+        "name": "Register \"enfusion://\" Protocol",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "childCount": 0,
+        "children": []
+      },
+      {
+        "controlType": "Button",
+        "name": "Export All Settings",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "childCount": 0,
+        "children": []
+      }
+    ]
+  }
+}

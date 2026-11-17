@@ -1,0 +1,376 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Generator",
+  "tool": "wb_generator",
+  "purpose": "World Editor generators on shapes: list, attach, detach, regenerate, point data, generator events.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Generator.c",
+  "request": [
+    "action",
+    "shape",
+    "cursor",
+    "limit",
+    "prefab",
+    "name",
+    "entity",
+    "op",
+    "index",
+    "dataClass",
+    "dataIndex",
+    "enabled"
+  ],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "next",
+    "rows",
+    "eventsEnabled",
+    "total",
+    "nextCursor",
+    "id",
+    "className",
+    "undoName",
+    "generators",
+    "count",
+    "was"
+  ],
+  "actions": [
+    {
+      "name": "list",
+      "summary": "Generators of a shape, or all, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "shape",
+          "type": "string",
+          "required": false,
+          "note": "shape ref; default all"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "id|className|prefab|shapeId"
+        },
+        {
+          "key": "eventsEnabled",
+          "type": "bool"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "attach",
+      "summary": "Generator prefab as child of a shape",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-10 passes; NOT_A_GENERATOR when the prefab's class does not inherit GeneratorBaseEntity.",
+      "params": [
+        {
+          "key": "shape",
+          "type": "string",
+          "required": true,
+          "note": "shape ref"
+        },
+        {
+          "key": "prefab",
+          "type": "string",
+          "required": true,
+          "note": "{GUID}path .et"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "detach",
+      "summary": "Delete a generator",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-10 passes; NOT_A_GENERATOR when the entity is neither a generator nor a shape with generator children.",
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "generator or shape ref"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "regenerate",
+      "summary": "Rebuild a shape's generators",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-11 picks the route: OnShapeChanged, or a shape re-set in one entity action.",
+      "params": [
+        {
+          "key": "shape",
+          "type": "string",
+          "required": true,
+          "note": "shape ref"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "generators",
+          "type": "int"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "pointData",
+      "summary": "Add or remove a point's generator data",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-13 passes; NOT_A_SHAPE when shape is not a ShapeEntity.",
+      "params": [
+        {
+          "key": "shape",
+          "type": "string",
+          "required": true,
+          "note": "shape ref"
+        },
+        {
+          "key": "op",
+          "type": "string",
+          "required": true,
+          "note": "add|remove"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": true,
+          "note": "point index"
+        },
+        {
+          "key": "dataClass",
+          "type": "string",
+          "required": false,
+          "note": "e.g. ForestGeneratorPointData; add"
+        },
+        {
+          "key": "dataIndex",
+          "type": "int",
+          "required": false,
+          "note": "remove; default 0"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "data entries on the point"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "events",
+      "summary": "Turn generator events on or off",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-12 passes; editor-wide state, not undoable; list reports it.",
+      "params": [
+        {
+          "key": "enabled",
+          "type": "bool",
+          "required": true
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "eventsEnabled",
+          "type": "bool",
+          "note": "state after the call"
+        },
+        {
+          "key": "was",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

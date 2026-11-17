@@ -1,0 +1,655 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Layers",
+  "tool": "wb_layers",
+  "purpose": "Layers and folders of the open world.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Layers.c",
+  "request": [
+    "action",
+    "subScene",
+    "cursor",
+    "limit",
+    "name",
+    "parentPath",
+    "layer",
+    "confirm",
+    "withContents"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "currentSubScene",
+    "rows",
+    "subScenes",
+    "activeLayer",
+    "total",
+    "nextCursor",
+    "layer",
+    "layerId",
+    "undoName",
+    "before",
+    "after",
+    "entityCount",
+    "childCount",
+    "entitiesDeleted",
+    "dryRun",
+    "layerLocked"
+  ],
+  "actions": [
+    {
+      "name": "list",
+      "summary": "Layers of a sub-scene by id",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "currentSubScene",
+          "type": "int"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "id|path|visible|locked|count"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "tree",
+      "summary": "Layer and folder tree, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: every sub-scene"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "subScenes",
+          "type": "int"
+        },
+        {
+          "key": "activeLayer",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "sub|path|id|kind|vis|lock|lockH|count"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "items before paging"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string",
+          "note": "empty on the last page"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "create",
+      "summary": "Create a layer",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "parentPath",
+          "type": "string",
+          "required": false,
+          "note": "folder path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "note": "path returned"
+        },
+        {
+          "key": "layerId",
+          "type": "int"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "createFolder",
+      "summary": "Create a layer folder",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "parentPath",
+          "type": "string",
+          "required": false,
+          "note": "folder path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "note": "path returned"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "rename",
+      "summary": "Rename a layer or folder",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer or folder path"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "delete",
+      "summary": "Delete a layer or folder; non-empty: withContents",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer or folder path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "withContents: false = dry run"
+        },
+        {
+          "key": "withContents",
+          "type": "bool",
+          "required": false,
+          "note": "delete its entities and children too"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entityCount",
+          "type": "int",
+          "note": "entities it held"
+        },
+        {
+          "key": "childCount",
+          "type": "int",
+          "note": "layers and folders under it"
+        },
+        {
+          "key": "entitiesDeleted",
+          "type": "int",
+          "note": "editor entity count drop"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "item paths deleted, deepest first"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "move",
+      "summary": "Move under another folder",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer or folder path"
+        },
+        {
+          "key": "parentPath",
+          "type": "string",
+          "required": true,
+          "note": "folder path; empty = root"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setActive",
+      "summary": "Set the layer new entities go to",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "lock",
+      "summary": "Lock a layer",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "layerLocked",
+          "type": "bool",
+          "note": "read back"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "unlock",
+      "summary": "Unlock a layer",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "layer",
+          "type": "string",
+          "required": true,
+          "note": "layer path"
+        },
+        {
+          "key": "subScene",
+          "type": "int",
+          "required": false,
+          "note": "default: current"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "layerLocked",
+          "type": "bool",
+          "note": "read back"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

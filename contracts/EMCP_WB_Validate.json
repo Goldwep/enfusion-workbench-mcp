@@ -1,0 +1,232 @@
+{
+  "handler": "EMCP_WB_Validate",
+  "tool": "wb_validate",
+  "purpose": "Bohemia material and texture validators, run as data. path: project-relative or a game resource.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Validate.c",
+  "request": ["action", "path", "typeName", "rebuild", "confirm"],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "severity",
+    "reports",
+    "textures",
+    "textureType",
+    "checks",
+    "fatal",
+    "before",
+    "after",
+    "saved",
+    "dryRun",
+    "rebuilt"
+  ],
+  "actions": [
+    {
+      "name": "material",
+      "summary": "MaterialValidatorUtils checks",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": ".emat, project or game"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "severity",
+          "type": "int",
+          "note": "highest of the reports; 0 none"
+        },
+        {
+          "key": "reports",
+          "type": "array<string>",
+          "note": "severity: text"
+        },
+        {
+          "key": "textures",
+          "type": "array<string>",
+          "note": "resolved texture paths"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "texture",
+      "summary": "TextureTypes checks per configuration",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "source texture with a meta"
+        },
+        {
+          "key": "typeName",
+          "type": "string",
+          "required": false,
+          "note": "e.g. co, nohq, fnt, unspecified"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "textureType",
+          "type": "string"
+        },
+        {
+          "key": "checks",
+          "type": "array<string>",
+          "note": "Check=result, or skipped"
+        },
+        {
+          "key": "fatal",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "fixTexture",
+      "summary": "Apply Bohemia texture fixes",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "typeName",
+          "type": "string",
+          "required": false,
+          "note": "e.g. co, nohq, fnt, unspecified"
+        },
+        {
+          "key": "rebuild",
+          "type": "bool",
+          "required": false,
+          "note": "rebuild after the save"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "textureType",
+          "type": "string"
+        },
+        {
+          "key": "checks",
+          "type": "array<string>",
+          "note": "Check=result, or skipped"
+        },
+        {
+          "key": "fatal",
+          "type": "bool"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "changed config.var=value"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "changed config.var=value"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "rebuilt",
+          "type": "bool",
+          "note": "WaitForFile after the rebuild"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

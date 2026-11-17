@@ -99,9 +99,13 @@ describe("generatePrefab", () => {
     expect(comps).toBeDefined();
     const editable = comps!.children.find((c) => c.type === "SCR_EditableEntityComponent");
     expect(editable).toBeDefined();
-    const nameProp = editable!.properties.find((p) => p.key === "m_sDisplayName");
-    expect(nameProp).toBeDefined();
-    expect(nameProp!.value).toBe("A test entity");
+    // Vanilla prefabs: m_UIInfo SCR_EditableEntityUIInfo "{GUID}" { Name "..." };
+    // SCR_EditableEntityComponent has no m_sDisplayName member.
+    expect(text).not.toContain("m_sDisplayName");
+    const ui = editable!.children.find((c) => c.type === "m_UIInfo");
+    expect(ui?.className).toBe("SCR_EditableEntityUIInfo");
+    expect(ui?.id).toMatch(/^\{[0-9A-F]{16}\}$/);
+    expect(ui?.properties.find((p) => p.key === "Name")?.value).toBe("A test entity");
   });
 
   it("generates gamemode prefab", () => {
@@ -177,6 +181,30 @@ describe("generatePrefab", () => {
       const node = parse(text);
       expect(node.type).toBe(expectedEntity);
     }
+  });
+
+  // Engine names, from vanilla (1.9.0.37 paks): SCR_AIGroup holds its faction in the entity's
+  // m_faction (Prefabs/Groups/BLUFOR/Group_US_Base.et; [Attribute] string m_faction in
+  // scripts/Game/Entities/SCR_AIGroup.c); no SCR_GroupIdentity class exists and
+  // SCR_CallsignGroupComponent has no attribute; InventoryItemComponent has no m_UIName (the
+  // name is nested under Attributes > ItemDisplayName, Prefabs/Items/Core/Item_Base.et).
+  // The faction is left to the modder: an empty m_faction would override a parent's.
+  it("group writes no member-name placeholder and no component SCR_AIGroup", () => {
+    const node = parse(generatePrefab({ name: "G", prefabType: "group" }));
+    expect(node.type).toBe("SCR_AIGroup");
+    expect(node.properties.map((p) => p.key)).toEqual(["ID"]);
+    const text = generatePrefab({ name: "G", prefabType: "group" });
+    for (const bad of ["m_sFactionKey", "SCR_GroupIdentity", "m_sCallsign"]) {
+      expect(text, bad).not.toContain(bad);
+    }
+    const comps = node.children.find((c) => c.type === "components");
+    expect(comps?.children.some((c) => c.type === "SCR_AIGroup") ?? false).toBe(false);
+  });
+
+  it("item writes no m_UIName on InventoryItemComponent", () => {
+    const text = generatePrefab({ name: "I", prefabType: "item" });
+    expect(text).toContain("InventoryItemComponent");
+    expect(text).not.toContain("m_UIName");
   });
 });
 

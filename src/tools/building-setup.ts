@@ -1,8 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
-import { writeFileSync, mkdirSync } from "node:fs";
-import { resolve, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { writeFileAtomic } from "../utils/atomic-write.js";
+import { resolve, join, relative, sep } from "node:path";
 import type { Config } from "../config.js";
 import { validateFilename } from "../utils/safe-path.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
@@ -56,16 +57,22 @@ export function guidPrefabPath(relativePath: string): string {
   return `{${generateGuid()}}${relativePath}`;
 }
 
+// Property names below follow vanilla prefabs in the game paks:
+//   SCR_DamagePhaseData { m_PhaseModel } — Prefabs/Props/Agriculture/Beehive_01/Beehive_01_stack.et
+//   BaseSlotComponent { AttachType EntitySlotInfo { PivotID } EntityPrefab }
+//     — Prefabs/Structures/Airport/ControlTower_01/ControlTower_01.et
+//   SlotBoneMappings { SlotBoneMappingObject { BonePrefix Prefab } } on the entity,
+//     not in components — Prefabs/Structures/Agriculture/Barn/Barn_E_01/Barn_E_01_Base.et
+// m_fPhaseHealth is not written: vanilla values are absolute hit points (300-10000),
+// and the manifest carries no health figure to put there.
 export function generateDestructionComponent(part: BuildingPart, modPrefix: string): string {
   if (part.phases.length === 0) return "";
 
   const phaseEntries = part.phases.map((phase) => {
-    const health = 1 - phase.index / (part.phases.length + 1);
     const xob = fbxToXob(phase.fbx, modPrefix);
     const guid = generateGuid();
     return `  SCR_DamagePhaseData "{${guid}}" {
-   PhaseModel "${xob}"
-   Health ${health.toFixed(2)}
+   m_PhaseModel "${xob}"
   }`;
   });
 
@@ -77,16 +84,18 @@ ${phaseEntries.join("\n")}
 }
 
 export function generateSlotBoneMappingObject(part: BuildingPart, partPrefabPath: string): string {
-  return `SlotBoneMappingObject {
+  return `SlotBoneMappingObject "{${generateGuid()}}" {
  BonePrefix "${part.socket_prefix}"
- Template "${partPrefabPath}"
+ Prefab "${partPrefabPath}"
 }`;
 }
 
 export function generateBaseSlotComponent(part: BuildingPart, partPrefabPath: string): string {
-  return `BaseSlotComponent {
- Slot "${part.socket_name}"
- Prefab "${partPrefabPath}"
+  return `BaseSlotComponent "{${generateGuid()}}" {
+ AttachType EntitySlotInfo "{${generateGuid()}}" {
+  PivotID "${part.socket_name}"
+ }
+ EntityPrefab "${partPrefabPath}"
 }`;
 }
 
@@ -116,17 +125,20 @@ export function generateBuildingPrefab(
   partPrefabPaths: Map<string, string>,
 ): string {
   const slotComponents: string[] = [];
+  const boneMappings: string[] = [];
 
   for (const part of parts) {
     const prefabPath = partPrefabPaths.get(part.name) || "";
     if (part.unique) {
-      slotComponents.push(` ${generateBaseSlotComponent(part, prefabPath)}`);
+      slotComponents.push(indent(generateBaseSlotComponent(part, prefabPath), "  "));
     } else {
-      slotComponents.push(` ${generateSlotBoneMappingObject(part, prefabPath)}`);
+      boneMappings.push(indent(generateSlotBoneMappingObject(part, prefabPath), "  "));
     }
   }
 
   const xob = fbxToXob(manifest.structure.fbx, modPrefix);
+  const mappingBlock =
+    boneMappings.length > 0 ? `\n SlotBoneMappings {\n${boneMappings.join("\n")}\n }` : "";
 
   return `SCR_DestructibleBuildingEntity : "{B6D7B585448658F5}Prefabs/Structures/BuildingParts/Building_Base.et" {
  components {
@@ -134,10 +146,17 @@ export function generateBuildingPrefab(
    Object "${xob}"
   }
   SCR_DestructibleBuildingComponent {
-  }
-${slotComponents.join("\n")}
- }
+  }${slotComponents.length > 0 ? "\n" + slotComponents.join("\n") : ""}
+ }${mappingBlock}
 }`;
+}
+
+/** Prefix every line of a block with `pad`. */
+function indent(block: string, pad: string): string {
+  return block
+    .split("\n")
+    .map((l) => pad + l)
+    .join("\n");
 }
 
 // ── Tool registration ────────────────────────────────────────────────────────
@@ -244,8 +263,9 @@ export function registerBuildingSetup(server: McpServer, config: Config): void {
         const partPath = join(partDir, partFile);
         const partContent = generatePartPrefab(part, modPrefix);
 
-        // Store GUID-prefixed prefab path for slot wiring
-        const relativePath = `Prefabs/Structures/${manifest.building_name}/Parts/${partFile}`;
+        // Store GUID-prefixed prefab path for slot wiring: where the part is written, relative
+        // to the project root (outDir is contained in it), so an outputDir is honoured (offline-writers-07).
+        const relativePath = relative(resolve(config.projectPath), partPath).split(sep).join("/");
         partPrefabPaths.set(part.name, guidPrefabPath(relativePath));
 
         const slotType = part.unique ? "BaseSlotComponent" : "SlotBoneMappingObject";
@@ -256,7 +276,8 @@ export function registerBuildingSetup(server: McpServer, config: Config): void {
 
         if (!dryRun) {
           mkdirSync(partDir, { recursive: true });
-          writeFileSync(partPath, partContent, "utf-8");
+          // A rerun replaces the parts, so write-then-rename (write-safety gap 20).
+          writeFileAtomic(partPath, partContent);
           createdFiles.push(partPath);
         }
       }
@@ -275,7 +296,7 @@ export function registerBuildingSetup(server: McpServer, config: Config): void {
 
       if (!dryRun) {
         mkdirSync(outDir, { recursive: true });
-        writeFileSync(buildingPath, buildingContent, "utf-8");
+        writeFileAtomic(buildingPath, buildingContent);
         createdFiles.push(buildingPath);
       }
 

@@ -32,7 +32,7 @@ export function registerConfigCreate(server: McpServer, config: Config): void {
         factionColor: z
           .string()
           .optional()
-          .describe("Faction RGBA color string, e.g., '255,0,0,255' (faction type)"),
+          .describe("Faction color 'R,G,B' or 'R,G,B,A', 0-255 each, e.g. '255,0,0,255' (faction type)"),
         flagPath: z
           .string()
           .optional()
@@ -86,7 +86,7 @@ export function registerConfigCreate(server: McpServer, config: Config): void {
         categoryName: z
           .string()
           .optional()
-          .describe("Category name (entity-catalog, editor-placeables types)"),
+          .describe("Ignored: vanilla catalogs and placeables registries hold no category name"),
         projectPath: z
           .string()
           .optional()
@@ -158,7 +158,8 @@ export function registerConfigCreate(server: McpServer, config: Config): void {
             };
           }
 
-          writeFileSync(targetPath, content, "utf-8");
+          // A new file only: flag wx refuses one that appeared after the check (write-safety gap 20).
+          writeFileSync(targetPath, content, { encoding: "utf-8", flag: "wx" });
 
           return {
             content: [

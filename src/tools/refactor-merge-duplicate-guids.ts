@@ -2,11 +2,16 @@
  * `refactor_merge_duplicate_guids` — find resource files that claim the
  * same GUID (L5-5).
  *
- * The project-index DB enforces UNIQUE on `resources.guid`, so the
- * crawler's `INSERT OR IGNORE` silently drops the second occurrence —
- * the DB is the wrong source of truth for duplicate detection. This
- * tool does a fresh disk-walk + GUID extraction across `.gproj`/`.et`/
- * `.conf`/`.ent`/`.layout` files, groups by GUID, and reports collisions.
+ * This tool does a fresh disk walk (the index may be stale) and groups the
+ * resource GUIDs it finds. A resource GUID lives in exactly two places:
+ *   - a `.gproj`'s `GUID` property (the addon GUID; forks often keep it);
+ *   - a `.meta` sidecar's `Name "{GUID}path"` line, for every other
+ *     registered resource (.et, .conf, .edds, .physmat, ...).
+ *
+ * An `.et` root `ID` is an ENTITY id and a `.conf` / `.layout` root node id
+ * is an object id (audit refactor-index-08): prefabs that inherit from one
+ * base share the entity id, so treating it as a GUID reported false
+ * collisions and told the user to rewrite entity ids. Neither is read here.
  *
  * v1 is DIAGNOSE-ONLY. Live-merge is deferred — the right fix is
  * usually "reissue a fresh GUID on the duplicate via `refactor_replace_guid`",
@@ -19,9 +24,9 @@ import { readTextFileBounded } from "../utils/safe-read.js";
 import { join, resolve, relative, extname } from "node:path";
 import { z } from "zod";
 import { parse } from "../formats/enfusion-text.js";
+import { extractMetaGuid } from "../project-index/meta-guid.js";
 
 const SKIP_DIRS = new Set<string>(["node_modules", ".git", "dist", ".bak"]);
-const SCAN_EXTS = new Set<string>([".gproj", ".et", ".conf", ".ent", ".layout"]);
 const GUID_RE = /^[0-9A-Fa-f]{16}$/;
 
 interface FileGuid {
@@ -32,35 +37,21 @@ interface FileGuid {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function stripBraces(s: string | undefined): string | undefined {
-  if (s === undefined) return undefined;
-  if (s.startsWith("{") && s.endsWith("}")) return s.slice(1, -1);
-  return s;
-}
-
-function extractRootGuid(content: string): { guid: string; rootType: string } | null {
+/** The addon GUID of a `.gproj` (its root `GUID` property), or null. */
+function extractProjectGuid(content: string): string | null {
   let root;
   try {
     root = parse(content);
   } catch {
     return null;
   }
-  const candidates: (string | undefined)[] = [
-    stripBraces(root.id),
-    root.properties.find((p) => p.key === "GUID" && typeof p.value === "string")?.value as
-      | string
-      | undefined,
-    root.properties.find((p) => p.key === "ID" && typeof p.value === "string")?.value as
-      | string
-      | undefined,
-  ];
-  for (const cand of candidates) {
-    if (cand && GUID_RE.test(cand)) {
-      return { guid: cand.toUpperCase(), rootType: root.type };
-    }
-  }
-  return null;
+  const g = root.properties.find((p) => p.key === "GUID" && typeof p.value === "string")
+    ?.value as string | undefined;
+  return g && GUID_RE.test(g) ? g.toUpperCase() : null;
 }
+
+/** The GUID on a `.meta` sidecar's top-level Name line, or null. */
+export { extractMetaGuid };
 
 function* walk(root: string): Generator<string> {
   let entries;
@@ -77,7 +68,8 @@ function* walk(root: string): Generator<string> {
       continue;
     }
     if (!e.isFile()) continue;
-    if (SCAN_EXTS.has(extname(e.name).toLowerCase())) {
+    const ext = extname(e.name).toLowerCase();
+    if (ext === ".gproj" || ext === ".meta") {
       yield join(root, e.name);
     }
   }
@@ -94,12 +86,13 @@ export function findDuplicateGuids(projectRoot: string): Map<string, FileGuid[]>
     } catch {
       continue;
     }
-    const ex = extractRootGuid(content);
-    if (!ex) continue;
+    const isMeta = extname(abs).toLowerCase() === ".meta";
+    const guid = isMeta ? extractMetaGuid(content) : extractProjectGuid(content);
+    if (!guid) continue;
     const rel = relative(projectRoot, abs).split("\\").join("/");
-    const list = byGuid.get(ex.guid) ?? [];
-    list.push({ guid: ex.guid, relPath: rel, rootType: ex.rootType });
-    byGuid.set(ex.guid, list);
+    const list = byGuid.get(guid) ?? [];
+    list.push({ guid, relPath: rel, rootType: isMeta ? "MetaFileClass" : "GameProject" });
+    byGuid.set(guid, list);
   }
   // Keep only collisions.
   const collisions = new Map<string, FileGuid[]>();
@@ -149,7 +142,7 @@ export function registerRefactorMergeDuplicateGuids(server: McpServer): void {
     {
       description:
         "Find resource files that claim the same 16-hex GUID (collisions). " +
-        "Walks the project root for .gproj/.et/.conf/.ent/.layout and groups by extracted root GUID. " +
+        "Walks the project root for each .gproj GUID and every .meta sidecar's Name GUID (entity IDs in .et files are not GUIDs), and groups by GUID. " +
         "v1 is DIAGNOSE-ONLY — the recommended fix is `refactor_replace_guid` per duplicate to issue fresh GUIDs. " +
         "Catches the most common Workshop fork bug: cloning a mod without changing its addon GUID.",
       inputSchema: {

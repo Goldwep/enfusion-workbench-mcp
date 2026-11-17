@@ -71,7 +71,8 @@ export function searchKb(
     .slice(0, maxFiles);
 
   if (scored.length === 0) {
-    return { files: [], usedIndex: true };
+    // No match is not an index request: the caller says "No KB entries matched" (read-knowledge-12).
+    return { files: [], usedIndex: false };
   }
 
   const patternsDir = resolve(kbDir, "patterns");

@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, isAbsolute } from "node:path";
 import type { Config } from "../config.js";
 import { PakVirtualFS } from "../pak/vfs.js";
 import { readTextFileBounded } from "../utils/safe-read.js";
@@ -9,11 +9,129 @@ import type { WorkbenchClient } from "../workbench/client.js";
 import { validateProjectPath } from "../utils/safe-path.js";
 import { resolveGameDataPath, findLooseFile, resolveAddonDir } from "../utils/game-paths.js";
 import { generateGuid } from "../formats/guid.js";
+import { registerProjectFile } from "./wb-resources.js";
 import {
   walkChain,
   mergeAncestryComponents,
   parseTopLevelComponents,
+  type AncestorLevel,
 } from "../utils/prefab-ancestry.js";
+
+// ── The text transform (pure) ────────────────────────────────────────────────
+
+/**
+ * Why a duplicate's paths are refused, or null when they are fine. The source must be a relative
+ * game resource path (no `..`, no drive, no leading separator) to a `.et` or `.conf`, and the
+ * destination must keep that extension.
+ */
+export function duplicatePathError(bareSource: string, destPath: string): string | null {
+  const ext = /\.(et|conf)$/i.exec(bareSource)?.[0].toLowerCase();
+  if (!ext) return `sourcePath must name a prefab (.et) or a config (.conf): ${bareSource}`;
+  if (
+    isAbsolute(bareSource) ||
+    /^[A-Za-z]:/.test(bareSource) ||
+    /^[\\/]/.test(bareSource) ||
+    bareSource.split(/[\\/]/).includes("..")
+  ) {
+    return `sourcePath must be a relative game resource path with no '..': ${bareSource}`;
+  }
+  if (!destPath.toLowerCase().endsWith(ext)) {
+    return `destPath must end in ${ext}, the source's extension: ${destPath}`;
+  }
+  return null;
+}
+
+export interface DuplicateTransformOptions {
+  /** The ancestry chain, oldest ancestor first and the source itself last (walkChain). */
+  levels?: readonly AncestorLevel[];
+  /** Strip the parent reference (applied only when the chain has more than one level). */
+  flatten: boolean;
+  /** The 16 hex digits written into the `ID "..."` line, when the text has one. */
+  newEntityId: string;
+}
+
+export interface DuplicateTransformResult {
+  content: string;
+  /** One entry per injected component: `TypeName (from [depth] path)`. */
+  injected: string[];
+  /** True when the chain had more than one level, so injection and flatten were considered. */
+  ancestryApplied: boolean;
+}
+
+/**
+ * game_duplicate's edits on the source text, with no file access (write-safety audit gap 3).
+ * Three edits, each a splice that keeps every other byte:
+ *   1. top-level components that ancestors declare and the source does not are inserted after the
+ *      source's `components {` line (or a components block is added before the final `}`);
+ *   2. with `flatten`, the parent reference of the first class line is removed;
+ *   3. the first `ID "<16 hex>"` line gets `newEntityId`.
+ * Edits 1 and 2 apply only when `levels` holds more than one level. With no levels, no flatten and
+ * the ID the text already holds, the result is the input byte for byte.
+ */
+export function transformDuplicate(
+  rawContent: string,
+  options: DuplicateTransformOptions,
+): DuplicateTransformResult {
+  const levels = options.levels ?? [];
+  let content = rawContent;
+  const injected: string[] = [];
+  const ancestryApplied = levels.length > 1;
+
+  if (ancestryApplied) {
+    // Merged components from the full ancestry.
+    const merged = mergeAncestryComponents([...levels]);
+
+    // Top-level component GUIDs per ancestor level (excludes nested sub-components).
+    const topLevelByDepth = new Map<number, Set<string>>();
+    for (const level of levels) {
+      topLevelByDepth.set(level.depth, new Set(parseTopLevelComponents(level.rawContent).keys()));
+    }
+
+    // Existing top-level GUIDs in the leaf file.
+    const existingGuids = new Set(parseTopLevelComponents(rawContent).keys());
+
+    // Components to inject, as raw text fragments.
+    const fragments: string[] = [];
+    for (const [guid, { comp, source }] of merged) {
+      if (existingGuids.has(guid)) continue; // already declared in leaf
+      if (source.depth === levels.length - 1) continue; // it's in the leaf itself
+      // Only inject top-level components; skip nested sub-components.
+      if (!topLevelByDepth.get(source.depth)?.has(guid)) continue;
+      // Raw text fragment keeping the original body exactly.
+      fragments.push(`  ${comp.typeName} "{${comp.guid}}" {${comp.rawBody}  }`);
+      injected.push(`${comp.typeName} (from [${source.depth}] ${source.path})`);
+    }
+
+    if (fragments.length > 0) {
+      // Insert into the components block by string splice (no lossy parse and serialise).
+      const componentsMatch = /^([ \t]*components\s*\{)/m.exec(content);
+      if (componentsMatch) {
+        const insertPos = componentsMatch.index + componentsMatch[0].length;
+        content =
+          content.slice(0, insertPos) + "\n" + fragments.join("\n") + content.slice(insertPos);
+      } else {
+        // No components block: insert one before the final closing brace.
+        const lastBrace = content.lastIndexOf("}");
+        content =
+          content.slice(0, lastBrace) +
+          " components {\n" +
+          fragments.join("\n") +
+          "\n }\n" +
+          content.slice(lastBrace);
+      }
+    }
+
+    // With flatten, strip the parent reference from the raw text.
+    if (options.flatten) {
+      content = content.replace(/^(\w+)\s*:\s*"[^"]*"\s*\{/m, "$1 {");
+    }
+  }
+
+  // The ID field (entity GUID) gets the new value so the duplicate is independent.
+  content = content.replace(/^(\s*ID\s+")[0-9A-Fa-f]{16}(")/m, `$1${options.newEntityId}$2`);
+
+  return { content, injected, ancestryApplied };
+}
 
 export function registerGameDuplicate(
   server: McpServer,
@@ -42,7 +160,7 @@ export function registerGameDuplicate(
           .string()
           .describe(
             "Destination path within your mod folder, relative to the addon root " +
-              "(e.g., 'Prefabs/Groups/MyCustomGroup.et'). Must end in .et",
+              "(e.g., 'Prefabs/Groups/MyCustomGroup.et'). Must keep the source's extension (.et or .conf)",
           ),
         modName: z
           .string()
@@ -72,6 +190,14 @@ export function registerGameDuplicate(
     async ({ sourcePath, destPath, modName, flatten, register }) => {
       // Strip GUID prefix from sourcePath if present: {GUID}path → path
       const bareSourcePath = sourcePath.replace(/^\{[0-9A-Fa-f]{16}\}/, "");
+
+      // The source is a game resource path: relative, no '..', a prefab or a config. Anything
+      // else would be joined onto the game data root and read from outside it (total audit
+      // offline-writers-03). The copy keeps the source's kind.
+      const pathError = duplicatePathError(bareSourcePath, destPath);
+      if (pathError) {
+        return { content: [{ type: "text", text: pathError }], isError: true };
+      }
 
       // Locate the source file — extracted library first, then pak loose files
       let sourceFile: string | null = null;
@@ -180,102 +306,44 @@ export function registerGameDuplicate(
         };
       }
 
-      // Resolve ancestry and inject inherited components
+      // Resolve ancestry (only for .et prefab files, not .conf), then apply the text edits.
       let ancestryNote = "";
-      let finalContent = rawContent;
-
-      // Only apply ancestry for .et prefab files, not .conf
-      if (bareSourcePath.endsWith(".et")) {
-        const { levels, warnings } = walkChain(bareSourcePath, config);
-
-        if (levels.length > 1) {
-          try {
-            // Get merged components from full ancestry
-            const merged = mergeAncestryComponents(levels);
-
-            // Top-level component GUIDs per ancestor level (excludes nested sub-components)
-            const topLevelByDepth = new Map<number, Set<string>>();
-            for (const level of levels) {
-              const topMap = parseTopLevelComponents(level.rawContent);
-              topLevelByDepth.set(level.depth, new Set(topMap.keys()));
-            }
-
-            // Existing top-level GUIDs in the leaf file
-            const existingGuids = new Set(parseTopLevelComponents(rawContent).keys());
-
-            // Build list of components to inject (as raw text fragments)
-            const injected: string[] = [];
-            const fragments: string[] = [];
-
-            for (const [guid, { comp, source }] of merged) {
-              if (existingGuids.has(guid)) continue; // already declared in leaf
-              if (source.depth === levels.length - 1) continue; // it's in the leaf itself
-
-              // Only inject top-level components — skip nested sub-components
-              if (!topLevelByDepth.get(source.depth)?.has(guid)) continue;
-
-              // Build raw text fragment preserving original content exactly
-              fragments.push(`  ${comp.typeName} "{${comp.guid}}" {${comp.rawBody}  }`);
-              injected.push(`${comp.typeName} (from [${source.depth}] ${source.path})`);
-            }
-
-            if (fragments.length > 0) {
-              // Insert fragments into the components block using string manipulation
-              // (avoids lossy parse/serialize round-trip)
-              const componentsMatch = /^([ \t]*components\s*\{)/m.exec(finalContent);
-              if (componentsMatch) {
-                // Insert after "components {" opening
-                const insertPos = componentsMatch.index + componentsMatch[0].length;
-                finalContent =
-                  finalContent.slice(0, insertPos) +
-                  "\n" +
-                  fragments.join("\n") +
-                  finalContent.slice(insertPos);
-              } else {
-                // No components block — insert one before the final closing brace
-                const lastBrace = finalContent.lastIndexOf("}");
-                finalContent =
-                  finalContent.slice(0, lastBrace) +
-                  " components {\n" +
-                  fragments.join("\n") +
-                  "\n }\n" +
-                  finalContent.slice(lastBrace);
-              }
-            }
-
-            // If flatten, strip parent reference from the raw text
-            if (flatten) {
-              finalContent = finalContent.replace(/^(\w+)\s*:\s*"[^"]*"\s*\{/m, "$1 {");
-            }
-
-            const levelCount = levels.length;
-            ancestryNote = `\n\nAncestry: resolved ${levelCount} level(s), injected ${injected.length} inherited component(s).`;
-            if (injected.length > 0) {
-              ancestryNote += `\nInjected: ${injected.join(", ")}`;
-            }
-            if (flatten) {
-              ancestryNote += "\nParent reference stripped (flatten=true).";
-            }
-            if (warnings.length > 0) {
-              ancestryNote += `\nWarnings: ${warnings.join("; ")}`;
-            }
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            return {
-              content: [{ type: "text", text: `Failed to process ancestry: ${msg}` }],
-              isError: true,
-            };
+      let finalContent: string;
+      try {
+        const chain = bareSourcePath.endsWith(".et")
+          ? walkChain(bareSourcePath, config)
+          : { levels: [] as AncestorLevel[], warnings: [] as string[] };
+        // Replace the ID field (entity GUID) with a fresh one so the duplicate is independent.
+        const edit = transformDuplicate(rawContent, {
+          levels: chain.levels,
+          flatten,
+          newEntityId: generateGuid(),
+        });
+        finalContent = edit.content;
+        if (edit.ancestryApplied) {
+          ancestryNote = `\n\nAncestry: resolved ${chain.levels.length} level(s), injected ${edit.injected.length} inherited component(s).`;
+          if (edit.injected.length > 0) {
+            ancestryNote += `\nInjected: ${edit.injected.join(", ")}`;
+          }
+          if (flatten) {
+            ancestryNote += "\nParent reference stripped (flatten=true).";
+          }
+          if (chain.warnings.length > 0) {
+            ancestryNote += `\nWarnings: ${chain.warnings.join("; ")}`;
           }
         }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return {
+          content: [{ type: "text", text: `Failed to process ancestry: ${msg}` }],
+          isError: true,
+        };
       }
-
-      // Replace the ID field (entity GUID) with a fresh one so the duplicate is independent
-      const newEntityId = generateGuid();
-      finalContent = finalContent.replace(/^(\s*ID\s+")[0-9A-Fa-f]{16}(")/m, `$1${newEntityId}$2`);
 
       try {
         mkdirSync(dirname(absDestPath), { recursive: true });
-        writeFileSync(absDestPath, finalContent, "utf-8");
+        // A new file only (the existsSync refusal above): flag wx refuses one that appeared since.
+        writeFileSync(absDestPath, finalContent, { encoding: "utf-8", flag: "wx" });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return {
@@ -287,16 +355,12 @@ export function registerGameDuplicate(
       // Register with Workbench to assign a new GUID (if requested)
       if (register) {
         try {
-          const regResp = await client.call<{ status: string; message?: string }>(
-            "EMCP_WB_Resources",
-            { action: "register", path: absDestPath, buildRuntime: false },
-            { timeout: 30000 },
-          );
+          // EMCP_WB_Resources register (W2): project-relative path, written only with confirm.
+          const reg = await registerProjectFile(client, addonDir, absDestPath);
 
-          const guidNote =
-            regResp.status === "ok"
-              ? "Registered with Workbench — a new GUID has been assigned."
-              : `Warning: registration returned: ${regResp.message ?? JSON.stringify(regResp)}`;
+          const guidNote = reg.ok
+            ? `Registered with Workbench — a new GUID has been assigned${reg.resourceName ? `: ${reg.resourceName}` : ""}.`
+            : `Warning: registration returned: ${reg.message}`;
 
           return {
             content: [

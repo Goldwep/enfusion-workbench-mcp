@@ -1,0 +1,638 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_WorldTools",
+  "tool": "wb_world_tools",
+  "purpose": "Dialog-free ports of vanilla World Editor plugins and tools.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_WorldTools.c",
+  "request": [
+    "action",
+    "entities",
+    "layer",
+    "cursor",
+    "limit",
+    "radius",
+    "activeLayerOnly",
+    "vegetation",
+    "belowTerrain",
+    "minOffset",
+    "maxOffset",
+    "gridSize",
+    "rows",
+    "relativeY",
+    "allWorld",
+    "flags",
+    "categories",
+    "includeChildren",
+    "pairs",
+    "keepChildren",
+    "text",
+    "belowWater",
+    "path"
+  ],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "next",
+    "total",
+    "nextCursor",
+    "rows",
+    "layers",
+    "grid",
+    "cellSize",
+    "scanned",
+    "created",
+    "moved",
+    "changed",
+    "cleared",
+    "replaced",
+    "ids",
+    "missing",
+    "failed",
+    "undoName"
+  ],
+  "actions": [
+    {
+      "name": "exportObjects",
+      "summary": "entities as import rows",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": false,
+          "note": "refs; default selection"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "required": false,
+          "note": "layer path instead of refs"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "prefab;x y z;qx qy qz qw;scale"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>",
+          "note": "refs naming no entity"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "floaters",
+      "summary": "entities off the terrain",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": false,
+          "note": "refs; default selection"
+        },
+        {
+          "key": "radius",
+          "type": "float",
+          "required": false,
+          "note": "metres around camera if no refs"
+        },
+        {
+          "key": "activeLayerOnly",
+          "type": "bool",
+          "required": false,
+          "note": "default false"
+        },
+        {
+          "key": "vegetation",
+          "type": "bool",
+          "required": false,
+          "note": "include trees and bushes"
+        },
+        {
+          "key": "belowTerrain",
+          "type": "bool",
+          "required": false,
+          "note": "also report sunk entities"
+        },
+        {
+          "key": "belowWater",
+          "type": "bool",
+          "required": false,
+          "note": "also report entities under water"
+        },
+        {
+          "key": "minOffset",
+          "type": "float",
+          "required": false,
+          "note": "metres; default 0.05"
+        },
+        {
+          "key": "maxOffset",
+          "type": "float",
+          "required": false,
+          "note": "metres; default 100"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "max hits, default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "scanned",
+          "type": "int"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "id;gap metres;reason"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>",
+          "note": "refs naming no entity"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "stats",
+      "summary": "counts per prefab, layer, grid",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "activeLayerOnly",
+          "type": "bool",
+          "required": false,
+          "note": "default false"
+        },
+        {
+          "key": "gridSize",
+          "type": "int",
+          "required": false,
+          "note": "cells per side, 0 = none, max 64"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "scanned",
+          "type": "int"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "prefab;count"
+        },
+        {
+          "key": "layers",
+          "type": "array<string>",
+          "note": "layer;count"
+        },
+        {
+          "key": "grid",
+          "type": "array<string>",
+          "note": "one row of counts per line"
+        },
+        {
+          "key": "cellSize",
+          "type": "float",
+          "note": "metres, as text"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "goToCoords",
+      "summary": "(TS) camera to link or coords",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: parses the text, reads terrain height through wb_terrain heights, then calls wb_view setCamera. No handler code.",
+      "params": [
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "note": "enfusion link, x,y,z;p,y,r or grid"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "importObjects",
+      "summary": "create from import rows",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": false,
+          "note": "project CSV; TS reads it into rows"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "required": false,
+          "note": "prefab;x y z;qx qy qz qw;scale"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "required": false,
+          "note": "layer path; default active"
+        },
+        {
+          "key": "relativeY",
+          "type": "bool",
+          "required": false,
+          "note": "y above terrain"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "created",
+          "type": "int"
+        },
+        {
+          "key": "ids",
+          "type": "array<string>"
+        },
+        {
+          "key": "failed",
+          "type": "array<string>",
+          "note": "row index;reason"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "snapToTerrain",
+      "summary": "snap and orient to terrain",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": false,
+          "note": "refs; default selection"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "moved",
+          "type": "int"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>"
+        },
+        {
+          "key": "failed",
+          "type": "array<string>",
+          "note": "ref;reason"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "resetFlags",
+      "summary": "flags back to the prefab's",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "No refs, no selection and no allWorld: true is INVALID_ARGUMENT; the whole world is never the silent default.",
+      "params": [
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": false,
+          "note": "refs; default selection"
+        },
+        {
+          "key": "allWorld",
+          "type": "bool",
+          "required": false,
+          "note": "every editor entity"
+        },
+        {
+          "key": "flags",
+          "type": "array<string>",
+          "required": false,
+          "note": "EntityFlags names; default 10"
+        },
+        {
+          "key": "categories",
+          "type": "array<string>",
+          "required": false,
+          "note": "rocks|trees|bushes|buildings|any"
+        },
+        {
+          "key": "includeChildren",
+          "type": "bool",
+          "required": false,
+          "note": "default false"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "entities walked"
+        },
+        {
+          "key": "scanned",
+          "type": "int",
+          "note": "walked ones passing the filter"
+        },
+        {
+          "key": "changed",
+          "type": "int"
+        },
+        {
+          "key": "cleared",
+          "type": "int",
+          "note": "values cleared to inherit"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>",
+          "note": "refs naming no entity"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "replaceEntities",
+      "summary": "swap entities for prefabs",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "pairs",
+          "type": "array<string>",
+          "required": true,
+          "note": "ref=prefab; max 200"
+        },
+        {
+          "key": "keepChildren",
+          "type": "bool",
+          "required": false,
+          "note": "re-parent children; default true"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "replaced",
+          "type": "int"
+        },
+        {
+          "key": "ids",
+          "type": "array<string>"
+        },
+        {
+          "key": "missing",
+          "type": "array<string>"
+        },
+        {
+          "key": "failed",
+          "type": "array<string>",
+          "note": "ref;reason"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

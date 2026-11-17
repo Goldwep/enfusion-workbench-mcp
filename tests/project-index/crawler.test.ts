@@ -210,6 +210,7 @@ describe("crawler", () => {
       // Simulate a crash mid-commit: target already swapped, .bak holds the
       // original, journal still in_progress.
       writeFileSync(target, torn);
+      writeFileSync(`${target}.meta`, 'MetaFileClass {\n Name "{F000000000000001}Prefabs/Foo.et"\n}\n');
       writeFileSync(`${target}.bak`, original);
       writeFileSync(`${target}.tmp.deadbeef`, torn);
       const journalDir = join(root, ".emcp", "journals");
@@ -242,10 +243,14 @@ describe("crawler", () => {
       expect(existsSync(`${target}.tmp.deadbeef`)).toBe(false);
       expect(existsSync(join(journalDir, ".atomic-commit.deadbeef.json"))).toBe(false);
       // And the index reflects the RESTORED content, not the torn write.
+      // Schema v4: the root `ID` is the entity id (the GUID is the .meta's).
       const row = db
-        .prepare("SELECT guid FROM resources WHERE project_id = 'Addon' AND file_path = ?")
-        .get("Prefabs/Foo.et") as { guid: string } | undefined;
-      expect(row?.guid).toBe("AAAA000000000001");
+        .prepare(
+          "SELECT guid, entity_id FROM resources WHERE project_id = 'Addon' AND file_path = ?",
+        )
+        .get("Prefabs/Foo.et") as { guid: string; entity_id: string } | undefined;
+      expect(row?.guid).toBe("F000000000000001");
+      expect(row?.entity_id).toBe("AAAA000000000001");
     });
   });
 });

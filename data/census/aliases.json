@@ -1,0 +1,1104 @@
+{
+  "$comment": "Accepted entity-resolution decisions that are not exact-key matches (plan 4.4). Written only by scripts/census/alias.ts accept, run by the main session. `from` merges into the canonical `to`.",
+  "aliases": [
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:attribute/WorkbenchPluginAttribute",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorkbenchPluginAttribute",
+      "why": "recon carry-over (api-type): plugins-netapi-cli.md#L155"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:attribute/WorkbenchToolAttribute",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorkbenchToolAttribute",
+      "why": "recon carry-over (api-type): plugins-netapi-cli.md#L156"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:event/GetExportColumn",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditorPlugin.GetExportColumn/2",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L257"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Add user filter",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.AddUserFilter/2",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L236"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/AddCommentEntity",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.AddCommentEntity/4",
+      "why": "recon carry-over (api-member): world-editor.md#L151"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/AddPrefabMembers",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.AddPrefabMembers/2",
+      "why": "recon carry-over (api-member): world-editor.md#L190"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/AddTerrainFlatterEntity",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.AddTerrainFlatterEntity/9",
+      "why": "recon carry-over (api-member): world-editor.md#L150"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Begin undo group",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.BeginModify/1",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L227"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/BeginEditSequence",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.BeginEditSequence/1",
+      "why": "recon carry-over (api-member): world-editor.md#L72"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/BeginEntityAction",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.BeginEntityAction/3",
+      "why": "recon carry-over (api-member): world-editor.md#L70"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ClearVariableValue",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ClearVariableValue/3",
+      "why": "recon carry-over (api-member): world-editor.md#L157"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CopySelectedEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CopySelectedEntities/0",
+      "why": "recon carry-over (api-member): world-editor.md#L89"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CreateComponent",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CreateComponent/2",
+      "why": "recon carry-over (api-member): world-editor.md#L102"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CreateEntityExt",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CreateEntityExt/7",
+      "why": "recon carry-over (api-member): world-editor.md#L184"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CreateObjectArrayVariableMember",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CreateObjectArrayVariableMember/5",
+      "why": "recon carry-over (api-member): world-editor.md#L159"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CreateObjectVariableMember",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CreateObjectVariableMember/4",
+      "why": "recon carry-over (api-member): world-editor.md#L158"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/CutSelectedEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.CutSelectedEntities/0",
+      "why": "recon carry-over (api-member): world-editor.md#L93"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Delete item",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.DeleteItem/1",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L230"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Duplicate world",
+      "proposed_by": "recon-resolve",
+      "to": "api:SCR_WorldFilesHelper.DuplicateWorld/2",
+      "why": "recon carry-over (api-member): world-editor.md#L56"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/DuplicateSelectedEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.DuplicateSelectedEntities/0",
+      "why": "recon carry-over (api-member): world-editor.md#L92"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/End undo group",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.EndModify/0",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L231"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/EndEditSequence",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.EndEditSequence/1",
+      "why": "recon carry-over (api-member): world-editor.md#L74"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/EndEntityAction",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.EndEntityAction/1",
+      "why": "recon carry-over (api-member): world-editor.md#L71"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Filtered rows",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.GetFilteredRows/1",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L234"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GenerateDefaultEntityName",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GenerateDefaultEntityName/1",
+      "why": "recon carry-over (api-member): world-editor.md#L188"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Get table",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.GetTable/0",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L233"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetEditorEntity",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetEditorEntity/1",
+      "why": "recon carry-over (api-member): world-editor.md#L85"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetEditorEntityCount",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetEditorEntityCount/0",
+      "why": "recon carry-over (api-member): world-editor.md#L84"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetMousePosX",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetMousePosX/1",
+      "why": "recon carry-over (api-member): world-editor.md#L112"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetMousePosY",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetMousePosY/1",
+      "why": "recon carry-over (api-member): world-editor.md#L113"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetPluginAPI",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetPluginAPI/1",
+      "why": "recon carry-over (api-member): world-editor.md#L114"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetScreenHeight",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetScreenHeight/0",
+      "why": "recon carry-over (api-member): world-editor.md#L111"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetScreenWidth",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetScreenWidth/0",
+      "why": "recon carry-over (api-member): world-editor.md#L110"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainResolutionX",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainResolutionX/1",
+      "why": "recon carry-over (api-member): world-editor.md#L130"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainResolutionY",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainResolutionY/1",
+      "why": "recon carry-over (api-member): world-editor.md#L131"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainSurfaceTile",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainSurfaceTile/4",
+      "why": "recon carry-over (api-member): world-editor.md#L128"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainSurfaceY",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainSurfaceY/2",
+      "why": "recon carry-over (api-member): world-editor.md#L127"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainTilesX",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainTilesX/1",
+      "why": "recon carry-over (api-member): world-editor.md#L132"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainTilesY",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainTilesY/1",
+      "why": "recon carry-over (api-member): world-editor.md#L133"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/GetTerrainUnitScale",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.GetTerrainUnitScale/1",
+      "why": "recon carry-over (api-member): world-editor.md#L134"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/HasCopiedEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.HasCopiedEntities/0",
+      "why": "recon carry-over (api-member): world-editor.md#L88"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Insert item",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.InsertItem/3",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L229"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Insert line",
+      "proposed_by": "recon-resolve",
+      "to": "api:ScriptEditor.InsertLine/2",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L33"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsCreatingEntityInWindow",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsCreatingEntityInWindow/0",
+      "why": "recon carry-over (api-member): world-editor.md#L77"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEditSequenceActive",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEditSequenceActive/1",
+      "why": "recon carry-over (api-member): world-editor.md#L73"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEntityLayerLocked",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEntityLayerLocked/2",
+      "why": "recon carry-over (api-member): world-editor.md#L143"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEntityLayerLockedHierarchy",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEntityLayerLockedHierarchy/2",
+      "why": "recon carry-over (api-member): world-editor.md#L144"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEntitySelected",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEntitySelected/1",
+      "why": "recon carry-over (api-member): world-editor.md#L117"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEntitySelectedAsMain",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEntitySelectedAsMain/1",
+      "why": "recon carry-over (api-member): world-editor.md#L118"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsEntityVisible",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsEntityVisible/1",
+      "why": "recon carry-over (api-member): world-editor.md#L115"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/IsPrefabEditMode",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.IsPrefabEditMode/0",
+      "why": "recon carry-over (api-member): world-editor.md#L79"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Modify one property",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.ModifyProperty/3",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L228"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ModifyHeightMap",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ModifyHeightMap/6",
+      "why": "recon carry-over (api-member): world-editor.md#L121"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ModifyHeightMapUserShape",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ModifyHeightMapUserShape/6",
+      "why": "recon carry-over (api-member): world-editor.md#L122"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ModifyLayers",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ModifyLayers/6",
+      "why": "recon carry-over (api-member): world-editor.md#L123"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ModifyLayersUserShape",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ModifyLayersUserShape/6",
+      "why": "recon carry-over (api-member): world-editor.md#L124"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/MoveEntitiesToPrefab",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.MoveEntitiesToPrefab/4",
+      "why": "recon carry-over (api-member): world-editor.md#L192"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ParentEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ParentEntities/3",
+      "why": "recon carry-over (api-member): world-editor.md#L186"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/PasteEntities",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.PasteEntities/0",
+      "why": "recon carry-over (api-member): world-editor.md#L90"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/PasteEntitiesAtMouseCursorPos",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.PasteEntitiesAtMouseCursorPos/0",
+      "why": "recon carry-over (api-member): world-editor.md#L91"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Read Resource Browser selection",
+      "proposed_by": "recon-resolve",
+      "to": "api:ResourceManager.GetResourceBrowserSelection/2",
+      "why": "recon carry-over (api-member): resource-manager.md#L41"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Read line",
+      "proposed_by": "recon-resolve",
+      "to": "api:ScriptEditor.GetLineText/2",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L31"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Rebuild (reimport) one resource",
+      "proposed_by": "recon-resolve",
+      "to": "api:ResourceManager.RebuildResourceFile/3",
+      "why": "recon carry-over (api-member): resource-manager.md#L38"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Rebuild many resources",
+      "proposed_by": "recon-resolve",
+      "to": "api:ResourceManager.RebuildResourceFiles/2",
+      "why": "recon carry-over (api-member): resource-manager.md#L39"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Refresh UI",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.RefreshUI/0",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L232"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Register resource",
+      "proposed_by": "recon-resolve",
+      "to": "api:ResourceManager.RegisterResourceFile/2",
+      "why": "recon carry-over (api-member): resource-manager.md#L37"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Remove line",
+      "proposed_by": "recon-resolve",
+      "to": "api:ScriptEditor.RemoveLine/1",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L34"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/RemoveObjectArrayVariableMember",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.RemoveObjectArrayVariableMember/4",
+      "why": "recon carry-over (api-member): world-editor.md#L160"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/RemoveTerrainFlatterEntity",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.RemoveTerrainFlatterEntity/2",
+      "why": "recon carry-over (api-member): world-editor.md#L135"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Repair terrain texture borders",
+      "proposed_by": "recon-resolve",
+      "to": "api:TexTools.RepairTerrainTextureBorders/3",
+      "why": "recon carry-over (api-member): resource-manager.md#L96"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Replace world entity prefab",
+      "proposed_by": "recon-resolve",
+      "to": "api:SCR_WorldFilesHelper.ReplaceWorldEntity/2",
+      "why": "recon carry-over (api-member): world-editor.md#L57"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Resource Browser selection",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditor.GetResourceBrowserSelection/2",
+      "why": "recon carry-over (api-member): world-editor.md#L54"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Save pixels as DDS",
+      "proposed_by": "recon-resolve",
+      "to": "api:TexTools.SaveImageData/4",
+      "why": "recon carry-over (api-member): resource-manager.md#L95"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Selected rows",
+      "proposed_by": "recon-resolve",
+      "to": "api:LocalizationEditor.GetSelectedRows/1",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L235"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/SetCamera",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.SetCamera/2",
+      "why": "recon carry-over (api-member): world-editor.md#L178"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/SetTerrainSurfaceTile",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.SetTerrainSurfaceTile/4",
+      "why": "recon carry-over (api-member): world-editor.md#L129"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/SetVariableValue",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.SetVariableValue/4",
+      "why": "recon carry-over (api-member): world-editor.md#L156"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ShowItemListDialog",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ShowItemListDialog/7",
+      "why": "recon carry-over (api-member): world-editor.md#L189"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Source file path",
+      "proposed_by": "recon-resolve",
+      "to": "api:MetaFile.GetSourceFilePath/0",
+      "why": "recon carry-over (api-member): resource-manager.md#L55"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/ToggleGeneratorEvents",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.ToggleGeneratorEvents/1",
+      "why": "recon carry-over (api-member): world-editor.md#L139"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/TraceWorldPos",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.TraceWorldPos/7",
+      "why": "recon carry-over (api-member): world-editor.md#L155"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/TryGetTerrainSurfaceY",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.TryGetTerrainSurfaceY/3",
+      "why": "recon carry-over (api-member): world-editor.md#L154"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/UndoOrRedoIsRestoring",
+      "proposed_by": "recon-resolve",
+      "to": "api:WorldEditorAPI.UndoOrRedoIsRestoring/0",
+      "why": "recon carry-over (api-member): world-editor.md#L76"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Wait for resource DB",
+      "proposed_by": "recon-resolve",
+      "to": "api:ResourceManager.WaitForFile/2",
+      "why": "recon carry-over (api-member): resource-manager.md#L40"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:method/Write line",
+      "proposed_by": "recon-resolve",
+      "to": "api:ScriptEditor.SetLineText/2",
+      "why": "recon carry-over (api-member): script-string-dialogue.md#L32"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Finish process",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.FinishProcess/1",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L99"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Kill process",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.KillProcess/1",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L96"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Process running?",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.IsRunningProcess/1",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L97"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Resource search (obsolete)",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.SearchResources/5",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L92"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Start process",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.RunProcess/1",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L95"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "api:static-method/Wait for process",
+      "proposed_by": "recon-resolve",
+      "to": "api:Workbench.WaitProcess/2",
+      "why": "recon carry-over (api-member): plugins-netapi-cli.md#L98"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.acp Audio component project",
+      "proposed_by": "recon-resolve",
+      "to": "file:.acp",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L275"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.ae Animation Event Table",
+      "proposed_by": "recon-resolve",
+      "to": "file:.ae",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L251"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.aex Animation Expression Table",
+      "proposed_by": "recon-resolve",
+      "to": "file:.aex",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L252"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.afm Audio Final Mixer",
+      "proposed_by": "recon-resolve",
+      "to": "file:.afm",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L277"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.agf Animation Graph File",
+      "proposed_by": "recon-resolve",
+      "to": "file:.agf",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L247"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.agr Animation Graph",
+      "proposed_by": "recon-resolve",
+      "to": "file:.agr",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L246"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.anm Animation clip",
+      "proposed_by": "recon-resolve",
+      "to": "file:.anm",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L253"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.asi Animation Set Instance",
+      "proposed_by": "recon-resolve",
+      "to": "file:.asi",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L249"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.ast Animation Set Template",
+      "proposed_by": "recon-resolve",
+      "to": "file:.ast",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L248"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.asy Animation Sync Table",
+      "proposed_by": "recon-resolve",
+      "to": "file:.asy",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L250"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.aw Animation Workspace",
+      "proposed_by": "recon-resolve",
+      "to": "file:.aw",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L245"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.nmn navmesh header file",
+      "proposed_by": "recon-resolve",
+      "to": "file:.nmn",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L432"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.ntile navmesh tile data",
+      "proposed_by": "recon-resolve",
+      "to": "file:.ntile",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L433"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.pap file",
+      "proposed_by": "recon-resolve",
+      "to": "file:.pap",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L316"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.sig Signal",
+      "proposed_by": "recon-resolve",
+      "to": "file:.sig",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L276"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.smap sound map",
+      "proposed_by": "recon-resolve",
+      "to": "file:.smap",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L282"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.snd sound container",
+      "proposed_by": "recon-resolve",
+      "to": "file:.snd",
+      "why": "recon carry-over (file-ext): audio-particle-navmesh.md#L280"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "file:file-type/.txa text animation source",
+      "proposed_by": "recon-resolve",
+      "to": "file:.txa",
+      "why": "recon carry-over (file-ext): anim-procanim-behavior.md#L254"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "link:Web-redirect-prefix",
+      "proposed_by": "recon-resolve",
+      "to": "link:https://enfusionengine.com/api/redirect?to=",
+      "why": "recon carry-over (link-url): plugins-netapi-cli.md#L393"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "link:enfusion://-Workbench-links",
+      "proposed_by": "recon-resolve",
+      "to": "link:enfusion://",
+      "why": "recon carry-over (link-url): mcp-inventory.md#L160"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Class tree including modded chain",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_class_hierarchy",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L213"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Hardcoded string scan",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/ui_extract_strings",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L320"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Linter (5 rules)",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_lint",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L218"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Localization coverage audit",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/ui_localization_audit",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L319; the recon marks the coverage partial: partial: ui_localization_audit (key extraction does not match real file shapes, see rows above)"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Modded-class finder",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_overrides",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L219"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Public interface extract",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_extract_interface",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L215"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/RPC and attribute finder",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_find_rpc_handlers",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L216"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Safe formatter",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_format",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L217"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "mcp:mcp-tool/Structural parse of a .c file",
+      "proposed_by": "recon-resolve",
+      "to": "mcp:tool/script_analyze",
+      "why": "recon carry-over (mcp-tool): script-string-dialogue.md#L212"
+    },
+    {
+      "evidence": "EV-s001-003",
+      "from": "plugin:plugin-setting/Template types",
+      "proposed_by": "recon-resolve",
+      "to": "plugin:SCR_ScriptTemplatePlugin#attr:m_eClassType",
+      "why": "recon carry-over (plugin-setting-typed): script-string-dialogue.md#L196"
+    },
+    {
+      "evidence": "EV-P4-2-001",
+      "from": "ui:AnimEditor/toolbar-button/Top Bar/open workspace",
+      "proposed_by": "p4-alias",
+      "to": "ui:AnimEditor/toolbar-button/mainToolBar/Open Workspace",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (open workspace vs Open Workspace); static path Top Bar vs live path mainToolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-2-001",
+      "from": "ui:AnimEditor/toolbar-button/Top Bar/paste",
+      "proposed_by": "p4-alias",
+      "to": "ui:AnimEditor/toolbar-button/mainToolBar/Paste",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (paste vs Paste); static path Top Bar vs live path mainToolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-2-001",
+      "from": "ui:AnimEditor/toolbar-button/Top Bar/play default node",
+      "proposed_by": "p4-alias",
+      "to": "ui:AnimEditor/toolbar-button/mainToolBar/Play Default Node",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (play default node vs Play Default Node); static path Top Bar vs live path mainToolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-2-001",
+      "from": "ui:AnimEditor/toolbar-button/Top Bar/save workspace",
+      "proposed_by": "p4-alias",
+      "to": "ui:AnimEditor/toolbar-button/mainToolBar/Save Workspace",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (save workspace vs Save Workspace); static path Top Bar vs live path mainToolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Edit/Edit prefab",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/Edit/Edit Prefab",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Edit prefab vs Edit Prefab); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Edit/Locate file in resource browser",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/Edit/Locate File in Resource Browser",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Locate file in resource browser vs Locate File in Resource Browser); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Edit/Reimport resource",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/Edit/Reimport Resource",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Reimport resource vs Reimport Resource); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Plugins/Validate Prefabs",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/Plugins/Prefabs/Validate Prefabs",
+      "why": "E07 wiki row is the live-observed menu-item: static path Plugins vs live path Plugins/Prefabs; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Utilities/Qt introspection tool",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/Utilities/Qt Introspection Tool",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Qt introspection tool vs Qt Introspection Tool); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/View/Hex view/16 bytes",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/View/Hex View/16 bytes",
+      "why": "E07 wiki row is the live-observed menu-item: static path View/Hex view vs live path View/Hex View; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/View/Hex view/32 bytes",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/View/Hex View/32 bytes",
+      "why": "E07 wiki row is the live-observed menu-item: static path View/Hex view vs live path View/Hex View; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/View/Hex view/8 bytes",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/View/Hex View/8 bytes",
+      "why": "E07 wiki row is the live-observed menu-item: static path View/Hex view vs live path View/Hex View; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Workbench/Exit",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/File/Exit",
+      "why": "E07 wiki row is the live-observed menu-item: static path Workbench vs live path File; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Workbench/Options",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/File/Options...",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Options vs Options...); static path Workbench vs live path File; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Workbench/Remove from Workshop",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/File/Remove from Workshop",
+      "why": "E07 wiki row is the live-observed menu-item: static path Workbench vs live path File; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Workbench/Save",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/File/Save",
+      "why": "E07 wiki row is the live-observed menu-item: static path Workbench vs live path File; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu-item/Workbench/Save All",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu-item/File/Save All",
+      "why": "E07 wiki row is the live-observed menu-item: static path Workbench vs live path File; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:ResourceManager/menu/View/Hex view",
+      "proposed_by": "p4-alias",
+      "to": "ui:ResourceManager/menu/View/Hex View",
+      "why": "E07 wiki row is the live-observed menu: label casing/punctuation (Hex view vs Hex View); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P6-BK1-006",
+      "from": "ui:ResourceManager/shortcut/Toggle Fullscreen Mode",
+      "proposed_by": "recon-resolve",
+      "to": "ui:ResourceManager/shortcut/Resource Manager/Toggle Fullscreen Mode",
+      "why": "recon carry-over (bk1-exact-label): resource-manager.md#L167; same dim, module, kind and exact label 'Toggle Fullscreen Mode' as the measured row"
+    },
+    {
+      "evidence": "EV-P4-3-001",
+      "from": "ui:ScriptEditor/menu-item/Windows/Callstack",
+      "proposed_by": "p4-alias",
+      "to": "ui:ScriptEditor/menu-item/Window/Callstack",
+      "why": "E07 wiki row is the live-observed menu-item: static path Windows vs live path Window; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-3-001",
+      "from": "ui:ScriptEditor/menu-item/Windows/Outline",
+      "proposed_by": "p4-alias",
+      "to": "ui:ScriptEditor/menu-item/Window/Outline",
+      "why": "E07 wiki row is the live-observed menu-item: static path Windows vs live path Window; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-3-001",
+      "from": "ui:ScriptEditor/menu-item/Windows/Projects",
+      "proposed_by": "p4-alias",
+      "to": "ui:ScriptEditor/menu-item/Window/Projects",
+      "why": "E07 wiki row is the live-observed menu-item: static path Windows vs live path Window; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/control/Log Console/Clear Console",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/control/logConsoleDock/logDockContents/Clear Console",
+      "why": "E07 wiki row is the live-observed control: static path Log Console vs live path logConsoleDock/logDockContents; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Game/Copy view link",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Copy View Link",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Copy view link vs Copy View Link); live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Play Game/Play from camera position",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Play Game Options/Play from Camera Position",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Play from camera position vs Play from Camera Position); static path Play Game vs live path Game/Play Game Options; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Play Game/Play in fullscreen",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Play Game Options/Play in Fullscreen",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Play in fullscreen vs Play in Fullscreen); static path Play Game vs live path Game/Play Game Options; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Play Game/Play inside viewport",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Play Game Options/Play inside Viewport",
+      "why": "E07 wiki row is the live-observed menu-item: label casing/punctuation (Play inside viewport vs Play inside Viewport); static path Play Game vs live path Game/Play Game Options; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Play Game/Server localhost",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Play Game Options/Server localhost",
+      "why": "E07 wiki row is the live-observed menu-item: static path Play Game vs live path Game/Play Game Options; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/menu-item/Play Game/Server localhost + PeerTool",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/menu-item/Game/Play Game Options/Server localhost + PeerTool",
+      "why": "E07 wiki row is the live-observed menu-item: static path Play Game vs live path Game/Play Game Options; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Export Map data",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolbarScriptedTools/Export Map data",
+      "why": "E07 wiki row is the live-observed toolbar-button: static path Top Bar vs live path toolbarScriptedTools; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Go to World File",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Go to World File",
+      "why": "E07 wiki row is the live-observed toolbar-button: static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Load World",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Load World",
+      "why": "E07 wiki row is the live-observed toolbar-button: static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Paste on same position",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Paste on Same Position",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (Paste on same position vs Paste on Same Position); static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Save World",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Save World",
+      "why": "E07 wiki row is the live-observed toolbar-button: static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Select parent entities",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Select Parent Entities",
+      "why": "E07 wiki row is the live-observed toolbar-button: label casing/punctuation (Select parent entities vs Select Parent Entities); static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    },
+    {
+      "evidence": "EV-P4-1-001",
+      "from": "ui:WorldEditor/toolbar-button/Top Bar/Toggle Gizmo Space",
+      "proposed_by": "p4-alias",
+      "to": "ui:WorldEditor/toolbar-button/toolBar/Toggle Gizmo Space",
+      "why": "E07 wiki row is the live-observed toolbar-button: static path Top Bar vs live path toolBar; live id canonical (DEC-054)"
+    }
+  ]
+}

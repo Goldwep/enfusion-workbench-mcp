@@ -1,7 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { relative, resolve, dirname } from "node:path";
-import { existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 import type { Config } from "../config.js";
 import { validateProjectPath } from "../utils/safe-path.js";
 import { listDirectory, formatSize } from "../utils/dir-listing.js";
@@ -181,7 +182,8 @@ export function registerProject(server: McpServer, config: Config): void {
             mkdirSync(dirname(fullPath), { recursive: true });
           }
 
-          writeFileSync(fullPath, content, "utf-8");
+          // action write may replace a file: write-then-rename (write-safety gap 20).
+          writeFileAtomic(fullPath, content);
           const sizeBytes = Buffer.byteLength(content, "utf-8");
 
           return {

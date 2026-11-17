@@ -1,0 +1,46 @@
+{
+  "$comment": "L06 fixture, SYNTHETIC: the readback of wb_container describe open:WorldEditor mode page (fields path,name,type). No live describe of the world has been recorded for L06 [unverified].",
+  "ok": true,
+  "action": "describe",
+  "target": "open:WorldEditor",
+  "changed": null,
+  "warnings": [],
+  "readback": {
+    "rootClass": "GenericEntity",
+    "total": 6,
+    "capped": false,
+    "rows": [
+      {
+        "path": "coords",
+        "name": "coords",
+        "type": "vector"
+      },
+      {
+        "path": "angleX",
+        "name": "angleX",
+        "type": "float"
+      },
+      {
+        "path": "angleY",
+        "name": "angleY",
+        "type": "float"
+      },
+      {
+        "path": "angleZ",
+        "name": "angleZ",
+        "type": "float"
+      },
+      {
+        "path": "scale",
+        "name": "scale",
+        "type": "float"
+      },
+      {
+        "path": "Flags",
+        "name": "Flags",
+        "type": "int"
+      }
+    ],
+    "nextCursor": null
+  }
+}

@@ -1,0 +1,524 @@
+{
+  "handler": "EMCP_WB_Particle",
+  "tool": "wb_particle",
+  "purpose": "Preview a .ptc in the open World Editor world (ParticleEffectEntity); never opens the Particle Editor.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Particle.c",
+  "request": [
+    "action",
+    "effect",
+    "coords",
+    "name",
+    "confirm",
+    "entity",
+    "op",
+    "seconds",
+    "minFps",
+    "emitter",
+    "param",
+    "value",
+    "multiply"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "entity",
+    "effectPath",
+    "coords",
+    "dryRun",
+    "state",
+    "emitters",
+    "particles",
+    "emitterNames",
+    "active",
+    "time",
+    "stateBefore",
+    "param",
+    "value",
+    "original",
+    "before",
+    "after",
+    "removed"
+  ],
+  "actions": [
+    {
+      "name": "spawn",
+      "summary": "Place a .ptc effect; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "effect",
+          "type": "string",
+          "required": true,
+          "note": ".ptc rel path or {GUID}path"
+        },
+        {
+          "key": "coords",
+          "type": "string",
+          "required": false,
+          "note": "x y z as text; default 10 m ahead"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "note": "id: ref of the new entity"
+        },
+        {
+          "key": "effectPath",
+          "type": "string"
+        },
+        {
+          "key": "coords",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NOT_IN_PROJECT (no project, or not the project's world); NO_WORLD; WRONG_MODE in prefab edit or play mode; RESOURCE_NOT_FOUND; INVALID_ARGUMENT"
+    },
+    {
+      "name": "stats",
+      "summary": "Emitters, particles, state, time",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "effectPath",
+          "type": "string"
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "note": "STOPPED PLAYING PAUSED STOPPING_EMISSION"
+        },
+        {
+          "key": "emitters",
+          "type": "int"
+        },
+        {
+          "key": "particles",
+          "type": "int"
+        },
+        {
+          "key": "emitterNames",
+          "type": "array<string>"
+        },
+        {
+          "key": "active",
+          "type": "bool"
+        },
+        {
+          "key": "time",
+          "type": "string",
+          "note": "float as text"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NOT_A_PARTICLE_EFFECT; NO_PARTICLES when GetParticles is null"
+    },
+    {
+      "name": "control",
+      "summary": "play, stop, pause, stopEmission, restart",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "op",
+          "type": "string",
+          "required": true,
+          "note": "play stop pause stopEmission restart"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "stateBefore",
+          "type": "string"
+        },
+        {
+          "key": "state",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT for an unknown op; NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NOT_A_PARTICLE_EFFECT; NO_PARTICLES for restart"
+    },
+    {
+      "name": "simulate",
+      "summary": "Advance by seconds, max 60",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "seconds",
+          "type": "string",
+          "required": true,
+          "note": "float as text, max 60"
+        },
+        {
+          "key": "minFps",
+          "type": "string",
+          "required": false,
+          "note": "float as text; multi-step"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "particles",
+          "type": "int"
+        },
+        {
+          "key": "time",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT for seconds outside (0, 60] or minFps outside (0, 240]; NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NOT_A_PARTICLE_EFFECT; NO_PARTICLES"
+    },
+    {
+      "name": "param",
+      "summary": "Read a float EmitterParam",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "emitter",
+          "type": "int",
+          "required": true,
+          "note": "index; -1 not allowed"
+        },
+        {
+          "key": "param",
+          "type": "string",
+          "required": true,
+          "note": "float EmitterParam name"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "note": "id: ref of the effect entity"
+        },
+        {
+          "key": "param",
+          "type": "string"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "note": "as text"
+        },
+        {
+          "key": "original",
+          "type": "string",
+          "note": "GetParamOrig, as text"
+        }
+      ],
+      "paging": false,
+      "refuses": "UNPROVEN if P-W5-08 kills GetParam; INVALID_ARGUMENT (not a float param, emitter out of range); ENTITY_NOT_FOUND; NOT_A_PARTICLE_EFFECT"
+    },
+    {
+      "name": "setParam",
+      "summary": "Set or multiply a float param",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "emitter",
+          "type": "int",
+          "required": true,
+          "note": "index, or -1 for all"
+        },
+        {
+          "key": "param",
+          "type": "string",
+          "required": true,
+          "note": "float EmitterParam, not CURRENT_TIME"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "float as text; a multiplier w/ multiply"
+        },
+        {
+          "key": "multiply",
+          "type": "bool",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "note": "id: ref of the effect entity"
+        },
+        {
+          "key": "param",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT (not a float param, CURRENT_TIME, emitter, |value| > 10000, multiplier outside 0..10); NOT_A_PARTICLE_EFFECT"
+    },
+    {
+      "name": "remove",
+      "summary": "Delete an effect; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "removed",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NOT_IN_PROJECT; NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NOT_A_PARTICLE_EFFECT"
+    }
+  ]
+}

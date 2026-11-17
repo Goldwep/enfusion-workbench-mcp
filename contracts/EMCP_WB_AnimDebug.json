@@ -1,0 +1,434 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_AnimDebug",
+  "tool": "wb_anim_debug",
+  "purpose": "Play mode: anim graph variables, tags, commands, ProcAnim signals of one entity.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_AnimDebug.c",
+  "request": [
+    "action",
+    "target",
+    "names",
+    "varTypes",
+    "kind",
+    "ctrl",
+    "name",
+    "varType",
+    "value",
+    "intParam",
+    "floatParam",
+    "enable"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "target",
+    "values",
+    "warnings",
+    "controllers",
+    "signals",
+    "bones",
+    "slots",
+    "before",
+    "after",
+    "id",
+    "called"
+  ],
+  "actions": [
+    {
+      "name": "vars",
+      "summary": "Graph variable values",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "names",
+          "type": "array<string>",
+          "required": true,
+          "note": "variable names from the .agr"
+        },
+        {
+          "key": "varTypes",
+          "type": "array<string>",
+          "required": true,
+          "note": "int|float|bool per name"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "note": "name|type|id|value; floats as text"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "tags",
+      "summary": "Tags or events set this frame",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "names",
+          "type": "array<string>",
+          "required": true,
+          "note": "tag or event names"
+        },
+        {
+          "key": "kind",
+          "type": "string",
+          "required": false,
+          "note": "tag (default) or event"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "note": "name|id|on"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "procAnim",
+      "summary": "ProcAnim controllers, signals, bones",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "ctrl",
+          "type": "int",
+          "required": false,
+          "note": "controller index, default 0"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        },
+        {
+          "key": "controllers",
+          "type": "int"
+        },
+        {
+          "key": "signals",
+          "type": "array<string>",
+          "note": "index|name"
+        },
+        {
+          "key": "bones",
+          "type": "array<string>",
+          "note": "index|name"
+        },
+        {
+          "key": "slots",
+          "type": "array<string>",
+          "note": "index|name"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "set",
+      "summary": "Set a graph variable (memory, play only)",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "UNPROVEN until P-W4-19: Set*Variable in play mode is not yet proven safe.",
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "varType",
+          "type": "string",
+          "required": true,
+          "note": "int|float|bool"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "text; bool true|false|1|0"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "name|type|id|value"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "read back"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "command",
+      "summary": "Call a graph command",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "UNPROVEN until P-W4-19: CallCommand in play mode is not yet proven safe.",
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "intParam",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "floatParam",
+          "type": "string",
+          "required": false,
+          "note": "float as text"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "int",
+          "note": "BindCommand id; -1 unknown"
+        },
+        {
+          "key": "called",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "btBreakpoint",
+      "summary": "Toggle the AI behavior-tree breakpoint",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "UNPROVEN until P-W4-21: SetBtBreakpoint may pause play or open the BT debugger.",
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "entity:<ref> of a play-mode entity"
+        },
+        {
+          "key": "enable",
+          "type": "bool",
+          "required": true
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "called",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

@@ -96,17 +96,17 @@ describe("Class Hierarchy Tree Visualization", () => {
     it("shows children of the target class", () => {
       const cls = engine.getClass("IEntity");
       expect(cls).toBeDefined();
-      if (cls!.children.length > 0) {
+      if (engine.getChildren(cls!.name).length > 0) {
         const tree = formatClassTree(cls!, engine);
         // At least one child should appear
-        expect(tree).toContain(cls!.children[0]);
+        expect(tree).toContain(engine.getChildren(cls!.name)[0]);
       }
     });
 
     it("uses ├── and └── for children", () => {
       const cls = engine.getClass("IEntity");
       expect(cls).toBeDefined();
-      if (cls!.children.length > 1) {
+      if (engine.getChildren(cls!.name).length > 1) {
         const tree = formatClassTree(cls!, engine);
         expect(tree).toContain("├──");
         expect(tree).toContain("└──");
@@ -161,14 +161,16 @@ describe("Class Hierarchy Tree Visualization", () => {
       let wideClass = null;
       for (const name of allNames) {
         const cls = engine.getClass(name);
-        if (cls && cls.children.length > MAX_TREE_CHILDREN) {
+        if (cls && engine.getChildren(cls.name).length > MAX_TREE_CHILDREN) {
           wideClass = cls;
           break;
         }
       }
       if (wideClass) {
         const tree = formatClassTree(wideClass, engine);
-        expect(tree).toContain(`... and ${wideClass.children.length - MAX_TREE_CHILDREN} more`);
+        expect(tree).toContain(
+          `... and ${engine.getChildren(wideClass.name).length - MAX_TREE_CHILDREN} more`,
+        );
       }
     });
   });

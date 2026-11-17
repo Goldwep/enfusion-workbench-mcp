@@ -1,0 +1,57 @@
+{
+  "$comment": "SYNTHETIC tree, not observed: class names are the guesses of L07's role table for the Animation Editor (node graph, timeline, curve editor, viewport), nested once to test the outermost-wins rule. No such class has been read live; the sitting that first walks the Animation Editor replaces this.",
+  "tree": {
+    "controlType": "Window",
+    "name": "Animation Editor",
+    "automationId": "Arma4WorkbenchApp.animEditorMain",
+    "className": "AnimEditorQt",
+    "rect": [100, 100, 1600, 900],
+    "enabled": true,
+    "offscreen": false,
+    "childCount": 3,
+    "children": [
+      {
+        "controlType": "Group",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.animEditorMain.graphHost",
+        "className": "NodeGraphView",
+        "rect": [100, 140, 800, 500],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 1,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.animEditorMain.graphHost.inner",
+            "className": "GraphCanvas",
+            "rect": [100, 140, 800, 500],
+            "enabled": true,
+            "offscreen": false,
+            "childCount": 0
+          }
+        ]
+      },
+      {
+        "controlType": "Group",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.animEditorMain.timeline",
+        "className": "TimelineWidget",
+        "rect": [100, 660, 1600, 200],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 0
+      },
+      {
+        "controlType": "Group",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.animEditorMain.curves",
+        "className": "CurveEditorView",
+        "rect": [920, 140, 780, 500],
+        "enabled": true,
+        "offscreen": true,
+        "childCount": 0
+      }
+    ]
+  }
+}

@@ -3,7 +3,9 @@ import { resolve, sep } from "node:path";
 import {
   assertInsideRoot,
   isPathInsideRoot,
+  pinnedProjectRoot,
 } from "../../src/utils/path-guard.js";
+import { VocabularyError } from "../../src/manifest/vocabulary.js";
 
 describe("isPathInsideRoot", () => {
   const root = resolve("/testroot/project");
@@ -187,5 +189,39 @@ describe("path-guard hardening (L6)", () => {
     expect(() => assertInsideAnyRoot(resolve(root, "a"), [undefined, ""], "p")).toThrow(
       /no configured project roots/,
     );
+  });
+});
+
+// Total audit offline-writers-01: a caller projectPath is pinned to the configured root.
+describe("pinnedProjectRoot", () => {
+  const root = resolve("/testroot/project");
+
+  it("answers the configured root when no caller path is given", () => {
+    expect(pinnedProjectRoot(undefined, root)).toBe(root);
+    expect(pinnedProjectRoot("", root)).toBe(root);
+    expect(pinnedProjectRoot(undefined, "")).toBeUndefined();
+  });
+
+  it("keeps a caller path at or under the configured root", () => {
+    expect(pinnedProjectRoot(root, root)).toBe(root);
+    const sub = resolve(root, "OtherMod");
+    expect(pinnedProjectRoot(sub, root)).toBe(sub);
+  });
+
+  it("refuses a caller path outside the configured root, or with none configured", () => {
+    const refused = (fn: () => unknown) => {
+      try {
+        fn();
+      } catch (e) {
+        return e as VocabularyError;
+      }
+      throw new Error("expected a refusal");
+    };
+    const sibling = refused(() => pinnedProjectRoot(resolve("/testroot/other"), root));
+    expect(sibling).toBeInstanceOf(VocabularyError);
+    expect(sibling.code).toBe("NOT_IN_PROJECT");
+    expect(refused(() => pinnedProjectRoot(resolve(root, ".."), root)).code).toBe("NOT_IN_PROJECT");
+    expect(refused(() => pinnedProjectRoot(`${root}Evil`, root)).code).toBe("NOT_IN_PROJECT");
+    expect(refused(() => pinnedProjectRoot(root, "")).code).toBe("NOT_IN_PROJECT");
   });
 });

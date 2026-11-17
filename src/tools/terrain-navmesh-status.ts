@@ -1,98 +1,48 @@
 /**
- * `terrain_navmesh_status` — Node-side wrapper for the L7 navmesh
- * coverage query.
+ * `terrain_navmesh_status`: the 1.x name of `wb_navmesh status` (W5 OD-1, DEC-068).
  *
- * Calls `EMCP_WB_Terrain { action: "navmesh_status", world_path }`.
- * Currently the Enforce handler returns `status: "not_implemented"`
- * (see `mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Terrain.c`); next
- * session wires it to `NavmeshWorldComponent.IsTileLoaded / IsTileValid /
- * IsTileRequested` over a tile grid spanning the world bounds.
- *
- * This tool ships now so the next-session work is purely Enforce-side —
- * Node-side surface stays stable.
+ * The 1.x tool called `EMCP_WB_Terrain { action: "navmesh_status", world_path }`, a placeholder
+ * that always answered "not implemented" (the Terrain branch is kept, and its census rows are
+ * subsumed by EMCP_WB_Navmesh). The alias routes through aliases.ts to wb_navmesh status, which
+ * reads the navmesh of the world open in the World Editor: `world_path` has no equivalent and is
+ * refused, never dropped. Listed only under ENFUSION_TOOLSET=all (tier alias).
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WorkbenchClient } from "../workbench/client.js";
+import { routeAlias } from "../manifest/aliases.js";
+import { VocabularyError, errorResponse } from "../manifest/vocabulary.js";
+import { runNavmesh, toToolResult } from "./wb-navmesh.js";
 
-interface NavmeshStatusResponse {
-  status?: string;
-  message?: string;
-  payload?: string;
-}
-
-export function registerTerrainNavmeshStatus(
-  server: McpServer,
-  client: WorkbenchClient,
-): void {
+export function registerTerrainNavmeshStatus(server: McpServer, client: WorkbenchClient): void {
   server.registerTool(
     "terrain_navmesh_status",
     {
       description:
-        "Report navmesh tile coverage for a world (loaded / valid / requested counts + bake recency). " +
-        "Requires Workbench + the EMCP_WB_Terrain.c `navmesh_status` action — currently a placeholder " +
-        "(see docs/L7-PLAN.md). Returns a structured 'not implemented' message until the handler ships.",
+        "Alias of wb_navmesh status: navmesh tile coverage (loaded, valid, requested) of the world open in the World Editor, through its AIWorld. " +
+        "Open the world first; world_path is refused (no equivalent).",
       inputSchema: {
-        world_path: z.string().describe("Path to the world `.ent` to query"),
+        world_path: z
+          .string()
+          .optional()
+          .describe("1.x key, refused when given: wb_navmesh reads the open world."),
+        project: z.string().optional().describe("Navmesh project (wb_navmesh status)."),
+        step: z.string().optional().describe("Grid step in metres (wb_navmesh status)."),
+        cursor: z.string().optional().describe("Cursor from the last page."),
+        limit: z.number().int().optional().describe("Grid points per page."),
       },
     },
-    async ({ world_path }) => {
+    async (args) => {
       try {
-        if (world_path.startsWith("-")) {
-          return {
-            content: [{ type: "text" as const, text: "Invalid world_path: must not start with '-'" }],
-            isError: true,
-          };
-        }
-        const resp = (await (client.call as (
-          m: string,
-          a: Record<string, unknown>,
-        ) => Promise<NavmeshStatusResponse>)("EMCP_WB_Terrain", {
-          action: "navmesh_status",
-          world_path,
-        })) ?? {};
-        if (
-          resp.status === "not_implemented" ||
-          (resp.status === "error" && String(resp.message ?? "").startsWith("not implemented"))
-        ) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text:
-                  `Navmesh status query is not yet implemented in the Workbench-side handler. ` +
-                  `Tracking: docs/L7-PLAN.md (L7-1 EMCP_WB_Terrain navmesh_status). ` +
-                  `Underlying message: ${resp.message ?? "(none)"}`,
-              },
-            ],
-          };
-        }
-        if (resp.status !== "ok") {
-          return {
-            content: [{ type: "text" as const, text: `Handler error: ${resp.message ?? "(no message)"}` }],
-            isError: true,
-          };
-        }
-        let data: Record<string, unknown> = {};
-        try {
-          data = JSON.parse(resp.payload ?? "{}") as Record<string, unknown>;
-        } catch {
-          data = { raw: resp.payload ?? "" };
-        }
-        const lines: string[] = [];
-        lines.push(`## terrain_navmesh_status: ${world_path}`);
-        lines.push("");
-        for (const [k, v] of Object.entries(data)) {
-          lines.push(`- **${k}:** ${typeof v === "object" ? JSON.stringify(v) : String(v)}`);
-        }
-        return { content: [{ type: "text" as const, text: lines.join("\n") }] };
+        const routed = routeAlias("terrain_navmesh_status", args as Record<string, unknown>);
+        if (!routed) throw new Error("terrain_navmesh_status alias is not routed");
+        return toToolResult(await runNavmesh(client, routed.args));
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [{ type: "text" as const, text: `Error in terrain_navmesh_status: ${msg}` }],
-          isError: true,
-        };
+        if (e instanceof VocabularyError) {
+          return toToolResult(errorResponse("status", "open:WorldEditor", e.code, e.message));
+        }
+        throw e;
       }
     },
   );

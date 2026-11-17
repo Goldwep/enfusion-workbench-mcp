@@ -64,6 +64,40 @@ describe("SearchEngine", () => {
     });
   });
 
+  describe("getChildren on the real index", () => {
+    // 29 classes are stored under their raw page title; hierarchy.html names
+    // classes with their template parameter list. Neither form may reach a
+    // children list, and no class may be listed twice.
+    const raw = /\sReference$|</;
+
+    it("no children list holds a page title, a template form, or a class twice", () => {
+      const bad: string[] = [];
+      for (const name of engine.getAllClassNames()) {
+        const children = engine.getChildren(name);
+        const keys = children.map((c) => c.toLowerCase());
+        for (const c of children) if (raw.test(c)) bad.push(`${name}: ${c}`);
+        if (new Set(keys).size !== keys.length) bad.push(`${name}: duplicate`);
+      }
+      expect(bad).toEqual([]);
+    });
+
+    it("lists each templated class once, under the name that finds it", () => {
+      expect(
+        engine
+          .getChildren("SCR_ScenarioFrameworkParamBase")
+          .filter((c) => c.startsWith("SCR_ScenarioFrameworkParam")),
+      ).toEqual(["SCR_ScenarioFrameworkParam"]);
+      expect(engine.getClass("SCR_ScenarioFrameworkParam")?.name).toBe(
+        "SCR_ScenarioFrameworkParam< Class T > Interface Template Reference",
+      );
+      const managed = engine.getChildren("Managed");
+      expect(managed.filter((c) => c.startsWith("ScriptInvokerBase"))).toEqual([
+        "ScriptInvokerBase",
+      ]);
+      expect(managed.filter((c) => /^array\b/.test(c))).toEqual(["array"]);
+    });
+  });
+
   describe("getInheritanceChain", () => {
     it("returns chain for GenericEntity", () => {
       const chain = engine.getInheritanceChain("GenericEntity");

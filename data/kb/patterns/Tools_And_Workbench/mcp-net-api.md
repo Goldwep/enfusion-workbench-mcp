@@ -252,28 +252,41 @@ The original implementation skips copying if `EMCP_WB_Ping.c` already exists. In
 **Workflow when Workbench is already open:**
 
 1. Call `wb_launch` with `gprojPath` — installs handler scripts to mod's `Scripts/WorkbenchGame/EnfusionMCP/`
-2. In Workbench: Tools > Reload Scripts
+2. In Workbench: reload the scripts (see "Reloading Scripts" below; the shipped wiki does not document a Reload Scripts entry under a Tools menu)
 3. `wb_connect` will then fully work
+
+**Reloading Scripts — what is known, what is not:**
+
+- Shipped wiki (Resource Manager, Script Editor Plugin and Workbench plugin tutorials): `Plugins > Settings > Reload WB Scripts` reloads the Workbench plugin scripts (the `WorkbenchGame` handlers live there). In the World Editor the wiki names `Reload Game Scripts` (`Ctrl+R`) for game scripts, and the Script Editor `Build` menu for `Compile and Reload Scripts` (`Shift+F7`) and `Validate Scripts`.
+- Menu labels found as strings in the 1.8.0.13 Workbench executable: `&Reload WB Scripts`, `&Reload Scripts`, `&Validate and Reload Scripts`, `Reload Game Scripts`, `Reload Workbench Scripts`. The string `Compile and Reload Scripts` is not in the executable, so that wiki label may be out of date for this build.
+- **Not verified live:** which menu each label sits under in 1.8.0.13, and the exact path array that `WBModuleDef.ExecuteAction` accepts for a reload. Do not rely on a menu path; confirm in the running Workbench.
+- The NET API also has a native `ReloadScripts` function (shipped `NetApiDocs.c`: no payload, error code `Ok` on success or `Compilation failed`). Whether it recompiles the `WorkbenchGame` handler scripts is not verified live.
 
 **`wb_component add` adds to world instance, not prefab file.** `CreateComponent` via `WorldEditorAPI` operates on the world-placed entity. The component class must be compiled (not "Unknown") for `setProperty` to work. If it shows as "Unknown", scripts haven't compiled — reload scripts first.
 
 ---
 
-## Animation Editor — Not Accessible via GetModule
+## Animation Editor — GetModule Is Declared, Live Behaviour Unverified
 
-The Animation Editor is NOT exposed as a `Workbench.GetModule()` module. It's a resource editor window,
-not a persistent module like `WorldEditor`.
+`Workbench.GetModule(typename type)` returns a `WBModuleDef`. The game scripts declare 11 module types, each
+`sealed class X: WBModuleDef`: `AnimEditor`, `AudioEditor`, `BehaviorEditor`, `DialogueEditor`,
+`LocalizationEditor`, `NavmeshGeneratorMain`, `ParticleEditor`, `ProcAnimEditor`, `ResourceManager`,
+`ScriptEditor`, `WorldEditor` (`scripts/GameLib/generated/WorkbenchAPI/Modules/`). `AnimEditor` is therefore a
+module type that can be passed to `GetModule` (`sealed class AnimEditor: WBModuleDef {}`, no members of its own).
+An earlier version of this note said the Animation Editor cannot be reached through `GetModule`; the source does not support that.
 
-Known scriptable modules (confirmed via Bohemia samples + EnfusionMCP handlers):
+**Not verified live:** whether `Workbench.GetModule(AnimEditor)` returns a non-null handle while an animation
+workspace is open, and what the inherited `WBModuleDef` methods (`SetOpenedResource`, `ExecuteAction`, ...) do on it.
+No shipped script calls `GetModule(AnimEditor)` (the shipped calls use `WorldEditor`, `ResourceManager`,
+`ScriptEditor` and `LocalizationEditor`), so there is no first-party example either way. Test it in a running
+Workbench before building on it.
+
+Modules this server's handlers use (confirmed via Bohemia samples + EnfusionMCP handlers):
 
 - `WorldEditor` — world scene editing
 - `ScriptEditor` — script file editing
 - `LocalizationEditor` — string tables
 - `ResourceManager` — resource registration/reload
-
-The NetAPI server runs in the same process as all Workbench editors (WorldEditor, AnimationEditor,
-ProcAnimEditor etc.) on the same port (default 5775). But only modules with a `GetModule()` type
-are accessible from script handlers.
 
 **For animation graph work:** Use file-based tools (`animation_graph_inspect`, `animation_graph_author`,
 `animation_graph_setup` in the enfusion-mcp-BK fork) — these read/write AGR/AGF/AST/ASI directly

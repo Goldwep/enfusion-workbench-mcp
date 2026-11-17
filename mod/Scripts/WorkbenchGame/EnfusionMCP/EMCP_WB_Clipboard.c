@@ -78,6 +78,25 @@ class EMCP_WB_Clipboard : NetApiHandler
 			return resp;
 		}
 
+		// cut, paste, pasteAtCursor and duplicate edit the open world: the guard of the W-wave edit
+		// handlers (DEC-058, EditApi of EMCP_WB_Entity.c): the project is found, the editor is not in
+		// play mode. copy and hasCopied change no entity.
+		if (req.action == "cut" || req.action == "paste" || req.action == "pasteAtCursor" || req.action == "duplicate")
+		{
+			if (!EMCP_WB_Guard.IsProjectFound())
+			{
+				resp.status = "error";
+				resp.message = EMCP_WB_Guard.NOT_IN_PROJECT + ": mutating actions need the handlers installed in the open project; nothing was changed";
+				return resp;
+			}
+			if (api.IsGameMode())
+			{
+				resp.status = "error";
+				resp.message = "WRONG_MODE: the World Editor is in play mode; nothing was changed - stop play first (wb_world stop)";
+				return resp;
+			}
+		}
+
 		if (req.action == "copy")
 		{
 			SetResult(resp, api.CopySelectedEntities(), "Selected entities copied", "CopySelectedEntities returned false (nothing selected?)");

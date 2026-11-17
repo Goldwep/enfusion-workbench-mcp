@@ -13,7 +13,10 @@ export function registerWbState(server: McpServer, client: WorkbenchClient): voi
     },
     async () => {
       try {
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_GetState");
+        // A read: a timeout is TIMEOUT (not LOST) and a refused connection gets the read back-off.
+        const result = await client.call<Record<string, unknown>>("EMCP_WB_GetState", {}, {
+          access: "read",
+        });
         if (isHandlerError(result)) {
           return handlerErrorResponse(result, client, "Error getting Workbench state");
         }

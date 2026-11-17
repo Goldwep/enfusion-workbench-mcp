@@ -1,0 +1,6042 @@
+{
+  "$comment": "Every countable set of the census (plan 4.6). One universe per kind of the plan 4.3 vocabulary (`kind:<kind>`), plus named sub-universes. `enumerators` declares, per enumerator, what it reads (`inputs`: two enumerators are independent only when their `independence_group` differs, neither lists the other and they share no input), whether it observes the installed build (T2 credit), its generator script, and its emission allow-list (`dims`, `kinds`, `id_prefixes`, `ref_pattern`); build.ts rejects every line outside it. Expected counts quote the plan (`source`); exact unless the plan states a lower bound (`at_least`) or a dispute (`candidates`). `shard_by_kind` routes knowledge kinds to their own ledger shard (main ruling 3). `g7_empty_reasons` explains empty module-by-kind cells. Generator paths, inputs and ref patterns of E02-E19 and L01-L17 are proposals for their authors [unverified]. Written first by the Phase 0 ledger author; main-owned afterwards.",
+  "version": 1,
+  "enumerators": {
+    "E01": {
+      "confidence_max": "low",
+      "dims": [
+        "ui",
+        "api",
+        "plugin",
+        "net",
+        "cli",
+        "file",
+        "schema",
+        "setting",
+        "link",
+        "diag",
+        "mcp"
+      ],
+      "generator": "scripts/census/enumerators/e01-recon-import.ts",
+      "id_prefixes": [
+        "api:",
+        "cli:",
+        "diag:",
+        "file:",
+        "link:",
+        "mcp:",
+        "net:",
+        "plugin:",
+        "schema:",
+        "setting:",
+        "ui:"
+      ],
+      "independence_group": "recon",
+      "inputs": [
+        "recon-files"
+      ],
+      "kinds": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "property",
+        "property-editor",
+        "context-menu",
+        "context-item",
+        "shortcut",
+        "tool",
+        "tool-button",
+        "canvas-gesture",
+        "region",
+        "status-item",
+        "hazard-dialog",
+        "class",
+        "method",
+        "static-method",
+        "event",
+        "attribute",
+        "enum",
+        "enum-value",
+        "plugin",
+        "plugin-setting",
+        "plugin-button",
+        "plugin-cli-arg",
+        "net-function",
+        "net-handler",
+        "net-field",
+        "cli-switch",
+        "link-format",
+        "file-type",
+        "resource-class",
+        "schema-class",
+        "schema-key",
+        "setting-key",
+        "option",
+        "diag-menu",
+        "diag-option",
+        "blender-operator",
+        "debug-panel",
+        "mcp-tool",
+        "mcp-action",
+        "handler-action"
+      ],
+      "name": "Recon import",
+      "observes_build": false,
+      "phase": "0",
+      "provisional": true,
+      "ref_pattern": "^<repo>/docs/v2/recon/[a-z0-9-]+\\.md#L\\d+$"
+    },
+    "E02": {
+      "dims": [
+        "api"
+      ],
+      "generator": "scripts/census/enumerators/e02-script-source.ts",
+      "id_prefixes": [
+        "api:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "pak-scripts"
+      ],
+      "kinds": [
+        "class",
+        "method",
+        "static-method",
+        "event",
+        "attribute",
+        "enum",
+        "enum-value"
+      ],
+      "name": "Script-source index",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E03": {
+      "dims": [
+        "plugin"
+      ],
+      "generator": "scripts/census/enumerators/e03-plugin-registry.ts",
+      "id_prefixes": [
+        "plugin:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "E02"
+      ],
+      "kinds": [
+        "plugin",
+        "plugin-setting",
+        "plugin-button",
+        "plugin-cli-arg",
+        "tool"
+      ],
+      "name": "Plugin and tool registry",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E04": {
+      "dims": [
+        "net"
+      ],
+      "generator": "scripts/census/enumerators/e04-net-surface.ts",
+      "id_prefixes": [
+        "net:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "pak-scripts",
+        "E05",
+        "blender-python"
+      ],
+      "kinds": [
+        "net-function",
+        "net-handler",
+        "net-field"
+      ],
+      "name": "NET surface",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+#L\\d+|<tools>/Blender/[^#]+#L\\d+|exe:0x[0-9a-f]+)$"
+    },
+    "E05": {
+      "confidence_rules": [
+        {
+          "max": "medium",
+          "ref_matches": "^exe:adjacency:"
+        }
+      ],
+      "dims": [
+        "ui",
+        "cli",
+        "net",
+        "setting"
+      ],
+      "generator": "scripts/census/enumerators/e05-executable-tables.ts",
+      "id_prefixes": [
+        "cli:",
+        "net:",
+        "setting:",
+        "ui:"
+      ],
+      "independence_group": "executable",
+      "inputs": [
+        "executable"
+      ],
+      "kinds": [
+        "module",
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "option",
+        "setting-key",
+        "shortcut",
+        "status-item",
+        "property-editor",
+        "cli-switch",
+        "net-function"
+      ],
+      "name": "Executable static tables",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^exe:(0x[0-9a-f]+|adjacency:0x[0-9a-f]+\\+0x[0-9a-f]+)$"
+    },
+    "E06": {
+      "dims": [
+        "ui",
+        "setting",
+        "plugin"
+      ],
+      "generator": "scripts/census/enumerators/e06-settings-store.ts",
+      "id_prefixes": [
+        "plugin:",
+        "setting:",
+        "ui:"
+      ],
+      "independence_group": "registry",
+      "inputs": [
+        "registry-export",
+        "E03"
+      ],
+      "kinds": [
+        "shortcut",
+        "setting-key",
+        "option",
+        "dock",
+        "toolbar",
+        "plugin-setting"
+      ],
+      "name": "Settings store",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^artifact:[0-9a-f]{64}(#.+)?$"
+    },
+    "E07": {
+      "dims": [
+        "ui",
+        "cli",
+        "file",
+        "diag",
+        "link"
+      ],
+      "generator": "scripts/census/enumerators/e07-wiki-tables.ts",
+      "id_prefixes": [
+        "cli:",
+        "diag:",
+        "file:",
+        "link:",
+        "ui:"
+      ],
+      "independence_group": "wiki",
+      "inputs": [
+        "wiki-export"
+      ],
+      "kinds": [
+        "menu",
+        "menu-item",
+        "shortcut",
+        "panel",
+        "dock",
+        "toolbar",
+        "tool",
+        "dialog",
+        "control",
+        "option",
+        "file-type",
+        "cli-switch",
+        "diag-menu",
+        "diag-option",
+        "link-format",
+        "canvas-gesture",
+        "context-menu",
+        "context-item",
+        "debug-panel",
+        "tab",
+        "toolbar-button"
+      ],
+      "name": "Wiki tables and structure",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^wiki:[^#\\s]+(#.+)?$"
+    },
+    "E08": {
+      "dims": [
+        "ui",
+        "net",
+        "cli",
+        "plugin"
+      ],
+      "generator": "scripts/census/enumerators/e08-shipped-docs.ts",
+      "id_prefixes": [
+        "cli:",
+        "net:",
+        "plugin:",
+        "ui:"
+      ],
+      "independence_group": "docs",
+      "inputs": [
+        "shipped-docs"
+      ],
+      "kinds": [
+        "net-function",
+        "net-handler",
+        "net-field",
+        "menu",
+        "menu-item",
+        "shortcut",
+        "cli-switch",
+        "plugin-cli-arg"
+      ],
+      "name": "Shipped HTML docs",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^<tools>/Workbench/docs/[^#]+(#.+)?$"
+    },
+    "E09": {
+      "dims": [
+        "file"
+      ],
+      "generator": "scripts/census/enumerators/e09-file-types.ts",
+      "id_prefixes": [
+        "file:"
+      ],
+      "independence_group": "file-corpus",
+      "inputs": [
+        "pak-listing",
+        "wiki-export",
+        "profile-dir"
+      ],
+      "kinds": [
+        "file-type",
+        "resource-class"
+      ],
+      "name": "File-type census",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+(#L\\d+)?|wiki:[^#\\s]+(#.+)?|artifact:[0-9a-f]{64}(#.+)?)$"
+    },
+    "E10": {
+      "dims": [
+        "schema",
+        "api",
+        "file"
+      ],
+      "generator": "scripts/census/enumerators/e10-data-schema.ts",
+      "id_prefixes": [
+        "api:",
+        "file:",
+        "schema:"
+      ],
+      "independence_group": "file-corpus",
+      "inputs": [
+        "pak-corpus",
+        "executable"
+      ],
+      "kinds": [
+        "schema-class",
+        "schema-key",
+        "enum",
+        "enum-value",
+        "resource-class"
+      ],
+      "name": "Data-schema census",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(pak:[^#]+#L\\d+|exe:0x[0-9a-f]+)$"
+    },
+    "E11": {
+      "dims": [
+        "mcp"
+      ],
+      "generator": "scripts/census/enumerators/e11-mcp-inventory.ts",
+      "id_prefixes": [
+        "mcp:"
+      ],
+      "independence_group": "mcp-source",
+      "inputs": [
+        "repo-source"
+      ],
+      "kinds": [
+        "mcp-tool",
+        "mcp-action",
+        "handler-action"
+      ],
+      "name": "MCP self-inventory",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^<repo>/[^#]+#L\\d+$"
+    },
+    "E12": {
+      "dims": [
+        "api"
+      ],
+      "generator": "scripts/census/enumerators/e12-api-index.ts",
+      "id_prefixes": [
+        "api:"
+      ],
+      "independence_group": "api-index",
+      "inputs": [
+        "api-index",
+        "E02"
+      ],
+      "kinds": [
+        "class",
+        "method",
+        "static-method",
+        "event"
+      ],
+      "name": "API-index reconcile",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^<repo>/data/api/[^#]+#L\\d+$"
+    },
+    "E13": {
+      "dims": [
+        "cli",
+        "ui"
+      ],
+      "generator": "scripts/census/enumerators/e13-launch-logs.ts",
+      "id_prefixes": [
+        "cli:",
+        "ui:"
+      ],
+      "independence_group": "logs",
+      "inputs": [
+        "launch-logs"
+      ],
+      "kinds": [
+        "cli-switch",
+        "hazard-dialog"
+      ],
+      "name": "Launch-log miner",
+      "observes_build": false,
+      "phase": "1",
+      "ref_pattern": "^artifact:[0-9a-f]{64}(#.+)?$"
+    },
+    "E14": {
+      "dims": [
+        "diag"
+      ],
+      "generator": "scripts/census/enumerators/e14-diag-menu.ts",
+      "id_prefixes": [
+        "diag:"
+      ],
+      "independence_group": "wiki",
+      "inputs": [
+        "wiki-export",
+        "pak-scripts"
+      ],
+      "kinds": [
+        "diag-menu",
+        "diag-option"
+      ],
+      "name": "Diag Menu",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^(wiki:[^#\\s]+(#.+)?|pak:[^#]+#L\\d+)$"
+    },
+    "E15": {
+      "dims": [
+        "api",
+        "plugin"
+      ],
+      "generator": "scripts/census/enumerators/e15-attribute-scan.ts",
+      "id_prefixes": [
+        "api:",
+        "plugin:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "E02"
+      ],
+      "kinds": [
+        "attribute",
+        "plugin-setting"
+      ],
+      "name": "[Attribute] scan",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E16": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/enumerators/e16-property-editors.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "E02"
+      ],
+      "kinds": [
+        "property-editor",
+        "dialog"
+      ],
+      "name": "Property-editor kinds",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E17": {
+      "dims": [
+        "link",
+        "plugin",
+        "ui"
+      ],
+      "generator": "scripts/census/enumerators/e17-workbench-data.ts",
+      "id_prefixes": [
+        "link:",
+        "plugin:",
+        "ui:"
+      ],
+      "independence_group": "pak-data",
+      "inputs": [
+        "pak-workbench-data"
+      ],
+      "kinds": [
+        "link-format",
+        "plugin-setting",
+        "panel",
+        "tab"
+      ],
+      "name": "Workbench-owned pak data",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+(#L\\d+)?$"
+    },
+    "E18": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/enumerators/e18-tool-gestures.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "pak-source",
+      "inputs": [
+        "E02"
+      ],
+      "kinds": [
+        "canvas-gesture",
+        "tool"
+      ],
+      "name": "Tool gestures",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^pak:[^#]+#L\\d+$"
+    },
+    "E19": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/enumerators/e19-blender-operators.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "blender",
+      "inputs": [
+        "blender-python"
+      ],
+      "kinds": [
+        "blender-operator"
+      ],
+      "name": "Blender add-on operators",
+      "observes_build": true,
+      "phase": "1",
+      "ref_pattern": "^<tools>/Blender/[^#]+#L\\d+$"
+    },
+    "L01": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L01-snapshot.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "window",
+        "menu",
+        "menu-item",
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "panel",
+        "tab",
+        "dialog",
+        "control",
+        "property-group",
+        "region",
+        "status-item",
+        "context-menu",
+        "context-item",
+        "tool-button",
+        "property-editor"
+      ],
+      "name": "Passive accessibility snapshot",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L02": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L02-menus.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "menu",
+        "menu-item",
+        "shortcut",
+        "window"
+      ],
+      "name": "Menu walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L03": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L03-chrome.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "toolbar",
+        "toolbar-button",
+        "dock",
+        "tab",
+        "status-item",
+        "panel",
+        "region",
+        "window",
+        "tool"
+      ],
+      "name": "Toolbars, docks, tabs, status bar",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L04": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L04-dialogs.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "dialog",
+        "control",
+        "property-group",
+        "option",
+        "tab"
+      ],
+      "name": "Dialog census",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L05": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L05-context.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "context-menu",
+        "context-item"
+      ],
+      "name": "Context menus",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L06": {
+      "dims": [
+        "ui",
+        "schema"
+      ],
+      "generator": "scripts/census/live/L06-grids.ts",
+      "id_prefixes": [
+        "schema:",
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "property-group",
+        "property",
+        "property-editor",
+        "dialog"
+      ],
+      "name": "Property grids",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L07": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L07-screens.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "region",
+        "window",
+        "panel",
+        "dock",
+        "canvas-gesture"
+      ],
+      "name": "Screenshot lane",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L08": {
+      "dims": [
+        "schema",
+        "ui"
+      ],
+      "generator": "not built: deferred to W2 (DEC-056 ruling 8)",
+      "id_prefixes": [
+        "schema:",
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-netapi"
+      ],
+      "kinds": [
+        "schema-class",
+        "schema-key",
+        "property",
+        "module"
+      ],
+      "name": "Container and schema introspection",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L09": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L09-actions.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live-netapi",
+      "inputs": [
+        "live-netapi"
+      ],
+      "kinds": [
+        "menu-item",
+        "context-item",
+        "toolbar-button"
+      ],
+      "name": "ExecuteAction vocabulary battery",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L10": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L10-modules.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-netapi"
+      ],
+      "kinds": [
+        "module"
+      ],
+      "name": "Module matrix",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L11": {
+      "dims": [
+        "plugin"
+      ],
+      "generator": "scripts/census/live/L11-plugins.ts",
+      "id_prefixes": [
+        "plugin:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-netapi"
+      ],
+      "kinds": [
+        "plugin"
+      ],
+      "name": "Plugin presence matrix",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L12": {
+      "dims": [
+        "net"
+      ],
+      "generator": "not built: deferred to W1 (DEC-056 ruling 8)",
+      "id_prefixes": [
+        "net:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-netapi"
+      ],
+      "kinds": [
+        "net-function",
+        "net-handler",
+        "net-field"
+      ],
+      "name": "NET payload capture",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L13": {
+      "dims": [
+        "cli"
+      ],
+      "generator": "not built: deferred to W1 (DEC-056 ruling 8)",
+      "id_prefixes": [
+        "cli:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-cli"
+      ],
+      "kinds": [
+        "cli-switch"
+      ],
+      "name": "CLI verification",
+      "observes_build": true,
+      "phase": "2",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L14": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L14-launcher.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "window",
+        "dialog",
+        "control",
+        "menu",
+        "menu-item"
+      ],
+      "name": "Launcher walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L15": {
+      "dims": [
+        "diag",
+        "ui"
+      ],
+      "generator": "scripts/census/live/L15-diag.ts",
+      "id_prefixes": [
+        "diag:",
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "diag-menu",
+        "diag-option",
+        "debug-panel"
+      ],
+      "name": "Diag Menu and debug-panel walk",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L16": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "hand-recorded by main from evidence (DEC-056 ruling 8)",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "hazard-dialog"
+      ],
+      "name": "Hazard dialogs",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    },
+    "L17": {
+      "dims": [
+        "ui"
+      ],
+      "generator": "scripts/census/live/L17-qt.ts",
+      "id_prefixes": [
+        "ui:"
+      ],
+      "independence_group": "live",
+      "inputs": [
+        "live-uia"
+      ],
+      "kinds": [
+        "window",
+        "panel",
+        "control",
+        "dock",
+        "region"
+      ],
+      "name": "Qt Introspection Tool harvest",
+      "observes_build": true,
+      "phase": "4",
+      "ref_pattern": "^(artifact:[0-9a-f]{64}(#.+)?|ev:EV-[A-Za-z0-9_.-]+)$"
+    }
+  },
+  "g7_empty_reasons": [
+    {
+      "module": "BlenderTools",
+      "kind": "*",
+      "why_ref": "PLAN 1.4",
+      "reason": "The Blender add-on is an evidence source and documented surface only, so its single row kind is blender-operator (E19); it has no Workbench windows, menus, API, schema, settings or NET rows of its own."
+    },
+    {
+      "module": "*",
+      "kind": "blender-operator",
+      "why_ref": "PLAN 4.5",
+      "reason": "A blender-operator row belongs to the Blender add-on, so its module is BlenderTools and every other module's cell is empty by construction."
+    },
+    {
+      "module": "*",
+      "kind": "module",
+      "why_ref": "PLAN 1.2",
+      "reason": "Module rows are the eleven WBModuleDef modules (E05 rcc directories, L10 GetModule matrix); the Resource Manager sub-editors, the Launcher and Shared are not WBModuleDef modules."
+    },
+    {
+      "module": "*",
+      "kind": "class",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "method",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "static-method",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "event",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "enum",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "enum-value",
+      "why_ref": "PLAN 4.5",
+      "reason": "E02 attributes every API row to one of the eleven WBModuleDef modules or Shared (class name, single wbModules entry, module base class, folder, else Shared), so the Resource Manager sub-editors, the Launcher and none receive no row, and a WBModuleDef module holds no row of this kind where E02 measured none in the Workbench API scope."
+    },
+    {
+      "module": "*",
+      "kind": "attribute",
+      "why_ref": "PLAN 4.5",
+      "reason": "E15 gives an [Attribute] row the module of the plugin or tool class that declares it (single wbModules entry, else Shared) or the module E02 gave the class (else none), so sub-editors and the Launcher never receive one, and the seven WBModuleDef modules without a plugin, tool or Workbench API class that declares attribute members hold none."
+    },
+    {
+      "module": "*",
+      "kind": "plugin",
+      "why_ref": "PLAN 4.5",
+      "reason": "A plugin row, and its settings and buttons, take the module of the plugin's single wbModules entry (else Shared); the 142 shipped declarations name only ResourceManager, WorldEditor, LocalizationEditor and ScriptEditor (42 name none), so no plugin belongs to any other module, to a sub-editor, to the Launcher or to none."
+    },
+    {
+      "module": "*",
+      "kind": "plugin-setting",
+      "why_ref": "PLAN 4.5",
+      "reason": "A plugin row, and its settings and buttons, take the module of the plugin's single wbModules entry (else Shared); the 142 shipped declarations name only ResourceManager, WorldEditor, LocalizationEditor and ScriptEditor (42 name none), so no plugin belongs to any other module, to a sub-editor, to the Launcher or to none."
+    },
+    {
+      "module": "*",
+      "kind": "plugin-button",
+      "why_ref": "PLAN 4.5",
+      "reason": "A plugin row, and its settings and buttons, take the module of the plugin's single wbModules entry (else Shared); the 142 shipped declarations name only ResourceManager, WorldEditor, LocalizationEditor and ScriptEditor (42 name none), so no plugin belongs to any other module, to a sub-editor, to the Launcher or to none."
+    },
+    {
+      "module": "*",
+      "kind": "plugin-cli-arg",
+      "why_ref": "PLAN 4.5",
+      "reason": "A plugin command-line argument takes its plugin's module (E03, else Shared) or none (E08 tables); sub-editors and the Launcher can never be that module, and the nine WBModuleDef modules without a plugin that reads a CLI argument hold none."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "Launcher",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "Shared",
+      "kind": "net-function",
+      "why_ref": "PLAN 4.5",
+      "reason": "Native NET functions are not owned by any editor module: E04 writes module none on every row and E05 states that no module owns a native, so every other module's cell is empty by construction (ScriptEditor is the exception and is not covered: it holds the 7 language-server rows)."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "Launcher",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder, else the one module it obtains with GetModule, else Shared or none, so a sub-editor or the Launcher never receives a handler."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "net-handler",
+      "why_ref": "PLAN 4.5",
+      "reason": "E04 gives a handler the WBModuleDef module of its source folder or of the one module it obtains with GetModule, and none of the 34 shipped handler classes belongs to or drives this module."
+    },
+    {
+      "module": "*",
+      "kind": "net-field",
+      "why_ref": "PLAN 4.5",
+      "reason": "A request or response field carries the module of its handler (E04), so sub-editors and the Launcher never receive one, and the WBModuleDef modules with no handler hold none."
+    },
+    {
+      "module": "*",
+      "kind": "cli-switch",
+      "why_ref": "PLAN 4.5",
+      "reason": "No module owns a switch (E05, E07 and E13 write module none); only E08's per-module table headings (Module: X, the -wbModule value, a WBModuleDef name) give a module, so sub-editors, the Launcher and Shared never receive a switch, and no documentation table names Dialogue, Animation, Behavior or Particle Editor."
+    },
+    {
+      "module": "*",
+      "kind": "link-format",
+      "why_ref": "PLAN 4.5",
+      "reason": "Link formats come from Workbench's documentation-link keys (E17, nine named editors, the rest Shared) and from wiki pages (E07, module of the page title); neither source holds a link format for Dialogue Editor, Navmesh Generator, a sub-editor, the Launcher or Shared."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Launcher",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Shared",
+      "kind": "mcp-tool",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Launcher",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Shared",
+      "kind": "mcp-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Launcher",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "Shared",
+      "kind": "handler-action",
+      "why_ref": "PLAN 4.5",
+      "reason": "E11 gives a handler-action the one module its Enforce source obtains with GetModule(X) (WBModuleDef classes only) and an mcp-tool or mcp-action the one module all its handlers reach, else none, so sub-editors, the Launcher and Shared never receive a row."
+    },
+    {
+      "module": "*",
+      "kind": "diag-menu",
+      "why_ref": "PLAN 1.2",
+      "reason": "The Diag Menu is the engine's single tree shown in every viewport and a diag id carries no module, so E14 gives every row Shared and no other module owns one."
+    },
+    {
+      "module": "*",
+      "kind": "diag-option",
+      "why_ref": "PLAN 1.2",
+      "reason": "The Diag Menu is the engine's single tree shown in every viewport and a diag id carries no module, so E14 gives every option Shared and no other module owns one."
+    },
+    {
+      "module": "*",
+      "kind": "property-editor",
+      "why_ref": "PLAN 1.2",
+      "reason": "A property-editor row is one of the 31 UIWidgets editor kinds of the property grid, which every module shares, so E16 gives all of them Shared."
+    },
+    {
+      "module": "Shared",
+      "kind": "file-type",
+      "why_ref": "PLAN 4.5",
+      "reason": "E09 and E07 give a file type the module of the one editor the wiki's Saved/Used by cell names, else none, never Shared."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "file-type",
+      "why_ref": "PLAN 4.5",
+      "reason": "Neither the wiki File Types table (E07) nor the pak corpus (E09) names Dialogue Editor as the owner of any file type."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "file-type",
+      "why_ref": "PLAN 4.5",
+      "reason": "The wiki File Types table (E07) attributes .emat to Resource Manager, not to the Material Editor, so E09 and E10 place the material format under ResourceManager (an attribution rule in code, not a measured zero)."
+    },
+    {
+      "module": "Launcher",
+      "kind": "file-type",
+      "why_ref": "DEC-025",
+      "reason": "A file type is filed under the editor that opens it. The launcher's project list is a profile file no Workbench editor opens, so E09 files it under none and the Launcher holds no file-type row."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "toolbar",
+      "why_ref": "EV-P4-2-003",
+      "reason": "The String Editor's main window carries no toolbar: L01 (EV-P4-2-002, 35 nodes) and L03 (EV-P4-2-003: window, panel, status item) read none in the default state of sitting P4-2."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "tab",
+      "why_ref": "EV-P4-2-003",
+      "reason": "The String Editor shows no tab strip: L01 (EV-P4-2-002) and L03 (EV-P4-2-003) read none in the default state of sitting P4-2."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "tool",
+      "why_ref": "EV-P4-2-003",
+      "reason": "The String Editor has no tool panel inside a dock: L03 (EV-P4-2-003) found none in sitting P4-2."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "toolbar",
+      "why_ref": "EV-P4-3-052",
+      "reason": "The Navmesh module's own window (titled \"Arma Reforger Workbench\") holds a render region and three controls, no toolbar: L01 (EV-P4-3-051, 6 nodes) and L03 (EV-P4-3-052) in sitting P4-3."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "tab",
+      "why_ref": "EV-P4-3-052",
+      "reason": "The Navmesh module's window has no tab strip: L01 (EV-P4-3-051) and L03 (EV-P4-3-052) in sitting P4-3."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "status-item",
+      "why_ref": "EV-P4-3-052",
+      "reason": "The Navmesh module's window has no status bar: L01 (EV-P4-3-051) and L03 (EV-P4-3-052) in sitting P4-3."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "tab",
+      "why_ref": "EV-P4-2-019",
+      "reason": "The Procedural Animation Editor shows no tab strip in its default state: L01 (EV-P4-2-018, 112 nodes) and L03 (EV-P4-2-019: 6 docks, 7 panels, 2 toolbars) in sitting P4-2."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "toolbar",
+      "why_ref": "EV-P4-2-027",
+      "reason": "The Resource Manager's main window carries no toolbar: L01 (EV-P4-2-026, 112 nodes) and L03 (EV-P4-2-027: window, 3 panels, 2 docks, 2 status items) in sitting P4-2; its buttons sit inside the Resource Browser panel as controls."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "tool",
+      "why_ref": "EV-P4-2-027",
+      "reason": "The Resource Manager has no tool panel inside a dock: L03 (EV-P4-2-027) found none in sitting P4-2."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "tool",
+      "why_ref": "EV-P4-2-015",
+      "reason": "The Animation Editor has no tool panel inside a dock in its default state: L03 (EV-P4-2-015: 4 panels, 10 tabs, 3 toolbars, 34 toolbar buttons) found none in sitting P4-2."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "tool",
+      "why_ref": "EV-P4-2-007",
+      "reason": "The Behavior Editor has no tool panel inside a dock in its default state: L03 (EV-P4-2-007: 8 docks, 6 panels, 6 tabs, 2 toolbars) found none in sitting P4-2."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "toolbar-button",
+      "why_ref": "EV-P4-2-003",
+      "reason": "L01 (EV-P4-2-002, 35 nodes) and L03 (EV-P4-2-003) read no toolbar and no toolbar button in the String Editor's default state (its toolbar cell is already explained); L09 never ran off the World Editor. (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "dock",
+      "why_ref": "EV-P4-2-003",
+      "reason": "L01 (EV-P4-2-002), L03 (EV-P4-2-003) and L07 (EV-P4-3-009) read no dock in the String Editor's default state; L17 never ran (U31 unsettled). (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "menu-item",
+      "why_ref": "EV-P4-3-051",
+      "reason": "The Navmesh module's window has no menu bar: L01 (EV-P4-3-051, 6 nodes) read none, so L02 had no title to open; the only menu row is E01's recon aggregate of its actions. (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "toolbar-button",
+      "why_ref": "EV-P4-3-052",
+      "reason": "The Navmesh module's window holds a render region and three controls: L01 (EV-P4-3-051, 6 nodes) and L03 (EV-P4-3-052) read no toolbar button; L09 never ran off the World Editor. (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "dock",
+      "why_ref": "EV-P4-3-052",
+      "reason": "L01 (EV-P4-3-051, 6 nodes), L03 (EV-P4-3-052) and L07 (EV-P4-3-053) read no dock in the Navmesh module's window; L17 never ran (U31 unsettled). (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "Launcher",
+      "kind": "menu",
+      "why_ref": "EV-P4-4-002",
+      "reason": "L14's passive walk of the launcher window (EV-P4-4-001/002, 7 rows) found no menu bar and proposed 0 titles; L01 and L02 never target the launcher, L14 is its walker. (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "Launcher",
+      "kind": "menu-item",
+      "why_ref": "EV-P4-4-002",
+      "reason": "L14's walk of the launcher window (EV-P4-4-001/002) found no menu bar, so it holds no menu item; L01, L02 and L09 never target the launcher. (A*, DEC-056 ruling 8: the co-awaiter is not built in Phase 4.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-001) and L03 (EV-W8-rewalk-002) of the Config tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-001) and L03 (EV-W8-rewalk-002) of the Config tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk of the Config tab (EV-W8-rewalk-001) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-007",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-007) and L03 (EV-W8-rewalk-008) of the Layout tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-007",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-007) and L03 (EV-W8-rewalk-008) of the Layout tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-007",
+      "reason": "The W8 run 8 L01 walk of the Layout tab (EV-W8-rewalk-007) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-005",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-005) and L03 (EV-W8-rewalk-006) of the Imageset tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-005",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-005) and L03 (EV-W8-rewalk-006) of the Imageset tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-005",
+      "reason": "The W8 run 8 L01 walk of the Imageset tab (EV-W8-rewalk-005) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-011",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-011) and L03 (EV-W8-rewalk-012) of the Model tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-011",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-011) and L03 (EV-W8-rewalk-012) of the Model tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-011",
+      "reason": "The W8 run 8 L01 walk of the Model tab (EV-W8-rewalk-011) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-015",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-015) and L03 (EV-W8-rewalk-016) of the Texture tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-015",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-015) and L03 (EV-W8-rewalk-016) of the Texture tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-015",
+      "reason": "The W8 run 8 L01 walk of the Texture tab (EV-W8-rewalk-015) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-009",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-009) and L03 (EV-W8-rewalk-010) of the Material tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-009",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-009) and L03 (EV-W8-rewalk-010) of the Material tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-009",
+      "reason": "The W8 run 8 L01 walk of the Material tab (EV-W8-rewalk-009) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-003) and L03 (EV-W8-rewalk-004) of the Font tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-003) and L03 (EV-W8-rewalk-004) of the Font tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The W8 run 8 L01 walk of the Font tab (EV-W8-rewalk-003) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "dock",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-013) and L03 (EV-W8-rewalk-014) of the Styles tab each read 2 docks, both the Resource Manager window's (resourceBrowserDock, consoleDock), filed under ResourceManager as shared chrome (DEC-059); the tab adds no dock. L07's 1.9.0.37 file holds no dock row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "status-item",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-013) and L03 (EV-W8-rewalk-014) of the Styles tab read 2 status items, both the Resource Manager window's status bar, filed under ResourceManager as shared chrome (DEC-059); the tab adds none. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "tool-button",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "The W8 run 8 L01 walk of the Styles tab (EV-W8-rewalk-013) emitted no tool-button row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-002",
+      "reason": "The W8 run 8 L03 chrome read of the Config tab (EV-W8-rewalk-002, over the L01 walk EV-W8-rewalk-001) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-008",
+      "reason": "The W8 run 8 L03 chrome read of the Layout tab (EV-W8-rewalk-008, over the L01 walk EV-W8-rewalk-007) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-006",
+      "reason": "The W8 run 8 L03 chrome read of the Imageset tab (EV-W8-rewalk-006, over the L01 walk EV-W8-rewalk-005) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-010",
+      "reason": "The W8 run 8 L03 chrome read of the Material tab (EV-W8-rewalk-010, over the L01 walk EV-W8-rewalk-009) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-004",
+      "reason": "The W8 run 8 L03 chrome read of the Font tab (EV-W8-rewalk-004, over the L01 walk EV-W8-rewalk-003) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "tool",
+      "why_ref": "EV-W8-rewalk-014",
+      "reason": "The W8 run 8 L03 chrome read of the Styles tab (EV-W8-rewalk-014, over the L01 walk EV-W8-rewalk-013) emitted no tool row. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "toolbar",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-001) and L03 (EV-W8-rewalk-002) of the Config tab read no toolbar. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "toolbar",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-013) and L03 (EV-W8-rewalk-014) of the Styles tab read no toolbar. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "toolbar-button",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-001) and L03 (EV-W8-rewalk-002) of the Config tab read no toolbar, so it holds no toolbar button and L09 has none to drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "toolbar-button",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-013) and L03 (EV-W8-rewalk-014) of the Styles tab read no toolbar, so it holds no toolbar button and L09 has none to drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "toolbar-button",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The W8 run 8 L01 walk (EV-W8-rewalk-003) and L03 (EV-W8-rewalk-004) read the Font tab's one toolbar; its items are edits and check boxes (control rows), not tool buttons, so L09 has no toolbar button to drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "window",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "A sub-editor is a tab of the Resource Manager window, not a window (DEC-056 ruling 9): the W8 run 8 L01 walk (EV-W8-rewalk-003) and L03 (EV-W8-rewalk-004) read the one window, ResourceManagerMain, filed under ResourceManager (DEC-059); L07 has no window row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "window",
+      "why_ref": "EV-W8-rewalk-013",
+      "reason": "A sub-editor is a tab of the Resource Manager window, not a window (DEC-056 ruling 9): the W8 run 8 L01 walk (EV-W8-rewalk-013) and L03 (EV-W8-rewalk-014) read the one window, ResourceManagerMain, filed under ResourceManager (DEC-059); L07 has no window row for it; L17 never ran (U31). (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "menu",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The W8 run 8 L01 walk of the Config tab (EV-W8-rewalk-001) read the 8 menu titles of the Resource Manager menu bar, all filed under ResourceManager (DEC-059); the tab adds no title, and the L02 policy (titles_by_module) gives it none to open. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "menu-item",
+      "why_ref": "EV-W8-rewalk-001",
+      "reason": "The Config tab adds no menu title (W8 run 8 L01, EV-W8-rewalk-001), so neither L02 nor L09 has a menu item of its own to read or drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "menu",
+      "why_ref": "EV-W8-rewalk-015",
+      "reason": "The W8 run 8 L01 walk of the Texture tab (EV-W8-rewalk-015) read the 8 menu titles of the Resource Manager menu bar, all filed under ResourceManager (DEC-059); the tab adds no title, and the L02 policy (titles_by_module) gives it none to open. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "menu-item",
+      "why_ref": "EV-W8-rewalk-015",
+      "reason": "The Texture tab adds no menu title (W8 run 8 L01, EV-W8-rewalk-015), so neither L02 nor L09 has a menu item of its own to read or drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "menu",
+      "why_ref": "EV-W8-rewalk-009",
+      "reason": "The W8 run 8 L01 walk of the Material tab (EV-W8-rewalk-009) read the 8 menu titles of the Resource Manager menu bar, all filed under ResourceManager (DEC-059); the tab adds no title, and the L02 policy (titles_by_module) gives it none to open. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "menu-item",
+      "why_ref": "EV-W8-rewalk-009",
+      "reason": "The Material tab adds no menu title (W8 run 8 L01, EV-W8-rewalk-009), so neither L02 nor L09 has a menu item of its own to read or drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "menu",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The W8 run 8 L01 walk of the Font tab (EV-W8-rewalk-003) read the 8 menu titles of the Resource Manager menu bar, all filed under ResourceManager (DEC-059); the tab adds no title, and the L02 policy (titles_by_module) gives it none to open. (A*, DEC-088: W8 run 8 re-walk.)"
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "menu-item",
+      "why_ref": "EV-W8-rewalk-003",
+      "reason": "The Font tab adds no menu title (W8 run 8 L01, EV-W8-rewalk-003), so neither L02 nor L09 has a menu item of its own to read or drive. (A*, DEC-088: W8 run 8 re-walk.)"
+    }
+  ],
+  "g7_open_cells": [
+    {
+      "module": "ScriptEditor",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W4"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "Launcher",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "none",
+      "kind": "canvas-gesture",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L07-no-gesture] L07 writes no canvas-gesture line by design (L07-screens.ts header: gestures are the ANNOTATOR's reading of the screenshots). Proposed: the module's wave. Was: L07."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "context-item",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05, L09 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05, L09."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "context-item",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05, L09 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05, L09."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "context-item",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L05, L09."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "context-item",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05, L09 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05, L09."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "context-item",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L05, L09."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "context-item",
+      "awaits": [
+        "W5"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05, L09 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05, L09."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "context-item",
+      "awaits": [
+        "L01",
+        "L05",
+        "L09"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "context-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no context-item; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L05, L09."
+    },
+    {
+      "module": "Shared",
+      "kind": "context-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L05, L09."
+    },
+    {
+      "module": "none",
+      "kind": "context-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L05, L09."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L05."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "context-menu",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L05."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "context-menu",
+      "awaits": [
+        "W5"
+      ],
+      "note": "DEC-056 exit remainder: L01, L05 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L05."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "context-menu",
+      "awaits": [
+        "L01",
+        "L05"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "context-menu",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no context-menu; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L05."
+    },
+    {
+      "module": "Shared",
+      "kind": "context-menu",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L05."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "control",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L04, L14, L17."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "control",
+      "awaits": [
+        "L01",
+        "L04",
+        "L17"
+      ]
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "DEC-056 exit remainder: L15 ran or was deferred in Phase 4 and the cell stayed empty; the residue wave reads it (tool-active state for tool buttons, the Diag menu walk L15 for the debug panel). Was: L15."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "Launcher",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "none",
+      "kind": "debug-panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-L15-WE-only] L15 writes debug-panel lines only under WorldEditor (its walk reads the World Editor window). Proposed: W8 (Diag Menu and in-play debug surfaces). Was: L15."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L04, L06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L04, L06."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L04, L06, L14."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L04, L06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L04, L06."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L01, L04, L06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L04, L06."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W5"
+      ],
+      "note": "DEC-056 exit remainder: L01, L04, L06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L04, L06."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "dialog",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L04, L06, L14."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "dialog",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "dock",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "dock",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no dock; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "Shared",
+      "kind": "dock",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "L16"
+      ]
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W4"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W4"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W4"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "Launcher",
+      "kind": "hazard-dialog",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-noscript] L16 has no script (main-recorded as met); no hazard dialog of this module was met in the Phase 4 sittings. Proposed: the module's wave records it when met. Was: L16."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "menu",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L02, L14."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "menu",
+      "awaits": [
+        "L01",
+        "L02"
+      ]
+    },
+    {
+      "module": "Shared",
+      "kind": "menu",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L02, L14."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "menu-item",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L02, L09, L14."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "menu-item",
+      "awaits": [
+        "L01",
+        "L02",
+        "L09"
+      ]
+    },
+    {
+      "module": "Shared",
+      "kind": "menu-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L02, L09, L14."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "option",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L04."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "option",
+      "awaits": [
+        "W5"
+      ],
+      "note": "DEC-056 exit remainder: L04 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L04."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "option",
+      "awaits": [
+        "W5"
+      ],
+      "note": "DEC-056 exit remainder: L04 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L04."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "option",
+      "awaits": [
+        "L04"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "panel",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "panel",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "panel",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "panel",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "panel",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no panel; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "Shared",
+      "kind": "panel",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "property",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L06, L08 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L06, L08."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "property",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L06, L08."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "property",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L06, L08 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L06, L08."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "property",
+      "awaits": [
+        "W4"
+      ],
+      "note": "DEC-056 exit remainder: L06, L08 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L06, L08."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "property",
+      "awaits": [
+        "L06",
+        "L08"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "property",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no property; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L06, L08."
+    },
+    {
+      "module": "Shared",
+      "kind": "property",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L06, L08."
+    },
+    {
+      "module": "none",
+      "kind": "property",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L06, L08."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "property-group",
+      "awaits": [
+        "W3"
+      ],
+      "note": "DEC-056 exit remainder: L01, L04, L06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: L01, L04, L06."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "property-group",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L04, L06."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "property-group",
+      "awaits": [
+        "L01",
+        "L04",
+        "L06"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "property-group",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no property-group; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L04, L06."
+    },
+    {
+      "module": "Shared",
+      "kind": "property-group",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L04, L06."
+    },
+    {
+      "module": "none",
+      "kind": "property-group",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L04, L06."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "region",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "region",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "region",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "region",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no region; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "Shared",
+      "kind": "region",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "none",
+      "kind": "region",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L07, L17."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "schema-class",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "schema-class",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "schema-class",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "schema-class",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "schema-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "schema-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "schema-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "schema-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "Launcher",
+      "kind": "schema-class",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "schema-key",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "schema-key",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "schema-key",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "schema-key",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "schema-key",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "schema-key",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "schema-key",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "schema-key",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "Launcher",
+      "kind": "schema-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-noscript] L08 has no script (phase 2 introspection never built). Proposed: the module's wave reads its live containers. Was: L08."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "setting-key",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: E06."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "setting-key",
+      "awaits": [
+        "W4"
+      ],
+      "note": "E06 read one registry export and files a key under the module of its top-level section; the export is taken again on the sandbox profile in Phase 4. DEC-056 exit remainder: E06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: E06."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "setting-key",
+      "awaits": [
+        "W5"
+      ],
+      "note": "E06 read one registry export and files a key under the module of its top-level section; the export is taken again on the sandbox profile in Phase 4. DEC-056 exit remainder: E06 ran in Phase 4 and found none in this module; the module's wave reads the cell. Was: E06."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "shortcut",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L02."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "shortcut",
+      "awaits": [
+        "L02"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "shortcut",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no shortcut; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L02."
+    },
+    {
+      "module": "none",
+      "kind": "shortcut",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L02."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "status-item",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "status-item",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L03."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "status-item",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "status-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no status-item; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03."
+    },
+    {
+      "module": "Shared",
+      "kind": "status-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03."
+    },
+    {
+      "module": "none",
+      "kind": "status-item",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "tab",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "tab",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "tab",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no tab; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03."
+    },
+    {
+      "module": "Shared",
+      "kind": "tab",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "tool",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L03."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "tool",
+      "awaits": [
+        "L03"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "tool",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no tool; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L03."
+    },
+    {
+      "module": "none",
+      "kind": "tool",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L03."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "the default-state L01 walk of sitting P4-1, P4-2 or P4-3 found none: a tool button appears only with a tool active, a state the matrix does not yet schedule (DEC-055) DEC-056 exit remainder: L01 ran or was deferred in Phase 4 and the cell stayed empty; the residue wave reads it (tool-active state for tool buttons, the Diag menu walk L15 for the debug panel). Was: L01."
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "tool-button",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-tool-state] A tool button appears only with a tool active, a state the matrix does not schedule (DEC-055 ruling 7); L01 read the default state only. Proposed: W8 (native-tool panels). Was: L01."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "tool-button",
+      "awaits": [
+        "L01"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no tool-button; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01."
+    },
+    {
+      "module": "Shared",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01."
+    },
+    {
+      "module": "none",
+      "kind": "tool-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; none owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "toolbar",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "toolbar",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "toolbar",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "toolbar",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "toolbar",
+      "awaits": [
+        "L01",
+        "L03"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "toolbar",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no toolbar; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03."
+    },
+    {
+      "module": "Shared",
+      "kind": "toolbar",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "toolbar-button",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03, L09."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "toolbar-button",
+      "awaits": [
+        "L01",
+        "L03",
+        "L09"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "toolbar-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-Launcher] L14 is the launcher's walker and its allow-list holds no toolbar-button; L01/L03/L05/L06/L07 never target the launcher. L14's passive walk read 7 rows, a window and 6 controls (EV-P4-4-001/002). Proposed: W8, or an explained reason on that evidence if the owner rules the L14 walk complete. Was: L01, L03, L09."
+    },
+    {
+      "module": "Shared",
+      "kind": "toolbar-button",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L09."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "window",
+      "awaits": [
+        "W3"
+      ],
+      "note": "[B-Dialogue] DialogueEditor is absent from the module list on this build (L10, EV-P4-1-026) and was never sat (design D15). Proposed: W3 (wb_dialogue). Was: L01, L03, L07, L14, L17."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "window",
+      "awaits": [
+        "W5"
+      ],
+      "note": "[B-Particle] The Particle Editor is opened and fronted only, its walk deferred (DEC-042; L10 EV-P4-1-026 lists it unread). Proposed: W5. Was: L01, L03, L07, L14, L17."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ]
+    },
+    {
+      "module": "Launcher",
+      "kind": "window",
+      "awaits": [
+        "L01",
+        "L03",
+        "L07",
+        "L14",
+        "L17"
+      ]
+    },
+    {
+      "module": "Shared",
+      "kind": "window",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[E-no-window] Every live walker attributes a line to the module whose window it reads; Shared owns no window (L06 writes Shared only for the deferred property-editor rows). Proposed: W8 pending a ruling; an explained reason is the likelier end state. Was: L01, L03, L07, L14, L17."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W3"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "mcp-tool",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W3"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "mcp-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "mcp-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W3"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W4"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "handler-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "handler-action",
+      "awaits": [
+        "W5"
+      ],
+      "note": "No tool of this server reaches the module yet; a coverage wave adds one."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "setting-key",
+      "awaits": [
+        "W8"
+      ],
+      "note": "[B-RMsub-E06] The sub-editor was never opened in a sitting, so no sandbox registry export can hold its keys. Proposed: W8 (settings store). Was: E06."
+    },
+    {
+      "module": "WorldEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ScriptEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "LocalizationEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "DialogueEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "AnimEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ProcAnimEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "BehaviorEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "AudioEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ParticleEditor",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "NavmeshGeneratorMain",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Config",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Layout",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Imageset",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Model",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Texture",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Material",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Font",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "ResourceManager.Styles",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "Launcher",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "Shared",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    },
+    {
+      "module": "none",
+      "kind": "resource-class",
+      "awaits": [
+        "W2"
+      ],
+      "note": "[E-allowlist] L08's kinds allow-list (schema-class, schema-key, property, module) cannot emit resource-class, so the DEC-025 ruling cannot be met as written. Proposed: W2 (meta read with per-variable schema); the alternative is adding resource-class to L08's kinds. Was: L08."
+    }
+  ],
+  "shard_by_kind": {
+    "attribute": "attribute",
+    "diag-menu": "diag",
+    "diag-option": "diag",
+    "property": "schema",
+    "schema-class": "schema",
+    "schema-key": "schema"
+  },
+  "universes": [
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "L08",
+        "L10"
+      ],
+      "id": "kind:module",
+      "kind": "module",
+      "leaf": false,
+      "what": "Every module row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "L01",
+        "L03",
+        "L07",
+        "L14",
+        "L17"
+      ],
+      "id": "kind:window",
+      "kind": "window",
+      "leaf": false,
+      "what": "Every window row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E08",
+        "L01",
+        "L02",
+        "L14"
+      ],
+      "id": "kind:menu",
+      "kind": "menu",
+      "leaf": false,
+      "what": "Every menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E08",
+        "L01",
+        "L02",
+        "L09",
+        "L14"
+      ],
+      "id": "kind:menu-item",
+      "kind": "menu-item",
+      "leaf": true,
+      "what": "Every menu-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E06",
+        "E07",
+        "L01",
+        "L03"
+      ],
+      "expected": {
+        "enumerator": "E06",
+        "source": "PLAN 2.1 finding 9 [recon]: 73 docks and 10 toolbars across 7 modules",
+        "value": 10
+      },
+      "id": "kind:toolbar",
+      "kind": "toolbar",
+      "leaf": false,
+      "what": "Every toolbar row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "L01",
+        "L03",
+        "L09"
+      ],
+      "id": "kind:toolbar-button",
+      "kind": "toolbar-button",
+      "leaf": true,
+      "what": "Every toolbar-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E06",
+        "E07",
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ],
+      "expected": {
+        "enumerator": "E06",
+        "source": "PLAN 2.1 finding 9 [recon]: 73 docks and 10 toolbars across 7 modules",
+        "value": 73
+      },
+      "id": "kind:dock",
+      "kind": "dock",
+      "leaf": false,
+      "what": "Every dock row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E17",
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ],
+      "id": "kind:panel",
+      "kind": "panel",
+      "leaf": false,
+      "what": "Every panel row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E17",
+        "L01",
+        "L03"
+      ],
+      "id": "kind:tab",
+      "kind": "tab",
+      "leaf": false,
+      "what": "Every tab row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E16",
+        "L01",
+        "L04",
+        "L06",
+        "L14"
+      ],
+      "id": "kind:dialog",
+      "kind": "dialog",
+      "leaf": false,
+      "what": "Every dialog row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "L01",
+        "L04",
+        "L14",
+        "L17"
+      ],
+      "id": "kind:control",
+      "kind": "control",
+      "leaf": true,
+      "what": "Every control row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "L01",
+        "L04",
+        "L06"
+      ],
+      "id": "kind:property-group",
+      "kind": "property-group",
+      "leaf": false,
+      "what": "Every property-group row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "schema",
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "L06",
+        "L08"
+      ],
+      "id": "kind:property",
+      "kind": "property",
+      "leaf": true,
+      "what": "Every property row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E16",
+        "L01",
+        "L06"
+      ],
+      "expected": {
+        "enumerator": "E16",
+        "source": "PLAN 4.5 E16: UIWidgets (31 members)",
+        "value": 31
+      },
+      "id": "kind:property-editor",
+      "kind": "property-editor",
+      "leaf": false,
+      "what": "Every property-editor row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "L01",
+        "L05"
+      ],
+      "id": "kind:context-menu",
+      "kind": "context-menu",
+      "leaf": false,
+      "what": "Every context-menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "L01",
+        "L05",
+        "L09"
+      ],
+      "id": "kind:context-item",
+      "kind": "context-item",
+      "leaf": true,
+      "what": "Every context-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E06",
+        "E07",
+        "E08",
+        "L02"
+      ],
+      "expected": {
+        "at_least": 359,
+        "enumerator": "E06",
+        "source": "DEC-024: the registry export holds 361 shortcut actions in 18 categories; E06 emits 359, dropping two plugin actions whose plugin is not in the 1.8.0.13 source (a lower bound: one machine's registry)"
+      },
+      "id": "kind:shortcut",
+      "kind": "shortcut",
+      "leaf": true,
+      "what": "Every shortcut row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui",
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E03",
+        "E07",
+        "E18",
+        "L03"
+      ],
+      "id": "kind:tool",
+      "kind": "tool",
+      "leaf": false,
+      "what": "Every tool row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "L01"
+      ],
+      "id": "kind:tool-button",
+      "kind": "tool-button",
+      "leaf": true,
+      "what": "Every tool-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "E18",
+        "L07"
+      ],
+      "id": "kind:canvas-gesture",
+      "kind": "canvas-gesture",
+      "leaf": true,
+      "what": "Every canvas-gesture row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "L01",
+        "L03",
+        "L07",
+        "L17"
+      ],
+      "id": "kind:region",
+      "kind": "region",
+      "leaf": true,
+      "what": "Every region row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "L01",
+        "L03"
+      ],
+      "id": "kind:status-item",
+      "kind": "status-item",
+      "leaf": true,
+      "what": "Every status-item row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E13",
+        "L16"
+      ],
+      "id": "kind:hazard-dialog",
+      "kind": "hazard-dialog",
+      "leaf": true,
+      "what": "Every hazard-dialog row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "id": "kind:class",
+      "kind": "class",
+      "leaf": false,
+      "what": "Every class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "id": "kind:method",
+      "kind": "method",
+      "leaf": true,
+      "what": "Every method row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "id": "kind:static-method",
+      "kind": "static-method",
+      "leaf": true,
+      "what": "Every static-method row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "id": "kind:event",
+      "kind": "event",
+      "leaf": true,
+      "what": "Every event row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api",
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E15"
+      ],
+      "id": "kind:attribute",
+      "kind": "attribute",
+      "leaf": true,
+      "what": "Every attribute row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api",
+        "schema"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E10"
+      ],
+      "id": "kind:enum",
+      "kind": "enum",
+      "leaf": false,
+      "what": "Every enum row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api",
+        "schema"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E10"
+      ],
+      "id": "kind:enum-value",
+      "kind": "enum-value",
+      "leaf": true,
+      "what": "Every enum-value row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E03",
+        "L11"
+      ],
+      "expected": {
+        "enumerator": "E03",
+        "source": "DEC-024: 148 attribute occurrences in source = 142 active classes (121 plugins, 21 tools) + 6 commented out; this universe counts the plugin rows. Build 1.9.0.37 adds NewMlodBakerPlugin: 122 (E03 re-run 2026-11-06)",
+        "value": 122
+      },
+      "id": "kind:plugin",
+      "kind": "plugin",
+      "leaf": false,
+      "what": "Every plugin row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E03",
+        "E06",
+        "E15",
+        "E17"
+      ],
+      "id": "kind:plugin-setting",
+      "kind": "plugin-setting",
+      "leaf": true,
+      "what": "Every plugin-setting row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E03"
+      ],
+      "id": "kind:plugin-button",
+      "kind": "plugin-button",
+      "leaf": true,
+      "what": "Every plugin-button row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "plugin"
+      ],
+      "enumerators": [
+        "E01",
+        "E03",
+        "E08"
+      ],
+      "id": "kind:plugin-cli-arg",
+      "kind": "plugin-cli-arg",
+      "leaf": true,
+      "what": "Every plugin-cli-arg row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "net"
+      ],
+      "enumerators": [
+        "E01",
+        "E04",
+        "E05",
+        "E08",
+        "L12"
+      ],
+      "expected": {
+        "enumerator": "E05",
+        "source": "PLAN 2.1 finding 2: Six are named in the executable",
+        "value": 6
+      },
+      "id": "kind:net-function",
+      "kind": "net-function",
+      "leaf": true,
+      "what": "Every net-function row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "net"
+      ],
+      "enumerators": [
+        "E01",
+        "E04",
+        "E08",
+        "L12"
+      ],
+      "expected": {
+        "enumerator": "E04",
+        "source": "DEC-024: 34 classes extend NetApiHandler; 33 are active and one (ExampleCall) sits under #ifdef DOXYGEN. Both recon readings were right. Build 1.9.0.37 adds nine (ExportSurfaceMasks, GetAnimationExporProfileChannelsInfo, GetAnimationExportProfileInfosInProject, GetMaterialsByClass, GetResourceValidity, GetSelectedEntities, GetSurfaceMaterials, GetTerrainInfo, GetTileHeightmap): 43 (E04 re-run 2026-11-06)",
+        "value": 43
+      },
+      "id": "kind:net-handler",
+      "kind": "net-handler",
+      "leaf": false,
+      "what": "Every net-handler row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "net"
+      ],
+      "enumerators": [
+        "E01",
+        "E04",
+        "E08",
+        "L12"
+      ],
+      "id": "kind:net-field",
+      "kind": "net-field",
+      "leaf": true,
+      "what": "Every net-field row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "cli"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E07",
+        "E08",
+        "E13",
+        "L13"
+      ],
+      "id": "kind:cli-switch",
+      "kind": "cli-switch",
+      "leaf": true,
+      "what": "Every cli-switch row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "link"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "E17"
+      ],
+      "id": "kind:link-format",
+      "kind": "link-format",
+      "leaf": true,
+      "what": "Every link-format row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "file"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "E09"
+      ],
+      "id": "kind:file-type",
+      "kind": "file-type",
+      "leaf": true,
+      "what": "Every file-type row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "file"
+      ],
+      "enumerators": [
+        "E01",
+        "E09",
+        "E10"
+      ],
+      "id": "kind:resource-class",
+      "kind": "resource-class",
+      "leaf": true,
+      "what": "Every resource-class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "schema"
+      ],
+      "enumerators": [
+        "E01",
+        "E10",
+        "L08"
+      ],
+      "id": "kind:schema-class",
+      "kind": "schema-class",
+      "leaf": false,
+      "what": "Every schema-class row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "schema"
+      ],
+      "enumerators": [
+        "E01",
+        "E10",
+        "L08"
+      ],
+      "id": "kind:schema-key",
+      "kind": "schema-key",
+      "leaf": true,
+      "what": "Every schema-key row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "setting"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E06"
+      ],
+      "id": "kind:setting-key",
+      "kind": "setting-key",
+      "leaf": true,
+      "what": "Every setting-key row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui",
+        "setting"
+      ],
+      "enumerators": [
+        "E01",
+        "E05",
+        "E06",
+        "E07",
+        "L04"
+      ],
+      "id": "kind:option",
+      "kind": "option",
+      "leaf": true,
+      "what": "Every option row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "diag"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "E14",
+        "L15"
+      ],
+      "id": "kind:diag-menu",
+      "kind": "diag-menu",
+      "leaf": false,
+      "what": "Every diag-menu row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "diag"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "E14",
+        "L15"
+      ],
+      "id": "kind:diag-option",
+      "kind": "diag-option",
+      "leaf": true,
+      "what": "Every diag-option row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E19"
+      ],
+      "id": "kind:blender-operator",
+      "kind": "blender-operator",
+      "leaf": true,
+      "what": "Every blender-operator row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "ui"
+      ],
+      "enumerators": [
+        "E01",
+        "E07",
+        "L15"
+      ],
+      "id": "kind:debug-panel",
+      "kind": "debug-panel",
+      "leaf": false,
+      "what": "Every debug-panel row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "mcp"
+      ],
+      "enumerators": [
+        "E01",
+        "E11"
+      ],
+      "expected": {
+        "enumerator": "E11",
+        "source": "DEC-087 (was 120 under DEC-051): the 150 tools the server registers with ENFUSION_TOOLSET=all, measured by fetchToolsList on dist/index.js (DEC-077) and reproduced three ways by tests/census/e11-mcp-inventory.test.ts; E11 counts 150",
+        "value": 150
+      },
+      "id": "kind:mcp-tool",
+      "kind": "mcp-tool",
+      "leaf": false,
+      "what": "Every mcp-tool row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "mcp"
+      ],
+      "enumerators": [
+        "E01",
+        "E11"
+      ],
+      "id": "kind:mcp-action",
+      "kind": "mcp-action",
+      "leaf": true,
+      "what": "Every mcp-action row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "mcp"
+      ],
+      "enumerators": [
+        "E01",
+        "E11"
+      ],
+      "id": "kind:handler-action",
+      "kind": "handler-action",
+      "leaf": true,
+      "what": "Every handler-action row"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "expected": {
+        "enumerator": "E02",
+        "source": "DEC-024: WorldEditorAPI declares 124 proto external methods (PLAN 2.1 finding 3) plus a private constructor and destructor, which E02 also emits as method rows. Build 1.9.0.37: ModifyHeightMap, ModifyHeightMapUserShape, ModifyLayers and ModifyLayersUserShape are gone, ExportSurfaceMasks, GetSurfaceMaterials and SetObjectVariableMember are new, BeginTerrainAction takes 2 arguments instead of 3: 125 (E02 re-run 2026-11-06)",
+        "value": 125
+      },
+      "id": "api:WorldEditorAPI-methods",
+      "id_prefix": "api:WorldEditorAPI.",
+      "kind": "method",
+      "leaf": true,
+      "what": "Methods of WorldEditorAPI in the script source"
+    },
+    {
+      "closure": "two-independent-sources",
+      "dims": [
+        "api"
+      ],
+      "enumerators": [
+        "E01",
+        "E02",
+        "E12"
+      ],
+      "expected": {
+        "enumerator": "E12",
+        "source": "DEC-027: the index holds all 124 proto external methods of WorldEditorAPI, 96 from the scrape and the 28 an /endcode typo hid from Doxygen back-filled from the script source; the private constructor and destructor are not index entries",
+        "value": 124
+      },
+      "id": "api:WorldEditorAPI-methods-index",
+      "id_prefix": "api:WorldEditorAPI.",
+      "kind": "method",
+      "leaf": true,
+      "what": "Methods of WorldEditorAPI in the API index, with the entries back-filled from the script source"
+    }
+  ]
+}

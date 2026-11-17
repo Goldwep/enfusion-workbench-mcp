@@ -171,3 +171,75 @@ describe("parseAgfToStruct", () => {
     expect(empty.sheets).toHaveLength(0);
   });
 });
+
+describe("parseAgfToStruct on the 1.9 layouts (CST reader)", () => {
+  const AGF = `AnimSrcGraphFile {
+ Sheets {
+  AnimSrcGraphSheet Master {
+   Nodes {
+    AnimSrcNodeBlendN "Blend N 1" {
+     EditorPos 385.4 516.5
+     BlendWeight "GetLOD()"
+     Thresholds {
+      0 1 2 3 4
+     }
+     Children {
+      "A" "B" "A" "C" "C"
+     }
+    }
+    AnimSrcNodeQueue Q {
+     Child "A"
+     QueueItems {
+      AnimSrcNodeQueueItem "{6106BE788947B4F0}" {
+       Child "B"
+       StartExpr "IsCommand(CMD_X)"
+      }
+     }
+    }
+    AnimSrcNodeFuncCall Call {
+     Child0 "A"
+     Child2 "C"
+    }
+   }
+   NodeGroups {
+    AnimSrcGraphNodeGroup Aiming {
+     EditorColor 0.4 0.3 0.4 255
+    }
+   }
+  }
+ }
+}`;
+  const nodes = parseAgfToStruct(AGF).sheets[0].nodes;
+
+  it("reads BlendN thresholds and its Children list (KD-W4-1)", () => {
+    const bn = nodes.find((n) => n.name === "Blend N 1")!;
+    expect(bn.properties.thresholds).toEqual([0, 1, 2, 3, 4]);
+    expect(bn.children).toEqual(["A", "B", "A", "C", "C"]);
+    expect(bn.editorPos).toEqual({ x: 385.4, y: 516.5 });
+  });
+
+  it("reads queue items inside QueueItems and every ChildN slot", () => {
+    const q = nodes.find((n) => n.name === "Q")!;
+    expect(q.children).toEqual(["A", "B"]);
+    expect((q.properties.queueItems as { startExpr: string }[])[0].startExpr).toBe(
+      "IsCommand(CMD_X)",
+    );
+    expect(nodes.find((n) => n.name === "Call")!.children).toEqual(["A", "C"]);
+  });
+
+  it("lists only the Nodes block's nodes, not node groups", () => {
+    expect(nodes.map((n) => n.name)).toEqual(["Blend N 1", "Q", "Call"]);
+  });
+
+  it("never throws on broken text", () => {
+    const broken = [
+      "AnimSrcGraphFile {",
+      " Sheets {",
+      "  AnimSrcGraphSheet S {",
+      "   Nodes {",
+      "    }}}}}",
+    ].join("\n");
+    expect(() => parseAgfToStruct(broken)).not.toThrow();
+    expect(() => parseAgfToStruct("")).not.toThrow();
+  });
+});

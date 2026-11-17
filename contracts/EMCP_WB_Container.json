@@ -1,0 +1,1060 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Container",
+  "tool": "wb_container",
+  "purpose": "A BaseContainer. target: path:<rel> | open:<module> | entity:<ref> | class:<Name> (read)",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Container.c",
+  "request": [
+    "action",
+    "target",
+    "path",
+    "value",
+    "emptyValue",
+    "mode",
+    "cursor",
+    "limit",
+    "fields",
+    "confirm",
+    "index",
+    "toIndex",
+    "className"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "target",
+    "rootClass",
+    "total",
+    "capped",
+    "nextCursor",
+    "columns",
+    "rows",
+    "typeCounts",
+    "setCount",
+    "defaultCount",
+    "children",
+    "topSet",
+    "siblings",
+    "varType",
+    "objectClass",
+    "value",
+    "before",
+    "after",
+    "written",
+    "saved",
+    "savedPath",
+    "dryRun",
+    "sourceAddons",
+    "isSet",
+    "isSetDirectly",
+    "defaultValue",
+    "undoName",
+    "count",
+    "widget",
+    "limits",
+    "enumValues"
+  ],
+  "actions": [
+    {
+      "name": "describe",
+      "summary": "Schema and values, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:, open:<module>, entity:, class:"
+        },
+        {
+          "key": "mode",
+          "type": "string",
+          "required": false,
+          "note": "summary (default) or page"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, default 100, max 200"
+        },
+        {
+          "key": "fields",
+          "type": "string",
+          "required": false,
+          "note": "columns; schema adds widget,limits,enum"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "rows walked"
+        },
+        {
+          "key": "capped",
+          "type": "bool",
+          "note": "walk stopped at 20000 rows"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "columns",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "row-major cells; vectors, arrays as text"
+        },
+        {
+          "key": "typeCounts",
+          "type": "array<string>",
+          "note": "TYPE=count"
+        },
+        {
+          "key": "setCount",
+          "type": "int"
+        },
+        {
+          "key": "defaultCount",
+          "type": "int"
+        },
+        {
+          "key": "children",
+          "type": "array<string>",
+          "note": "name=Class (n rows); #i=child nodes"
+        },
+        {
+          "key": "topSet",
+          "type": "array<string>",
+          "note": "set top-level variables"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "get",
+      "summary": "One path: value, flags, schema",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:, open:<module>, entity:, class:"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "dotted; X[Class] ok; #i. child node"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "objectClass",
+          "type": "string"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "note": "scalar, VECTOR2/3, scalar array as text"
+        },
+        {
+          "key": "isSet",
+          "type": "bool"
+        },
+        {
+          "key": "isSetDirectly",
+          "type": "bool"
+        },
+        {
+          "key": "defaultValue",
+          "type": "string"
+        },
+        {
+          "key": "widget",
+          "type": "string",
+          "note": "GetUIWidget"
+        },
+        {
+          "key": "limits",
+          "type": "string",
+          "note": "min,max,step"
+        },
+        {
+          "key": "enumValues",
+          "type": "array<string>",
+          "note": "name=value"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "set",
+      "summary": "Set a scalar",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:, open:<module>, entity:"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "dotted path; components[Class] ok"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "new value as text"
+        },
+        {
+          "key": "emptyValue",
+          "type": "bool",
+          "required": false,
+          "note": "set by the tool for an empty value"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "path:/open: true writes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "entity: history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "clear",
+      "summary": "Drop an override",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel> or entity:<ref>"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "dotted path; components[Class] ok"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "path: true writes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        },
+        {
+          "key": "isSet",
+          "type": "bool",
+          "note": "read back after the clear"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "entity: history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "arrayAdd",
+      "summary": "Add an element",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel> or entity:<ref>"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "path to the array; components[Class] ok"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "class of the new element"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false,
+          "note": "insert position; -1 (default) = end"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "path: true writes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "objectClass",
+          "type": "string",
+          "note": "the array's base class"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "elements after"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "entity: history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "arrayRemove",
+      "summary": "Remove an element",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel> or entity:<ref>"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "path to the array; components[Class] ok"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": true,
+          "note": "the element to remove"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "path: true writes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "objectClass",
+          "type": "string",
+          "note": "the array's base class"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "elements after"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "entity: history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "arrayMove",
+      "summary": "Move an element",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "UNPROVEN for an entity:<ref> target: SetObjectVariableMember/4 names no array slot (probe P-W1-22); path: targets move.",
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel>; entity:<ref> refuses"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "path to the array"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": true,
+          "note": "the element to move"
+        },
+        {
+          "key": "toIndex",
+          "type": "int",
+          "required": true,
+          "note": "its position after the move"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "objectClass",
+          "type": "string",
+          "note": "the array's base class"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "elements after"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "element classes, comma-joined"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setClass",
+      "summary": "Set a property class",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel> or entity:<ref>"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "object; entity: also an element"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "class of the new object"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "path: true writes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "siblings",
+          "type": "array<string>",
+          "note": "up to 5 names on PATH_NOT_FOUND"
+        },
+        {
+          "key": "varType",
+          "type": "string"
+        },
+        {
+          "key": "objectClass",
+          "type": "string",
+          "note": "class read back"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "class before; empty when none"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "class after"
+        },
+        {
+          "key": "written",
+          "type": "bool"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "entity: history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Re-save",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "target",
+          "type": "string",
+          "required": true,
+          "note": "path:<rel> or open:<module>"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "target",
+          "type": "string"
+        },
+        {
+          "key": "rootClass",
+          "type": "string",
+          "note": "class of the root container"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "sourceAddons",
+          "type": "string",
+          "note": "GetSourceAddons, comma-joined"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

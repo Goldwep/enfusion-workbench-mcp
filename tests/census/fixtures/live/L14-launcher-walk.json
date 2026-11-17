@@ -1,0 +1,157 @@
+{
+  "$comment": "SYNTHETIC launcher tree: no launcher walk exists yet, so this is built from the node shapes of the real World Editor walk (p33-g2-04) and the Options walk (sf-26). Names are neutral placeholders; replace with a redacted slice of the first live walk. [unverified]",
+  "schema": "emcp-uia-walk/1",
+  "provider": "uia",
+  "view": "raw",
+  "completed": true,
+  "partial": false,
+  "target": { "className": "Qt683QWindowIcon", "title": "Enfusion Workbench Launcher" },
+  "tree": {
+    "controlType": "Window",
+    "name": "Enfusion Workbench Launcher",
+    "automationId": "Arma4WorkbenchApp.EnfusionLauncher",
+    "className": "Qt683QWindowIcon",
+    "enabled": true,
+    "childCount": 8,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "enabled": true,
+        "childCount": 2,
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "enabled": true,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "enabled": true,
+                "childCount": 0
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "enabled": true,
+            "legacyDescription": "Closes the window",
+            "childCount": 0
+          }
+        ]
+      },
+      {
+        "controlType": "MenuBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.menuBar",
+        "className": "QMenuBar",
+        "enabled": true,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "MenuItem",
+            "name": "File",
+            "automationId": "",
+            "className": "",
+            "enabled": true,
+            "childCount": 0
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Help",
+            "automationId": "",
+            "className": "",
+            "enabled": true,
+            "childCount": 0
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Mystery",
+            "automationId": "",
+            "className": "",
+            "enabled": true,
+            "childCount": 0
+          }
+        ]
+      },
+      {
+        "controlType": "Text",
+        "name": "Projects",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.projectsLabel",
+        "className": "QLabel",
+        "enabled": true,
+        "childCount": 0
+      },
+      {
+        "controlType": "List",
+        "name": "Projects",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.projectList",
+        "className": "QListWidget",
+        "enabled": true,
+        "childCount": 2,
+        "sampled": false,
+        "children": [
+          {
+            "controlType": "ListItem",
+            "name": "<project>",
+            "automationId": "",
+            "className": "",
+            "enabled": true,
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "<project>",
+            "automationId": "",
+            "className": "",
+            "enabled": true,
+            "childCount": 0
+          }
+        ]
+      },
+      {
+        "controlType": "Button",
+        "name": "Open",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.openButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "childCount": 0
+      },
+      {
+        "controlType": "Button",
+        "name": "Browse...",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "childCount": 0
+      },
+      {
+        "controlType": "Button",
+        "name": "Remove",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "childCount": 0
+      },
+      {
+        "controlType": "Edit",
+        "name": "Password",
+        "automationId": "Arma4WorkbenchApp.EnfusionLauncher.passwordEdit",
+        "className": "QLineEdit",
+        "enabled": true,
+        "childCount": 0
+      }
+    ]
+  }
+}

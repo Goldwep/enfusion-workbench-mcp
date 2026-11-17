@@ -31,6 +31,13 @@ import {
   type ProjectScanRoot,
 } from "../animation/find-unused-clips.js";
 
+/** At most 400 characters (DEC-067 OD-7); the longer prose is in the anim-lint-tools KB page. */
+export const FIND_UNUSED_CLIPS_DESCRIPTION =
+  "Read-only scan for `.anm` clips that no AGF, ASI, AGR or character `.conf` references; " +
+  "never deletes. Run it before publishing a mod to prune dead clips. Scans the configured " +
+  "project root; `include_workshop: true` adds workshop roots from the ProjectIndex. " +
+  "`format`: markdown (default) or json. Scope and output: KB anim-lint-tools.";
+
 function rejectFlagShape(label: string, raw: string): void {
   if (raw.startsWith("-")) {
     throw new Error(`Invalid ${label}: must not start with '-' (flag-smuggle guard)`);
@@ -106,16 +113,11 @@ export function registerAnimationFindUnusedClips(
   config: Config,
   projectIndex?: ProjectIndex,
 ): void {
+  // The scope and output prose is in data/kb/patterns/Character_And_Animation/animation/anim-lint-tools.md.
   server.registerTool(
     "animation_find_unused_clips",
     {
-      description:
-        "Walk the project's `.anm` animation clip files and report any that aren't referenced by any " +
-        "AGF / ASI / AGR / character `.conf`. Read-only — never deletes. Use this before publishing " +
-        "a mod to prune dead clip assets. " +
-        "Scope: defaults to the user-mod project root (config.projectPath). Pass `include_workshop: true` " +
-        "to also fold workshop project roots from the ProjectIndex into the disk walk and reference scan. " +
-        "Output: markdown (default) or JSON via `format`.",
+      description: FIND_UNUSED_CLIPS_DESCRIPTION,
       inputSchema: {
         project_path: z
           .string()
@@ -134,7 +136,9 @@ export function registerAnimationFindUnusedClips(
         format: z
           .enum(["markdown", "json"])
           .default("markdown")
-          .describe("Output format. `markdown` (default) renders a table; `json` returns the raw struct."),
+          .describe(
+            "Output format. `markdown` (default) renders a table; `json` returns the raw struct.",
+          ),
       },
     },
     async ({ project_path, include_workshop, format }) => {
@@ -147,8 +151,7 @@ export function registerAnimationFindUnusedClips(
             content: [
               {
                 type: "text" as const,
-                text:
-                  "No project_path configured. Set ENFUSION_PROJECT_PATH or pass project_path explicitly.",
+                text: "No project_path configured. Set ENFUSION_PROJECT_PATH or pass project_path explicitly.",
               },
             ],
             isError: true,
@@ -200,9 +203,7 @@ export function registerAnimationFindUnusedClips(
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return {
-          content: [
-            { type: "text" as const, text: `Error finding unused clips: ${msg}` },
-          ],
+          content: [{ type: "text" as const, text: `Error finding unused clips: ${msg}` }],
           isError: true,
         };
       }

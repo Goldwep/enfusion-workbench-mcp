@@ -1,0 +1,884 @@
+{
+  "$comment": "L06 fixture, SYNTHETIC rows: the L06-we-none.json slice with invented TreeItem rows (no populated grid has been walked live yet). entityPropGrid: categories Object (5 leaves) and Flags (collapsed, no children read), a leaf m_sName, an unnamed leaf. PropertyGridBC: 40 of 120 rows kept, marked sampled. Row shape (TreeItem, ExpandCollapse on categories) is [unverified] until the first P4-1 edit/entity walk.",
+  "schema": "emcp-uia-walk/1",
+  "target": {
+    "className": "Qt683QWindowIcon",
+    "uiaClassName": "WorldEditorQt",
+    "title": "World Editor - tiny",
+    "titlePattern": "^World Editor - tiny$"
+  },
+  "completed": true,
+  "partial": false,
+  "sampling": {
+    "containers_sampled": 1,
+    "rows_not_read_at_least": 80,
+    "applied": [
+      {
+        "path": "0/1/0/0/0/0/0/0",
+        "controlType": "Tree",
+        "rule": "data-container",
+        "kept": 40,
+        "childCount": 120,
+        "gridRowCount": 120
+      }
+    ]
+  },
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - Unnamed empty world",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "patterns": ["Invoke", "Value", "Window", "Transform", "LegacyIAccessible"],
+    "gridRowCount": 0,
+    "gridColumnCount": 0,
+    "childCount": 18,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "patterns": ["Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 4,
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "patterns": ["LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "patterns": ["ExpandCollapse", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Minimize",
+            "automationId": "Minimize-Restore",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Maximize",
+            "automationId": "Maximize-Restore",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Prefab Library",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock",
+        "className": "QDockWidget",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents",
+            "className": "QWidget",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget",
+                "className": "TemplateLibraryWidget",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 7,
+                "children": [
+                  {
+                    "controlType": "Custom",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter",
+                    "className": "QSplitter",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 5,
+                    "children": [
+                      {
+                        "controlType": "Custom",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter",
+                        "className": "QSplitter",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "Group",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter.QWidget",
+                            "className": "QWidget",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 1,
+                            "children": [
+                              {
+                                "controlType": "Tree",
+                                "name": "",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter.QWidget.PropertyGridBC",
+                                "className": "PropertyGridBC",
+                                "patterns": [
+                                  "Value",
+                                  "Selection",
+                                  "Grid",
+                                  "Table",
+                                  "LegacyIAccessible"
+                                ],
+                                "gridRowCount": 120,
+                                "gridColumnCount": 1,
+                                "childCount": 120,
+                                "children": [
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row0",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row1",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row2",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row3",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row4",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row5",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row6",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row7",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row8",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row9",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row10",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row11",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row12",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row13",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row14",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row15",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row16",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row17",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row18",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row19",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row20",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row21",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row22",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row23",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row24",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row25",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row26",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row27",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row28",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row29",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row30",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row31",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row32",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row33",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row34",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row35",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row36",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row37",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row38",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "row39",
+                                    "className": "",
+                                    "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                    "childCount": 0,
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Object Properties",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock",
+        "className": "QDockWidget",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents",
+            "className": "QWidget",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 3,
+            "children": [
+              {
+                "controlType": "Text",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.selectedObjectClassName",
+                "className": "QLabel",
+                "patterns": ["Invoke", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.selectedObjectName",
+                "className": "QLineEdit",
+                "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Custom",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter",
+                "className": "QSplitter",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 3,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1",
+                    "className": "QWidget",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 8,
+                    "children": [
+                      {
+                        "controlType": "Custom",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter",
+                        "className": "QSplitter",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 3,
+                        "children": [
+                          {
+                            "controlType": "ComboBox",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.topLevelStorageCombo",
+                            "className": "QComboBox",
+                            "patterns": ["Invoke", "ExpandCollapse", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.propFilter",
+                            "className": "QLineEdit",
+                            "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 1,
+                            "children": [
+                              {
+                                "controlType": "Button",
+                                "name": "",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.propFilter.QLineEditIconButton",
+                                "className": "QLineEditIconButton",
+                                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                                "gridRowCount": 0,
+                                "gridColumnCount": 0,
+                                "childCount": 0,
+                                "children": []
+                              }
+                            ]
+                          },
+                          {
+                            "controlType": "Thumb",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.qt_splithandle_",
+                            "className": "QSplitterHandle",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.gotoTopLevelStorageObjectButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.locatePrefabFileButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "CheckBox",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.showComponentHierarchyButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Toggle", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Tree",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.entityPropGrid",
+                        "className": "EntityPropertyGrid",
+                        "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                        "gridRowCount": 9,
+                        "gridColumnCount": 1,
+                        "childCount": 4,
+                        "children": [
+                          {
+                            "controlType": "TreeItem",
+                            "name": "Object",
+                            "className": "",
+                            "patterns": ["ExpandCollapse", "SelectionItem", "LegacyIAccessible"],
+                            "childCount": 5,
+                            "children": [
+                              {
+                                "controlType": "TreeItem",
+                                "name": "coords",
+                                "className": "",
+                                "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                "childCount": 0,
+                                "children": []
+                              },
+                              {
+                                "controlType": "TreeItem",
+                                "name": "angleX",
+                                "className": "",
+                                "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                "childCount": 0,
+                                "children": []
+                              },
+                              {
+                                "controlType": "TreeItem",
+                                "name": "angleY",
+                                "className": "",
+                                "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                "childCount": 0,
+                                "children": []
+                              },
+                              {
+                                "controlType": "TreeItem",
+                                "name": "angleZ",
+                                "className": "",
+                                "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                "childCount": 0,
+                                "children": []
+                              },
+                              {
+                                "controlType": "TreeItem",
+                                "name": "scale",
+                                "className": "",
+                                "patterns": ["SelectionItem", "LegacyIAccessible"],
+                                "childCount": 0,
+                                "children": []
+                              }
+                            ]
+                          },
+                          {
+                            "controlType": "TreeItem",
+                            "name": "Flags",
+                            "className": "",
+                            "patterns": ["ExpandCollapse", "SelectionItem", "LegacyIAccessible"],
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "TreeItem",
+                            "name": "m_sName",
+                            "className": "",
+                            "patterns": ["SelectionItem", "LegacyIAccessible"],
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "TreeItem",
+                            "name": "",
+                            "className": "",
+                            "patterns": ["SelectionItem", "LegacyIAccessible"],
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "+ Add Component",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.addComponentButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Apply to prefab",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.applyToPrefabButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.QPushButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget",
+                    "className": "QWidget",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 3,
+                    "children": [
+                      {
+                        "controlType": "Edit",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentFilter",
+                        "className": "QLineEdit",
+                        "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "Button",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentFilter.QLineEditIconButton",
+                            "className": "QLineEditIconButton",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Tree",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentTree",
+                        "className": "ComponentTreeWidget",
+                        "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 2,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.QPushButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Thumb",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.qt_splithandle_",
+                    "className": "QSplitterHandle",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

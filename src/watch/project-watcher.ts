@@ -16,20 +16,18 @@ import Database from "better-sqlite3";
 import { logger } from "../utils/logger.js";
 import { crawl } from "../project-index/crawler.js";
 import { resolveOwningProject } from "../project-index/project-index.js";
+import { isParsedTextPath } from "../project-index/resource-scan.js";
 import type { ResourceSource } from "../project-index/types.js";
 
-/** File extensions we react to. Mirrors scanProject's SCANNABLE_EXTENSIONS. */
-const WATCHED_EXTENSIONS = [
-  ".gproj",
-  ".conf",
-  ".et",
-  ".layout",
-  ".ent",
-  ".emat",
-  ".ptc",
-  ".styles",
-  ".st",
-];
+/**
+ * A `.meta` sidecar carries the resource GUID (schema v4), so an edit to the
+ * sidecar alone, for example after refactor_replace_guid, must re-index its
+ * resource. Its add, change and unlink all schedule a re-crawl, which re-reads
+ * the companion file and reconciles rows for files that are gone.
+ */
+function isMetaSidecar(path: string): boolean {
+  return path.toLowerCase().endsWith(".meta");
+}
 
 /**
  * Debounce window in milliseconds. Workbench atomic saves can cascade across
@@ -111,6 +109,13 @@ export class ProjectWatcher {
   }
 
   private handleUnlink(absPath: string): void {
+    if (isMetaSidecar(absPath)) {
+      // The sidecar's resource row is keyed by the companion file's path;
+      // a re-crawl re-reads that file without its GUID and drops the row.
+      this.pending.add(absPath);
+      this.scheduleFlush();
+      return;
+    }
     if (!hasWatchedExtension(absPath)) return;
 
     // Rows are stored with file_path RELATIVE to the OWNING project's root
@@ -191,9 +196,9 @@ export class ProjectWatcher {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** File extensions we react to: every file the scanner parses, plus `.meta`. */
 function hasWatchedExtension(path: string): boolean {
-  const lower = path.toLowerCase();
-  return WATCHED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+  return isParsedTextPath(path) || isMetaSidecar(path);
 }
 
 function isIgnoredPath(watchedPath: string): boolean {

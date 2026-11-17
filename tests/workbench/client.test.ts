@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import type { Config } from "../../src/config.js";
+import { generateGproj } from "../../src/templates/gproj.js";
 import {
   WorkbenchClient,
   WorkbenchError,
@@ -77,7 +78,7 @@ describe("WorkbenchClient", () => {
   let client: WorkbenchClient;
 
   beforeEach(() => {
-    mockServer = createMockWorkbench((apiFunc, params) => {
+    mockServer = createMockWorkbench((apiFunc, _params) => {
       if (apiFunc === "EMCP_WB_Ping") {
         return { status: "ok", mode: "edit", message: "EnfusionMCP Workbench bridge active" };
       }
@@ -321,12 +322,13 @@ describe("cleanupHandlerScripts", () => {
 function captureClientSockets(): { sockets: Socket[]; restore: () => void } {
   const sockets: Socket[] = [];
   const original = Socket.prototype.connect;
-  const spy = vi
-    .spyOn(Socket.prototype, "connect")
-    .mockImplementation(function (this: Socket, ...args: unknown[]) {
-      sockets.push(this);
-      return (original as unknown as (...a: unknown[]) => Socket).apply(this, args);
-    });
+  const spy = vi.spyOn(Socket.prototype, "connect").mockImplementation(function (
+    this: Socket,
+    ...args: unknown[]
+  ) {
+    sockets.push(this);
+    return (original as unknown as (...a: unknown[]) => Socket).apply(this, args);
+  });
   return { sockets, restore: () => spy.mockRestore() };
 }
 
@@ -480,10 +482,14 @@ describe("ensureRunning launch coordination", () => {
     writeFileSync(join(tmp, "ModB", "ModB.gproj"), "GameProject {}");
     // workbenchPath points at an empty dir → findWorkbenchExe() returns null →
     // launchWorkbench throws LAUNCH_FAILED before any spawn. logsPath unset →
-    // no tracker. Port 1 → ping refused immediately.
+    // no tracker. Port 1 → ping refused immediately. The lease and the
+    // no-autolaunch marker live in the temp dir (ensureRunning takes the
+    // lease), never at the real per-user location.
     config = {
       workbenchPath: join(tmp, "no-tools-here"),
       projectPath: tmp,
+      leasePath: join(tmp, "lease", "workbench.lease.json"),
+      noAutolaunchPath: join(tmp, "lease", "no-autolaunch"),
     } as unknown as Config;
   });
 
@@ -581,18 +587,45 @@ describe("isOurStandaloneAddon", () => {
     expect(isOurStandaloneAddon(dir)).toBe(false);
   });
 
-  it("is true when our Ping handler is present", () => {
+  it("live-client-01: is false when only our handlers are present (the installer puts them in every project)", () => {
     const dir = join(tmp, "EnfusionMCP");
     mkdirSync(join(dir, "Scripts", "WorkbenchGame", "EnfusionMCP"), { recursive: true });
     writeFileSync(join(dir, "Scripts", "WorkbenchGame", "EnfusionMCP", "EMCP_WB_Ping.c"), "//");
+    expect(isOurStandaloneAddon(dir)).toBe(false);
+    writeFileSync(join(dir, "EnfusionMCP.gproj"), generateGproj({ name: "EnfusionMCP" }));
+    expect(isOurStandaloneAddon(dir)).toBe(false);
+  });
+
+  it("is true for the generated .gproj (our title) with only our handler scripts", () => {
+    const dir = join(tmp, "EnfusionMCP");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "EnfusionMCP.gproj"),
+      generateGproj({ name: "EnfusionMCP", title: "EnfusionMCP Handlers" }),
+    );
+    expect(isOurStandaloneAddon(dir)).toBe(true);
+    const h = join(dir, "Scripts", "WorkbenchGame", "EnfusionMCP");
+    mkdirSync(h, { recursive: true });
+    writeFileSync(join(h, "EMCP_WB_Ping.c"), "//");
     expect(isOurStandaloneAddon(dir)).toBe(true);
   });
 
-  it("is true when the generated .gproj carries our title", () => {
+  it("is false for the generated .gproj once anything else lives beside it", () => {
     const dir = join(tmp, "EnfusionMCP");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "EnfusionMCP.gproj"), 'GameProject { TITLE "EnfusionMCP Handlers" }');
-    expect(isOurStandaloneAddon(dir)).toBe(true);
+    const h = join(dir, "Scripts", "WorkbenchGame", "EnfusionMCP");
+    mkdirSync(h, { recursive: true });
+    writeFileSync(
+      join(dir, "EnfusionMCP.gproj"),
+      generateGproj({ name: "EnfusionMCP", title: "EnfusionMCP Handlers" }),
+    );
+    writeFileSync(join(h, "Mine.c"), "class Mine {}");
+    expect(isOurStandaloneAddon(dir)).toBe(false);
+    rmSync(join(h, "Mine.c"));
+    mkdirSync(join(dir, "Scripts", "Game"));
+    expect(isOurStandaloneAddon(dir)).toBe(false);
+    rmSync(join(dir, "Scripts", "Game"), { recursive: true });
+    mkdirSync(join(dir, "worlds"));
+    expect(isOurStandaloneAddon(dir)).toBe(false);
   });
 });
 

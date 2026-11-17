@@ -2,29 +2,24 @@
  * `scenario_clone_area` — clone a rectangular world-coord area of a scenario
  * layer into a fresh layer file with regenerated GUIDs.
  *
- * Pure-FS tool. Reads the source layer, walks top-level entities, filters by
- * the XZ rectangle, deep-clones the matches with fresh GUIDs, optionally
- * translates the clones, and writes the result to a new layer file via
- * `writeWithBackup`. Destination must not exist unless `force: true`.
+ * Pure-FS tool. Reads the source layer on the lossless CST, keeps the
+ * top-level entities inside the XZ rectangle with fresh GUIDs (every other
+ * kept byte as the source wrote it), optionally translates them, and writes
+ * the result to a new layer file (write-then-rename), or over an existing one
+ * via `writeWithBackup`. Destination must not exist unless `force: true`.
  *
  * Defaults to dry_run = false because the operation is intentional — the
  * caller is asking to extract a region into a new file.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
 import type { Config } from "../config.js";
-import {
-  cloneArea,
-  parseLayer,
-  serializeLayer,
-  type Area,
-  type GuidSwap,
-  type Translate,
-} from "../scenario/clone-area.js";
+import { cloneArea, type Area, type GuidSwap, type Translate } from "../scenario/clone-area.js";
 import { checkGitState, writeWithBackup } from "../refactor/byte-edit.js";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,21 +173,21 @@ export function registerScenarioCloneArea(server: McpServer, config: Config): vo
           };
         }
 
-        const sourceText = readFileSync(sourceAbs, "utf-8");
+        const sourceBytes = readFileSync(sourceAbs);
         // Audit fix H-4: dispatch on file extension. `.conf` / `.ent` are
-        // single-root files (mission headers, prefab roots) whose root-level
-        // properties must be preserved verbatim — without `singleRoot:true`,
-        // the sentinel wrap silently drops them when we rebuild destRoot.
+        // single-root files (mission headers, prefab roots): their entities
+        // are the root's children and the root's own properties are kept.
         // `.layer` and unknown extensions stay multi-root.
         const isSingleRoot = /\.(conf|ent)$/i.test(sourceAbs);
-        const sourceRoot = parseLayer(sourceText, { singleRoot: isSingleRoot });
 
         const areaTyped: Area = area;
         const translateTyped: Translate | undefined = translate
           ? { x: translate.x, z: translate.z }
           : undefined;
 
-        const result = cloneArea(sourceRoot, areaTyped, translateTyped);
+        const result = cloneArea(sourceBytes, areaTyped, translateTyped, {
+          singleRoot: isSingleRoot,
+        });
 
         if (result.clonedCount === 0) {
           return {
@@ -208,27 +203,11 @@ export function registerScenarioCloneArea(server: McpServer, config: Config): vo
           };
         }
 
-        // Build a destination root from the cloned entities and serialize.
-        // Audit fix H-4: preserve the source root's properties/values when the
-        // input was a real single-root file (e.g. SCR_MissionHeaderCampaign
-        // with `m_sName`). For a multi-root .layer the source root IS the
-        // sentinel container — its properties/values are empty by definition
-        // — so cloning them is a no-op. Either way, the children are
-        // replaced with the filtered clones.
-        const destRoot: typeof sourceRoot = {
-          type: sourceRoot.type,
-          id: sourceRoot.id,
-          className: sourceRoot.className,
-          inheritance: sourceRoot.inheritance,
-          properties: sourceRoot.properties.map((p) =>
-            typeof p.value === "string"
-              ? { key: p.key, value: p.value }
-              : { key: p.key, value: JSON.parse(JSON.stringify(p.value)) as typeof p.value },
-          ),
-          values: [...sourceRoot.values],
-          children: result.clonedEntities,
-        };
-        const destText = serializeLayer(destRoot);
+        // The destination is the source text with the out-of-area entities
+        // removed and the kept ones' GUIDs (and coords, with a translate)
+        // changed: the header and root-level properties of a single-root
+        // file survive as written (audit fix H-4).
+        const destText = result.text;
 
         if (dry_run) {
           return {
@@ -277,7 +256,8 @@ export function registerScenarioCloneArea(server: McpServer, config: Config): vo
               };
             }
           }
-          writeFileSync(destAbs, destText, "utf-8");
+          // Write-then-rename: a cut-short write never leaves a partial layer.
+          writeFileAtomic(destAbs, destText);
         }
 
         return {

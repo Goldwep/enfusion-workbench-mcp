@@ -1,0 +1,778 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Localization",
+  "tool": "wb_localization",
+  "purpose": "Localization Editor: the open .st table.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Localization.c",
+  "request": [
+    "action",
+    "path",
+    "id",
+    "index",
+    "fields",
+    "values",
+    "prefix",
+    "column",
+    "filter",
+    "cursor",
+    "limit",
+    "confirm"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "table",
+    "inProject",
+    "itemClass",
+    "total",
+    "columns",
+    "rows",
+    "nextCursor",
+    "id",
+    "index",
+    "result",
+    "before",
+    "after",
+    "selected",
+    "filtered",
+    "dryRun",
+    "saved",
+    "built",
+    "closed",
+    "warnings"
+  ],
+  "actions": [
+    {
+      "name": "status",
+      "summary": "Table, class, count",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "table",
+          "type": "string",
+          "note": "rel path if opened via open"
+        },
+        {
+          "key": "inProject",
+          "type": "bool"
+        },
+        {
+          "key": "itemClass",
+          "type": "string",
+          "note": "e.g. CustomStringTableItem"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "Items count"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "columns",
+      "summary": "Fields: name|type|enums",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "itemClass",
+          "type": "string"
+        },
+        {
+          "key": "columns",
+          "type": "array<string>",
+          "note": "name|type|NAME=n,... for an enum"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "list",
+      "summary": "Item rows, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "fields",
+          "type": "array<string>",
+          "required": false,
+          "note": "default Id, Target_en_us"
+        },
+        {
+          "key": "prefix",
+          "type": "string",
+          "required": false,
+          "note": "Id prefix filter"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "<start>:<count>"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "columns",
+          "type": "array<string>",
+          "note": "index, then the fields"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "pipe-joined, escaped"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "get",
+      "summary": "One item, all fields",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "id",
+          "type": "string",
+          "required": false,
+          "note": "item Id; or index"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false,
+          "note": "Items index"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "index",
+          "type": "int"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "name|type|value"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "selection",
+      "summary": "Selected/filtered rows",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "selected",
+          "type": "array<int>",
+          "note": "GetSelectedRows"
+        },
+        {
+          "key": "filtered",
+          "type": "array<int>",
+          "note": "GetFilteredRows"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "open",
+      "summary": "Open a .st",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "MODAL_HAZARD while another table is open with handler edits not saved, or one opened by hand (no dirty-flag call)",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "clean relative .st path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "SetOpenedResource"
+        },
+        {
+          "key": "table",
+          "type": "string"
+        },
+        {
+          "key": "inProject",
+          "type": "bool"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "insert",
+      "summary": "Add an item",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "DUPLICATE_ID when the Id exists; MODAL_HAZARD per OnChange plugin rules",
+      "params": [
+        {
+          "key": "id",
+          "type": "string",
+          "required": true,
+          "note": "new item Id"
+        },
+        {
+          "key": "fields",
+          "type": "array<string>",
+          "required": false,
+          "note": "field names"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "required": false,
+          "note": "encoded values, same order"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "index",
+          "type": "int"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "name|value read back"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "set",
+      "summary": "Set item fields",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "MODAL_HAZARD when an OnChange plugin would open a dialog for this edit",
+      "params": [
+        {
+          "key": "id",
+          "type": "string",
+          "required": false,
+          "note": "item Id; or index"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "fields",
+          "type": "array<string>",
+          "required": true
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "required": true,
+          "note": "encoded, same order"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "index",
+          "type": "int"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "name|value, to restore"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "name|value read back"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "delete",
+      "summary": "Delete, return snapshot",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "DUPLICATE_ID when two items share the Id (DeleteItem takes an Id)",
+      "params": [
+        {
+          "key": "id",
+          "type": "string",
+          "required": false,
+          "note": "item Id; or index"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "index",
+          "type": "int"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "name|value, for insert"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "filter",
+      "summary": "Column user filter",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "column",
+          "type": "string",
+          "required": true,
+          "note": "field name"
+        },
+        {
+          "key": "filter",
+          "type": "string",
+          "required": true,
+          "note": "text the column contains"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "filtered",
+          "type": "array<int>",
+          "note": "GetFilteredRows after"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Save (confirm)",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "NO_DOCUMENT unless the table was opened through open; NOT_IN_PROJECT for a file outside the project",
+      "params": [
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true saves, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "table",
+          "type": "string"
+        },
+        {
+          "key": "saved",
+          "type": "bool",
+          "note": "WBModuleDef.Save"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "buildRuntime",
+      "summary": "Build runtime table",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W3-18 passes",
+      "params": [
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true builds, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "table",
+          "type": "string"
+        },
+        {
+          "key": "built",
+          "type": "bool",
+          "note": "ExecuteAction result"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "close",
+      "summary": "Close (confirm)",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "GATED until P-W3-19 passes",
+      "params": [
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true closes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "closed",
+          "type": "bool"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

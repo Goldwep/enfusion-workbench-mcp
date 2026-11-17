@@ -1,7 +1,8 @@
 /**
  * EMCP_WB_EditorControl.c - Editor mode control handler
  *
- * Supports actions: play, stop, save, saveAs (always error - see below), undo, redo, openResource
+ * Supports actions: play, stop, save and saveAs (both always error - see below), undo, redo,
+ * openResource
  * Called via NET API TCP protocol: APIFunc = "EMCP_WB_EditorControl"
  */
 
@@ -56,6 +57,31 @@ class EMCP_WB_EditorControl : NetApiHandler
 			return resp;
 		}
 
+		// undo and redo edit the open world: the guard of the W-wave edit handlers (DEC-058, EditApi
+		// of EMCP_WB_Entity.c): the project is found, the editor is not in play mode.
+		if (req.action == "undo" || req.action == "redo")
+		{
+			if (!EMCP_WB_Guard.IsProjectFound())
+			{
+				resp.status = "error";
+				resp.message = EMCP_WB_Guard.NOT_IN_PROJECT + ": mutating actions need the handlers installed in the open project; nothing was changed";
+				return resp;
+			}
+			WorldEditorAPI api = worldEditor.GetApi();
+			if (!api)
+			{
+				resp.status = "error";
+				resp.message = "WorldEditorAPI not available: no world is open";
+				return resp;
+			}
+			if (api.IsGameMode())
+			{
+				resp.status = "error";
+				resp.message = "WRONG_MODE: the World Editor is in play mode; nothing was changed - stop play first (wb_world stop)";
+				return resp;
+			}
+		}
+
 		if (req.action == "play")
 		{
 			// SwitchToGameMode(bool debugMode=false, bool fullScreen=false) is void and the mode
@@ -74,17 +100,11 @@ class EMCP_WB_EditorControl : NetApiHandler
 		}
 		else if (req.action == "save")
 		{
-			bool saved = worldEditor.Save();
-			if (saved)
-			{
-				resp.status = "ok";
-				resp.message = "World saved";
-			}
-			else
-			{
-				resp.status = "error";
-				resp.message = "WorldEditor.Save() returned false (no world loaded, save cancelled, or write failed)";
-			}
+			// Retired (review round 1, F11): the 1.x save had no project guard, no confirm and no
+			// project-world check, and no shipped tool sends it (wb_save routes through wb_module).
+			// EMCP_WB_Module save is the one guarded save; nothing is saved here.
+			resp.status = "error";
+			resp.message = "save is retired on EMCP_WB_EditorControl: it saved any open world unguarded; nothing was saved - use EMCP_WB_Module save (wb_module save, or wb_save)";
 		}
 		else if (req.action == "saveAs")
 		{
@@ -137,11 +157,15 @@ class EMCP_WB_EditorControl : NetApiHandler
 			}
 			else
 			{
-				bool opened = worldEditor.SetOpenedResource(req.path);
-				if (opened)
+				// Only the module that owns the file type is asked: the World Editor takes a .ent or
+				// a .et and nothing else (a .conf raised a modal, W2 run 2).
+				string openedIn = EMCP_WB_OpenResource.OpenInOwningModule(req.path);
+				if (openedIn != "")
 				{
 					resp.status = "ok";
 					resp.message = "Opened resource: " + req.path;
+					if (openedIn != "WorldEditor")
+						resp.message = resp.message + " (through " + openedIn + ")";
 				}
 				else
 				{

@@ -11,6 +11,7 @@ import {
   type BuildingManifest,
   type BuildingPart,
 } from "../../src/tools/building-setup.js";
+import { parse } from "../../src/formats/enfusion-text.js";
 
 // ── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -139,20 +140,17 @@ describe("building-setup", () => {
       expect(result).toContain("Mod/Walls/wall_dst_03.xob");
     });
 
-    it("distributes health values evenly across phases", () => {
-      const part = makePart({
-        phases: [
-          { index: 1, fbx: "a.fbx" },
-          { index: 2, fbx: "b.fbx" },
-          { index: 3, fbx: "c.fbx" },
-        ],
-      });
+    it("writes the vanilla SCR_DamagePhaseData member names", () => {
+      // Vanilla Prefabs/Props/Agriculture/Beehive_01/Beehive_01_stack.et:
+      // SCR_DamagePhaseData "{GUID}" { m_fPhaseHealth 800  m_PhaseModel "...xob" }
+      const part = makePart({ phases: [{ index: 1, fbx: "a.fbx" }] });
       const result = generateDestructionComponent(part, "");
 
-      // 3 phases: health = 1 - 1/4 = 0.75, 1 - 2/4 = 0.50, 1 - 3/4 = 0.25
-      expect(result).toContain("Health 0.75");
-      expect(result).toContain("Health 0.50");
-      expect(result).toContain("Health 0.25");
+      expect(result).toContain('m_PhaseModel "a.xob"');
+      expect(result).not.toMatch(/^\s*PhaseModel /m);
+      // Health is absolute hit points in vanilla (300-10000); none is invented here.
+      expect(result).not.toMatch(/^\s*Health /m);
+      expect(result).not.toContain("m_fPhaseHealth");
     });
 
     it("includes unique GUIDs per phase entry", () => {
@@ -175,9 +173,15 @@ describe("building-setup", () => {
       const part = makePart({ socket_prefix: "SOCKET_wall" });
       const result = generateSlotBoneMappingObject(part, "{ABCD}Prefabs/wall.et");
 
-      expect(result).toContain("SlotBoneMappingObject");
-      expect(result).toContain('BonePrefix "SOCKET_wall"');
-      expect(result).toContain('Template "{ABCD}Prefabs/wall.et"');
+      // Vanilla Barn_E_01_Base.et: SlotBoneMappingObject "{GUID}" { BonePrefix "..." Prefab "..." }
+      const node = parse(result);
+      expect(node.type).toBe("SlotBoneMappingObject");
+      expect(node.id).toMatch(/^\{[0-9A-F]{16}\}$/);
+      expect(node.properties).toEqual([
+        { key: "BonePrefix", value: "SOCKET_wall" },
+        { key: "Prefab", value: "{ABCD}Prefabs/wall.et" },
+      ]);
+      expect(result).not.toContain("Template");
     });
   });
 
@@ -186,9 +190,15 @@ describe("building-setup", () => {
       const part = makePart({ socket_name: "SOCKET_door_01", unique: true });
       const result = generateBaseSlotComponent(part, "{ABCD}Prefabs/door.et");
 
-      expect(result).toContain("BaseSlotComponent");
-      expect(result).toContain('Slot "SOCKET_door_01"');
-      expect(result).toContain('Prefab "{ABCD}Prefabs/door.et"');
+      // Vanilla ControlTower_01.et:
+      // BaseSlotComponent "{GUID}" { AttachType EntitySlotInfo "{GUID}" { PivotID "..." } EntityPrefab "..." }
+      const node = parse(result);
+      expect(node.type).toBe("BaseSlotComponent");
+      expect(node.properties).toEqual([{ key: "EntityPrefab", value: "{ABCD}Prefabs/door.et" }]);
+      const attach = node.children.find((c) => c.type === "AttachType");
+      expect(attach?.className).toBe("EntitySlotInfo");
+      expect(attach?.properties).toEqual([{ key: "PivotID", value: "SOCKET_door_01" }]);
+      expect(result).not.toMatch(/^\s*Slot /m);
     });
   });
 
@@ -235,6 +245,12 @@ describe("building-setup", () => {
 
       expect(result).toContain("SlotBoneMappingObject");
       expect(result).not.toContain("BaseSlotComponent");
+      // SlotBoneMappings is an entity property in vanilla, not a component.
+      const node = parse(result);
+      const mappings = node.children.find((c) => c.type === "SlotBoneMappings");
+      expect(mappings?.children.map((c) => c.type)).toEqual(["SlotBoneMappingObject"]);
+      const comps = node.children.find((c) => c.type === "components");
+      expect(comps!.children.some((c) => c.type === "SlotBoneMappingObject")).toBe(false);
     });
 
     it("uses BaseSlotComponent for unique parts (unique=true)", () => {

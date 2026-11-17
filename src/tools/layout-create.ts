@@ -11,6 +11,7 @@ import {
   type WidgetDef,
 } from "../templates/layout.js";
 import { validateFilename } from "../utils/safe-path.js";
+import { assertInsideRoot } from "../utils/path-guard.js";
 
 export function registerLayoutCreate(server: McpServer, config: Config): void {
   server.registerTool(
@@ -105,6 +106,13 @@ export function registerLayoutCreate(server: McpServer, config: Config): void {
           const targetDir = resolve(basePath, subdir);
           const targetPath = join(targetDir, filename);
 
+          // Containment, as config_create: a caller-supplied projectPath must stay inside the
+          // configured project root, and so must the final write path (Phase 7 write-safety gap 21).
+          if (config.projectPath) {
+            assertInsideRoot(resolve(basePath), config.projectPath, "projectPath");
+            assertInsideRoot(targetPath, config.projectPath, "layout path");
+          }
+
           mkdirSync(targetDir, { recursive: true });
 
           if (existsSync(targetPath)) {
@@ -118,7 +126,8 @@ export function registerLayoutCreate(server: McpServer, config: Config): void {
             };
           }
 
-          writeFileSync(targetPath, content, "utf-8");
+          // A new file only: flag wx refuses one that appeared after the check (write-safety gap 20).
+          writeFileSync(targetPath, content, { encoding: "utf-8", flag: "wx" });
 
           return {
             content: [

@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { afterAll, describe, it, expect } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { Config } from "../../src/config.js";
 import {
+  isPrefabResourcePath,
+  readEtFile,
+  walkChain,
   stripGuid,
   parseParentPath,
   parseComponents,
@@ -115,5 +122,43 @@ describe("mergeAncestryComponents", () => {
     expect(merged.size).toBe(2);
     expect(merged.has("AAAAAAAAAAAAAAAA")).toBe(true);
     expect(merged.has("BBBBBBBBBBBBBBBB")).toBe(true);
+  });
+});
+
+// Total audit offline-writers-02: prefab inspect read any file on disk.
+describe("prefab reads stay inside their roots", () => {
+  const tmp = mkdtempSync(join(tmpdir(), "prefab-ancestry-"));
+  const project = join(tmp, "project");
+  mkdirSync(join(project, "Prefabs"), { recursive: true });
+  writeFileSync(join(tmp, "secret.txt"), "TOP SECRET");
+  writeFileSync(join(tmp, "secret.et"), "GenericEntity {\n SECRET 1\n}");
+  writeFileSync(join(project, "Prefabs", "Child.et"), 'GenericEntity : "../secret.et" {\n}');
+  const config = { projectPath: project, gamePath: join(tmp, "no-game") } as unknown as Config;
+  afterAll(() => rmSync(tmp, { recursive: true, force: true }));
+
+  it("accepts only a relative .et path with no '..'", () => {
+    expect(isPrefabResourcePath("Prefabs/A.et")).toBe(true);
+    expect(isPrefabResourcePath("Prefabs\\A.ET")).toBe(true);
+    expect(isPrefabResourcePath("../secret.et")).toBe(false);
+    expect(isPrefabResourcePath("Prefabs/../../secret.et")).toBe(false);
+    expect(isPrefabResourcePath("../secret.txt")).toBe(false);
+    expect(isPrefabResourcePath("Prefabs/A.conf")).toBe(false);
+    expect(isPrefabResourcePath("C:/Windows/x.et")).toBe(false);
+    expect(isPrefabResourcePath("/etc/x.et")).toBe(false);
+  });
+
+  it("does not read a file outside the project through '..' or a non-.et name", () => {
+    expect(readEtFile("../secret.et", config)).toBeNull();
+    expect(readEtFile("../secret.txt", config)).toBeNull();
+    const { levels, warnings } = walkChain("../secret.txt", config);
+    expect(levels).toEqual([]);
+    expect(warnings.join("\n")).toContain("Refused");
+  });
+
+  it("refuses a parent reference that leaves the project, and keeps the child", () => {
+    const { levels, warnings } = walkChain("Prefabs/Child.et", config);
+    expect(levels.map((l) => l.path)).toEqual(["Prefabs/Child.et"]);
+    expect(levels.some((l) => l.rawContent.includes("SECRET"))).toBe(false);
+    expect(warnings.join("\n")).toContain("Refused: ../secret.et");
   });
 });

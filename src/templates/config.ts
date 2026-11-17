@@ -1,4 +1,6 @@
 import { createNode, serialize, setProperty } from "../formats/enfusion-text.js";
+import { generateGuid } from "../formats/guid.js";
+import { renderFactionText, type FactionColor255 } from "./faction.js";
 
 export type ConfigType = "mission-header" | "faction" | "entity-catalog" | "editor-placeables";
 
@@ -67,6 +69,9 @@ const CONFIG_TYPE_INFO: Record<ConfigType, ConfigTypeInfo> = {
  * Generate an Enfusion .conf config file.
  */
 export function generateConfig(opts: ConfigOptions): string {
+  // Faction: vanilla shape via the shared renderer (quoted key, UIInfo block).
+  if (opts.configType === "faction") return buildFaction(opts);
+
   const info = CONFIG_TYPE_INFO[opts.configType];
   // mission-header: root type depends on mode
   const rootType =
@@ -78,9 +83,6 @@ export function generateConfig(opts: ConfigOptions): string {
   switch (opts.configType) {
     case "mission-header":
       buildMissionHeader(root, opts);
-      break;
-    case "faction":
-      buildFaction(root, opts);
       break;
     case "entity-catalog":
       buildEntityCatalog(root, opts);
@@ -96,11 +98,12 @@ export function generateConfig(opts: ConfigOptions): string {
 function buildMissionHeader(root: ReturnType<typeof createNode>, opts: ConfigOptions): void {
   if (opts.missionMode === "SF") {
     // Scenario Framework — single-player / co-op narrative missions
+    // `World` is the native MissionHeader attribute (vanilla Scenario01_Intro.conf);
+    // SCR_MissionHeader has no m_sWorldFile or m_bIsModded member.
+    if (opts.worldPath) setProperty(root, "World", opts.worldPath);
     setProperty(root, "m_sName", opts.scenarioName || opts.name);
     setProperty(root, "m_sDescription", opts.scenarioDescription || "");
-    setProperty(root, "m_sWorldFile", opts.worldPath || "");
     setProperty(root, "m_sIcon", "");
-    setProperty(root, "m_bIsModded", "1");
   } else {
     // Conflict (default) — multiplayer Campaign/Conflict scenarios
     // Matches the exact property order used by vanilla Conflict_East.conf
@@ -119,22 +122,42 @@ function buildMissionHeader(root: ReturnType<typeof createNode>, opts: ConfigOpt
   }
 }
 
-function buildFaction(root: ReturnType<typeof createNode>, opts: ConfigOptions): void {
-  const key = opts.factionKey || opts.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  setProperty(root, "m_sKey", key);
-  setProperty(root, "m_sName", opts.name);
-  setProperty(root, "m_Color", opts.factionColor || "0,100,200,255");
-  setProperty(root, "m_sFlagPath", opts.flagPath || "");
+/** Parse "R,G,B[,A]" (0-255 channels). Throws on a malformed string. */
+export function parseRgbaString(raw: string): FactionColor255 {
+  const parts = raw.split(",").map((p) => p.trim());
+  const nums = parts.map((p) => Number(p));
+  if (
+    (parts.length !== 3 && parts.length !== 4) ||
+    nums.some((n, i) => parts[i] === "" || !Number.isInteger(n) || n < 0 || n > 255)
+  ) {
+    throw new Error(`factionColor must be "R,G,B" or "R,G,B,A" with 0-255 integers, got "${raw}"`);
+  }
+  return { r: nums[0]!, g: nums[1]!, b: nums[2]!, a: nums[3] ?? 255 };
 }
 
-function buildEntityCatalog(root: ReturnType<typeof createNode>, opts: ConfigOptions): void {
-  setProperty(root, "m_sCategoryName", opts.categoryName || "Custom");
+/** Faction .conf in the vanilla shape (FactionKey, FactionColor, UIInfo.Name, m_sFactionFlag). */
+function buildFaction(opts: ConfigOptions): string {
+  const key = opts.factionKey || opts.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  return renderFactionText({
+    factionKey: key,
+    displayName: opts.name,
+    color: parseRgbaString(opts.factionColor || "0,100,200,255"),
+    flagPath: opts.flagPath || undefined,
+  });
+}
 
+// Entity catalog and placeables registry follow vanilla files: SCR_EntityCatalog
+// lists SCR_EntityCatalogEntry objects under m_aEntityEntryList with
+// m_sEntityPrefab (Configs/EntityCatalog/US/WeaponTripod_EntityCatalog_US.conf);
+// SCR_PlaceableEntitiesRegistry lists bare resource strings under m_Prefabs
+// (Configs/Editor/PlaceableEntities/Compositions/Compositions.conf). Neither
+// class holds a category name, so categoryName is not written.
+function buildEntityCatalog(root: ReturnType<typeof createNode>, opts: ConfigOptions): void {
   if (opts.prefabRefs && opts.prefabRefs.length > 0) {
-    const entries = createNode("m_aEntries");
+    const entries = createNode("m_aEntityEntryList");
     for (const ref of opts.prefabRefs) {
-      const entry = createNode("SCR_EntityCatalogEntry");
-      setProperty(entry, "m_sPrefab", ref);
+      const entry = createNode("SCR_EntityCatalogEntry", { id: `{${generateGuid()}}` });
+      setProperty(entry, "m_sEntityPrefab", ref);
       entries.children.push(entry);
     }
     root.children.push(entries);
@@ -142,16 +165,8 @@ function buildEntityCatalog(root: ReturnType<typeof createNode>, opts: ConfigOpt
 }
 
 function buildEditorPlaceables(root: ReturnType<typeof createNode>, opts: ConfigOptions): void {
-  setProperty(root, "m_sCategoryName", opts.categoryName || "Custom");
-
   if (opts.prefabRefs && opts.prefabRefs.length > 0) {
-    const entries = createNode("m_aEntries");
-    for (const ref of opts.prefabRefs) {
-      const entry = createNode("SCR_PlaceableEntity");
-      setProperty(entry, "m_sPrefab", ref);
-      entries.children.push(entry);
-    }
-    root.children.push(entries);
+    root.children.push(createNode("m_Prefabs", { values: [...opts.prefabRefs] }));
   }
 }
 

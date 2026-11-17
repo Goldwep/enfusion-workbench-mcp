@@ -19,7 +19,16 @@ export type RefKind =
   /** Standalone `{GUID}`-shaped value inside a values block (rare). */
   | "value";
 
-/** One row of the `resources` table. */
+/**
+ * One row of the `resources` table (schema v4: one row per file).
+ *
+ * `guid` is the RESOURCE GUID that `{GUID}path` references use: the `Name`
+ * line of the file's `.meta` sidecar, or a `.gproj`'s `GUID` property. It is
+ * never an `.et` root `ID` (an entity id) nor a node id; that value is kept
+ * separately in `entity_id`. `root_type` is the parsed root node type for
+ * Enfusion text files, or the file extension (e.g. `.edds`) for resources the
+ * index does not parse.
+ */
 export interface ResourceRow {
   guid: string;
   file_path: string;
@@ -28,6 +37,10 @@ export interface ResourceRow {
   parent_inherit: string | null;
   source: ResourceSource;
   last_indexed: number;
+  /** Owning project (schema v2+). Present when the query selects it. */
+  project_id?: string | null;
+  /** Root `ID` (entity id) of an `.et`, when the query selects it. */
+  entity_id?: string | null;
 }
 
 /** One row of the `resource_refs` table (schema v3: keyed by project). */

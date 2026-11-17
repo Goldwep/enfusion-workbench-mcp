@@ -45,6 +45,31 @@ export interface ValidateGraphOptions {
    * When omitted, the bone-remap check is skipped.
    */
   skeleton?: { bones: string[] };
+  /**
+   * Node names of the graph's other .agf files (the AGR lists several). V06
+   * looks for `DefaultRunNode` in this file and in these.
+   */
+  graphNodeNames?: string[];
+}
+
+/**
+ * Rules demoted to a warning because they fire on shipping vanilla content
+ * (DEC-067 OD-4 option a; spec 0.2 measured them on the 1.9.0.37 paks). They
+ * stay as warnings until P-W4-14 gives engine log lines to rewrite them from.
+ */
+export const DEMOTED_RULES: Readonly<Record<string, string>> = {
+  V01: "vanilla graphs use integer transition durations (95 findings in 22 .agf at 1.9.0.37)",
+  V06: "vanilla graphs name a DefaultRunNode that no .agf of the graph read here holds (5 .agf at 1.9.0.37)",
+  V08: "vanilla Source nodes use the 2-part form (2,192 findings in 105 .agf at 1.9.0.37)",
+  V15: "only character graphs carry WEAPON and STANCE tags (270 findings in 151 .agf at 1.9.0.37)",
+};
+
+/** Normalises the BlendN thresholds a struct holds: numbers, strings or one blank-separated string. */
+function thresholdNumbers(raw: unknown): number[] {
+  if (Array.isArray(raw)) return raw.map((x) => Number(x));
+  if (typeof raw === "string") return raw.trim() === "" ? [] : raw.trim().split(/\s+/).map(Number);
+  if (typeof raw === "number") return [raw];
+  return [];
 }
 
 /**
@@ -85,6 +110,13 @@ function extractBoneRemapReferences(agrContent: string): { hasBlock: boolean; bo
   }
   return { hasBlock: true, bones };
 }
+
+const REAL_TIME_STORAGE: ReadonlySet<unknown> = new Set([
+  "Real Time",
+  "Inherit",
+  "Normalized Time",
+  "No Time",
+]);
 
 export function validateGraph(
   agf: ParsedAgf,
@@ -172,7 +204,10 @@ export function validateGraph(
         // V12: State Time mode mismatch
         for (const state of states) {
           const childName = state.child as string | null;
-          if (childName && state.timeMode) {
+          // Real files write TimeStorage (Real Time / Inherit / Normalized Time / No Time). In
+          // the vanilla corpus 204 of 207 states over a nested machine are not "No Time", so
+          // the legacy Notime rule does not hold for real values: V12 only judges legacy tokens.
+          if (childName && state.timeMode && !REAL_TIME_STORAGE.has(state.timeMode)) {
             const childNode = sheet.nodes.find((n) => n.name === childName);
             if (childNode) {
               const childIsSM = childNode.type === "AnimSrcNodeStateMachine";
@@ -226,9 +261,9 @@ export function validateGraph(
       }
 
       // V11: BlendN threshold order
+      // KD-W4-1: thresholds were read as one string and `.map` threw; any shape is taken now.
       if (node.type === "AnimSrcNodeBlendN") {
-        const thresholds = (node.properties.thresholds ?? []) as string[];
-        const nums = thresholds.map(Number);
+        const nums = thresholdNumbers(node.properties.thresholds);
         for (let i = 1; i < nums.length; i++) {
           if (nums[i] < nums[i - 1]) {
             issues.push({
@@ -246,15 +281,16 @@ export function validateGraph(
   // Cross-reference checks (require AGR)
   if (agr) {
     // V06: DefaultRunNode mismatch
+    // Vanilla runs state machines and other nodes as DefaultRunNode, and the node may
+    // sit in another .agf of the graph: any node name of the graph matches.
     if (agr.defaultRunNode) {
-      const allQueueNames = agf.sheets.flatMap((s) =>
-        s.nodes.filter((n) => n.type === "AnimSrcNodeQueue").map((n) => n.name),
-      );
-      if (!allQueueNames.includes(agr.defaultRunNode)) {
+      const names = new Set(agf.sheets.flatMap((s) => s.nodes.map((n) => n.name)));
+      for (const n of options?.graphNodeNames ?? []) names.add(n);
+      if (!names.has(agr.defaultRunNode)) {
         issues.push({
           id: "V06",
           severity: "error",
-          message: `DefaultRunNode "${agr.defaultRunNode}" does not match any Queue node in the AGF`,
+          message: `DefaultRunNode "${agr.defaultRunNode}" does not match any node in the graph's AGF files read`,
         });
       }
     }
@@ -325,8 +361,12 @@ export function validateGraph(
   // array for both "block missing" and "block present but empty", so we can't
   // distinguish from the parsed struct alone. Skipped silently when `agrContent`
   // is not provided.
-  if (agr && options?.agrContent) {
-    if (!/^[ \t]*GlobalTags[ \t]*\{/m.test(options.agrContent)) {
+  const hasTags =
+    options?.agrContent !== undefined
+      ? /^[ \t]*GlobalTags[ \t]*\{/m.test(options.agrContent)
+      : agr?.hasGlobalTags;
+  if (agr && hasTags !== undefined) {
+    if (!hasTags) {
       issues.push({
         id: "V14",
         severity: "warning",
@@ -420,6 +460,14 @@ export function validateGraph(
           message: `m_BoneRemap references bone "${bone}" which is not present in the skeleton`,
         });
       }
+    }
+  }
+
+  for (const i of issues) {
+    const why = DEMOTED_RULES[i.id];
+    if (why !== undefined && i.severity === "error") {
+      i.severity = "warning";
+      i.demoted = why;
     }
   }
 

@@ -1,0 +1,25 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Ping",
+  "tool": "wb_ping",
+  "purpose": "Liveness check: editor mode and the handler build stamp.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c",
+  "request": ["action"],
+  "response": ["status", "mode", "message", "buildStamp"],
+  "actions": [
+    {
+      "name": "ping",
+      "summary": "Answer ok, the editor mode and the bundle's build stamp",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "mode", "type": "string", "note": "edit, game or no_world_editor" },
+        { "key": "message", "type": "string" },
+        { "key": "buildStamp", "type": "string", "note": "client.ts bundleDigest at build" }
+      ],
+      "paging": false
+    }
+  ]
+}

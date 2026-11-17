@@ -1,0 +1,38 @@
+{
+  "$comment": "Window list for the L07 test, in the order WINDOWS_SCRIPT writes it (EnumWindows, top of the z-order first). The World Editor entry is the P3-3 gate 2 window (hwnd, class, enabled) with a placeholder pid and title; its rect is the walk root [319,155,1920,1080] (x,y,w,h) widened by an 8 px frame on each side as Win32 GetWindowRect reports it: SYNTHETIC geometry, [unverified] until the first live run. The taskbar and the other-process window are synthetic stand-ins.",
+  "windows": [
+    {
+      "hwnd": 6884278,
+      "pid": 4242,
+      "className": "Qt683QWindowIcon",
+      "title": "World Editor - <world>",
+      "owner": 0,
+      "enabled": true,
+      "rect": [311, 147, 2247, 1243],
+      "monitor": [0, 0, 2560, 1440],
+      "primary": true
+    },
+    {
+      "hwnd": 131216,
+      "pid": 777,
+      "className": "Shell_TrayWnd",
+      "title": "",
+      "owner": 0,
+      "enabled": true,
+      "rect": [0, 1400, 2560, 1440],
+      "monitor": [0, 0, 2560, 1440],
+      "primary": true
+    },
+    {
+      "hwnd": 67488,
+      "pid": 778,
+      "className": "ApplicationFrameWindow",
+      "title": "<other app>",
+      "owner": 0,
+      "enabled": true,
+      "rect": [0, 0, 1000, 800],
+      "monitor": [0, 0, 2560, 1440],
+      "primary": true
+    }
+  ]
+}

@@ -19,11 +19,10 @@ export interface IndexTotals {
 /**
  * Per-project rollup row used by {@link formatStatus}.
  *
- * `resourceCount` is an APPROXIMATION: resources do not carry a `project_id`
- * foreign key, only a `source` column ("user" | "core" | "workshop"). The
- * count here is the total number of resources sharing this project's source,
- * which over-counts when multiple projects share a source. For L1 this is
- * acceptable — the tool is a diagnostic, not an authoritative attribution.
+ * `resourceCount` is the number of resources rows whose `project_id` is this
+ * project (the scanner writes it on every row; phase-7 audit refactor-index-11
+ * replaced the old by-source approximation, which gave every user project the
+ * same total).
  */
 export interface ProjectRollup {
   id: string;
@@ -31,7 +30,7 @@ export interface ProjectRollup {
   source: string;
   root_path: string;
   last_scan: number;
-  /** Approximation — see {@link ProjectRollup} JSDoc. */
+  /** Rows in `resources` owned by this project. */
   resourceCount: number;
 }
 
@@ -144,7 +143,7 @@ export function formatStatus(
     );
     lines.push(`   Path: ${p.root_path}`);
     lines.push(
-      `   Resources (approx by source): ${p.resourceCount}`,
+      `   Resources: ${p.resourceCount}`,
     );
   }
 
@@ -173,14 +172,13 @@ export function queryTotals(db: Database.Database): IndexTotals {
 /**
  * Pull the per-project rollup, ordered by `last_scan DESC`.
  *
- * The `resourceCount` subquery groups by `source` (see {@link ProjectRollup}
- * for why this is an approximation).
+ * The `resourceCount` subquery counts the project's own resources rows.
  */
 export function queryProjectRollups(db: Database.Database): ProjectRollup[] {
   return db
     .prepare(
       "SELECT p.id, p.title, p.source, p.root_path, p.last_scan, " +
-        "  (SELECT COUNT(*) FROM resources r WHERE r.source = p.source) AS resourceCount " +
+        "  (SELECT COUNT(*) FROM resources r WHERE r.project_id = p.id) AS resourceCount " +
         "FROM projects p " +
         "ORDER BY p.last_scan DESC",
     )

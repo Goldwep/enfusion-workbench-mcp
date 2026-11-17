@@ -20,10 +20,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, basename } from "node:path";
 import { z } from "zod";
-import {
-  atomicCommit,
-  type PendingEdit,
-} from "../refactor/byte-edit.js";
+import { atomicCommit, type PendingEdit } from "../refactor/byte-edit.js";
+import { loadConfig, type Config } from "../config.js";
+import { assertInsideAnyRoot } from "../utils/path-guard.js";
 
 // ── Pure formatter ───────────────────────────────────────────────────────────
 
@@ -64,12 +63,14 @@ export function formatSource(source: string): {
     }
   }
 
-  // Ensure exactly one trailing newline.
-  let trailingNewlineAdjusted = false;
+  // Ensure exactly one trailing newline. split() leaves one empty string after a
+  // correct final newline, so popping exactly one means nothing changed.
+  let popped = 0;
   while (out.length > 0 && out[out.length - 1] === "") {
     out.pop();
-    trailingNewlineAdjusted = true;
+    popped += 1;
   }
+  const trailingNewlineAdjusted = popped !== 1 && out.length > 0;
   out.push(""); // exactly one trailing newline
 
   const joined = out.join("\n");
@@ -100,13 +101,17 @@ export function formatReport(input: {
     lines.push("✅ Already clean — no formatting changes needed.");
     return lines.join("\n");
   }
-  lines.push(`- Trailing whitespace stripped from ${changes.trailingWhitespaceLines} line${changes.trailingWhitespaceLines !== 1 ? "s" : ""}`);
+  lines.push(
+    `- Trailing whitespace stripped from ${changes.trailingWhitespaceLines} line${changes.trailingWhitespaceLines !== 1 ? "s" : ""}`,
+  );
   lines.push(`- Blank-line runs collapsed: ${changes.blankLineRunsCollapsed}`);
   lines.push(`- Trailing-newline adjusted: ${changes.trailingNewlineAdjusted ? "yes" : "no"}`);
   lines.push("");
   if (mode === "dry-run") {
     lines.push("DRY-RUN. Pass `commit: true` to write the cleaned file.");
-    lines.push("Riskier reformats (indent style, `if(`/`if (`) are NOT applied — use `script_lint` to surface those.");
+    lines.push(
+      "Riskier reformats (indent style, `if(`/`if (`) are NOT applied — use `script_lint` to surface those.",
+    );
   } else {
     lines.push("✅ Committed. `.bak` sidecar created.");
   }
@@ -115,7 +120,14 @@ export function formatReport(input: {
 
 // ── Registration ─────────────────────────────────────────────────────────────
 
-export function registerScriptFormat(server: McpServer): void {
+export function registerScriptFormat(server: McpServer, config?: Config): void {
+  // The project roots a script must sit under, as the refactor tools take them (Phase 7
+  // write-safety gap 22); resolved lazily when the caller does not hand the config in.
+  let cfg: Config | undefined = config;
+  const roots = (): (string | undefined)[] => {
+    if (!cfg) cfg = loadConfig();
+    return [cfg.projectPath, cfg.workshopPath];
+  };
   server.registerTool(
     "script_format",
     {
@@ -124,9 +136,7 @@ export function registerScriptFormat(server: McpServer): void {
         "DRY-RUN by default — pass `commit: true` to write. Atomic-commit with .bak sidecar; git-clean refuse. " +
         "Riskier reformats (indent normalization, `if(` style) are intentionally NOT applied — use `script_lint` to surface those for human decision.",
       inputSchema: {
-        script_path: z
-          .string()
-          .describe("Path to the .c file (absolute or repo-relative)"),
+        script_path: z.string().describe("Path to the .c file (absolute or repo-relative)"),
         commit: z.boolean().default(false).describe("True to actually write."),
         force: z.boolean().default(false).describe("Skip git-clean check."),
       },
@@ -135,7 +145,9 @@ export function registerScriptFormat(server: McpServer): void {
       try {
         if (script_path.startsWith("-")) {
           return {
-            content: [{ type: "text" as const, text: "Invalid script_path: must not start with '-'" }],
+            content: [
+              { type: "text" as const, text: "Invalid script_path: must not start with '-'" },
+            ],
             isError: true,
           };
         }
@@ -154,6 +166,7 @@ export function registerScriptFormat(server: McpServer): void {
           };
         }
         const fullPath = resolve(script_path);
+        assertInsideAnyRoot(fullPath, roots(), "script_path");
         if (!existsSync(fullPath)) {
           return {
             content: [{ type: "text" as const, text: `Script file not found: ${fullPath}` }],

@@ -33,6 +33,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { dirname, join, relative } from "node:path";
 import { logger } from "../utils/logger.js";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,8 +113,7 @@ export function readTextStrict(filePath: string): StrictRead {
 function assertUnchangedSincePlan(edit: PendingEdit, phase: string): void {
   if (edit.expectedMtimeMs === undefined && edit.expectedSize === undefined) return;
   const stat = statSync(edit.filePath);
-  const mtimeDrift =
-    edit.expectedMtimeMs !== undefined && stat.mtimeMs !== edit.expectedMtimeMs;
+  const mtimeDrift = edit.expectedMtimeMs !== undefined && stat.mtimeMs !== edit.expectedMtimeMs;
   const sizeDrift = edit.expectedSize !== undefined && stat.size !== edit.expectedSize;
   if (mtimeDrift || sizeDrift) {
     throw new Error(
@@ -269,7 +269,11 @@ export function applyMultipleSplices(
  * (no shell, no command-injection surface).
  */
 export function checkGitState(filePath: string): GitState {
-  const cwd = existsSync(filePath) ? (statSync(filePath).isDirectory() ? filePath : dirname(filePath)) : dirname(filePath);
+  const cwd = existsSync(filePath)
+    ? statSync(filePath).isDirectory()
+      ? filePath
+      : dirname(filePath)
+    : dirname(filePath);
 
   let repoTop: string;
   try {
@@ -289,15 +293,11 @@ export function checkGitState(filePath: string): GitState {
 
   try {
     const relPath = relative(repoTop, filePath).split("\\").join("/");
-    const status = execFileSync(
-      "git",
-      ["status", "--porcelain", "--", relPath],
-      {
-        cwd: repoTop,
-        encoding: "utf-8",
-        stdio: ["ignore", "pipe", "ignore"],
-      },
-    );
+    const status = execFileSync("git", ["status", "--porcelain", "--", relPath], {
+      cwd: repoTop,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
     if (status.trim().length === 0) {
       return { kind: "clean" };
     }
@@ -462,7 +462,8 @@ export function writeWithBackup(
   const { runBak, pristineBak } = createBackup(filePath);
 
   try {
-    writeFileSync(filePath, newContent, "utf-8");
+    // Write-then-rename (Phase 7 write-safety gap 18): a cut-short write never replaces the file.
+    writeFileAtomic(filePath, newContent);
   } catch (e) {
     // Best-effort restore from this run's backup (pre-write content).
     try {
@@ -499,8 +500,11 @@ export function writeWithBackup(
  * deterministic project-level dir (`<root>/.emcp/journals/`, RBE-2) so
  * recovery can find it independently of which target dir came first. The
  * record carries every target's absolute path/bak/tmp, so a single journal
- * restores a multi-directory commit. The journal write itself does not need
- * to be atomic w.r.t. the targets, so we just `writeFileSync` it.
+ * restores a multi-directory commit. The journal is written twice (in_progress,
+ * then completed), so each write goes through writeFileAtomic: a cut-short
+ * second write would otherwise leave a journal recovery cannot parse (write-safety
+ * audit, gap 20). The temporary sibling does not end in the journal suffix, so the
+ * recovery sweep never reads it.
  */
 interface JournalRecord {
   id: string;
@@ -614,7 +618,7 @@ function ensureDir(dir: string): void {
 }
 
 function writeJournal(path: string, record: JournalRecord): void {
-  writeFileSync(path, JSON.stringify(record, null, 2), "utf-8");
+  writeFileAtomic(path, JSON.stringify(record, null, 2));
 }
 
 /**
@@ -643,10 +647,7 @@ function writeJournal(path: string, record: JournalRecord): void {
  * key improvement over the prior two-phase write that could leave
  * partial state on Windows.
  */
-export function atomicCommit(
-  edits: PendingEdit[],
-  options: EditOptions = {},
-): AtomicCommitResult {
+export function atomicCommit(edits: PendingEdit[], options: EditOptions = {}): AtomicCommitResult {
   const result: AtomicCommitResult = { edits: [], rolledBack: [] };
 
   if (edits.length === 0) return result;
@@ -1011,9 +1012,9 @@ export function planFileEdit(
   // We unwrap the trailing offset+fullString from the replacer's tail args.
   const newContent = content.replace(pattern, (match: string, ...rest: unknown[]) => {
     // rest = [...captures, offset, fullString]. Strip the last two.
-    const captures = rest.slice(0, Math.max(0, rest.length - 2)).map((v) =>
-      typeof v === "string" ? v : "",
-    );
+    const captures = rest
+      .slice(0, Math.max(0, rest.length - 2))
+      .map((v) => (typeof v === "string" ? v : ""));
     replaced += 1;
     return replacer(match, ...captures);
   });

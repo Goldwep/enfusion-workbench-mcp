@@ -29,6 +29,7 @@ import {
   pidFilePathFor,
   prepareLaunchInputs,
   probeServerExe,
+  resolveScenarioId,
   writePidFile,
 } from "../server-mgmt/launch.js";
 import {
@@ -43,7 +44,7 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
     {
       description:
         "Launch ArmaReforgerServer.exe (the dedicated server — separate from the Workbench/game install, Steam app 1874900) " +
-        "with the supplied server.json and scenarioId. Always defaults to dry_run=true: the tool prints the argv that " +
+        "with the supplied server.json; the scenario is the file's game.scenarioId. Always defaults to dry_run=true: the tool prints the argv that " +
         "WOULD run plus a redacted view of the config, but does not spawn unless dry_run is explicitly false. " +
         "Passwords are never echoed — uses RedactedServerConfig at the type boundary. " +
         "On a real spawn, writes `<dirname(server_config_path)>/.arma-reforger-server.pid` and refuses a second " +
@@ -54,8 +55,9 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
           .describe("Absolute path to the server.json to launch with."),
         scenario_id: z
           .string()
+          .optional()
           .describe(
-            "Full scenarioId in {GUID}path form, e.g. `{DFAC5FABD11D2507}Missions/23_Campaign_NorthCentral.conf`.",
+            "Optional check, {GUID}path form: must equal the server.json's game.scenarioId, which is what the server loads.",
           ),
         extra_args: z
           .array(z.string())
@@ -96,13 +98,16 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
         const { config: redacted, absolutePath: configAbsPath } =
           readRedactedServerConfig(prepared.absoluteConfigPath);
 
+        // 2b. The scenario is the file's game.scenarioId (KD-005: no measured
+        // source knows a scenario switch). A requested one must match it.
+        const scenarioId = resolveScenarioId(prepared.scenarioId, redacted.game?.scenarioId);
+
         // 3. Probe for the server exe.
         const probe = probeServerExe();
 
         // 4. Build the argv we'd pass to spawn.
         const argv = buildLaunchArgv({
           serverConfigPath: configAbsPath,
-          scenarioId: prepared.scenarioId,
           extraArgs: prepared.extraArgs,
         });
 
@@ -135,6 +140,7 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
                 text:
                   "## server_launch (dry run — nothing spawned)\n\n" +
                   `**Exe:** \`${probe.path}\`\n` +
+                  `**Scenario (server.json game.scenarioId):** \`${scenarioId}\`\n` +
                   `**Argv (display only):** \`${argvForDisplay}\`\n\n` +
                   `### Redacted server.json (\`${configAbsPath}\`)\n\n` +
                   `\`\`\`json\n${redactedJson}\n\`\`\`\n\n` +
@@ -256,7 +262,7 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
               pid,
               started_at: new Date().toISOString(),
               server_config_path: configAbsPath,
-              scenario_id: prepared.scenarioId,
+              scenario_id: scenarioId,
               argv,
             });
             pidFileNote = `**PID file:** \`${pidFilePath}\`\n`;

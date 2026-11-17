@@ -89,11 +89,24 @@ export function encodeRequest(
  *   [pascalString status]   — "Ok" on success, error message otherwise
  *   [pascalString payload]  — JSON data (only present when status is "Ok")
  *
+ * An "Ok" status followed by an empty payload string (a complete frame whose
+ * second length prefix is 0) decodes as `{}`: native NET functions that answer
+ * with no fields, ReloadScripts among them, send exactly that (E04 contract
+ * table; KD-006, fixed here).
+ *
  * @param buf  Raw response bytes from the TCP socket
+ * @param opts `allowEmptyPayload`: an "Ok" status with no payload string at
+ *   all also decodes as `{}` instead of throwing. Native functions answer this
+ *   way (DEC-040 sc-08: `BringModuleWindowToFront` answers `{}` for every
+ *   module name); for handlers a missing payload string may be a truncated
+ *   frame, so the strict default stays for them.
  * @returns Parsed JSON object from the payload
  * @throws Error if status is not "Ok" or payload JSON is invalid
  */
-export function decodeResponse<T = Record<string, unknown>>(buf: Buffer): T {
+export function decodeResponse<T = Record<string, unknown>>(
+  buf: Buffer,
+  opts: { allowEmptyPayload?: boolean } = {},
+): T {
   const { value: status, bytesRead } = decodePascalString(buf, 0);
 
   // Status != "Ok" means an error — throw regardless of trailing data
@@ -111,8 +124,10 @@ export function decodeResponse<T = Record<string, unknown>>(buf: Buffer): T {
         throw new Error(`Failed to parse response JSON: ${payload.slice(0, 200)}`);
       }
     }
-    throw new Error("Workbench error: Ok status with empty payload");
+    // A complete, empty payload string: an answer with no fields, not a fault.
+    return {} as T;
   }
 
+  if (opts.allowEmptyPayload) return {} as T;
   throw new Error("Workbench error: Ok status with no payload — possible truncated response");
 }

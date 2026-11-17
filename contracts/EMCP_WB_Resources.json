@@ -1,0 +1,796 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Resources",
+  "tool": "wb_resources",
+  "purpose": "Resource database and import. path: project-relative source file.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Resources.c",
+  "request": [
+    "action",
+    "rootPath",
+    "extensions",
+    "searchStr",
+    "tags",
+    "recursive",
+    "cursor",
+    "limit",
+    "path",
+    "available",
+    "timeoutMs",
+    "buildRuntime",
+    "confirm",
+    "paths",
+    "configuration",
+    "settings",
+    "allPlatforms",
+    "className",
+    "inherit",
+    "xobPath"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "total",
+    "nextCursor",
+    "capped",
+    "items",
+    "resourceName",
+    "guid",
+    "relPath",
+    "absPath",
+    "hasMeta",
+    "sourcePath",
+    "projectFile",
+    "found",
+    "registered",
+    "dryRun",
+    "count",
+    "rebuilt",
+    "pending",
+    "before",
+    "after",
+    "saved",
+    "savedPath"
+  ],
+  "actions": [
+    {
+      "name": "search",
+      "summary": "Paged database search",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "rootPath",
+          "type": "string",
+          "required": false,
+          "note": "$Addon:Folder/ or relative (every addon)"
+        },
+        {
+          "key": "extensions",
+          "type": "array<string>",
+          "required": false,
+          "note": "without the dot"
+        },
+        {
+          "key": "searchStr",
+          "type": "array<string>",
+          "required": false,
+          "note": "all words must match"
+        },
+        {
+          "key": "tags",
+          "type": "array<string>",
+          "required": false
+        },
+        {
+          "key": "recursive",
+          "type": "bool",
+          "required": false,
+          "note": "default true"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "capped",
+          "type": "bool"
+        },
+        {
+          "key": "items",
+          "type": "array<string>",
+          "note": "ResourceName; unregistered: $Addon:path"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "selection",
+      "summary": "Browser selection",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "recursive",
+          "type": "bool",
+          "required": false,
+          "note": "default true; expands folders"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "capped",
+          "type": "bool"
+        },
+        {
+          "key": "items",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "resolve",
+      "summary": "Name, GUID, meta of a path",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "path, {GUID}, {GUID}path or source path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "relPath",
+          "type": "string"
+        },
+        {
+          "key": "absPath",
+          "type": "string",
+          "note": "home folder scrubbed"
+        },
+        {
+          "key": "hasMeta",
+          "type": "bool"
+        },
+        {
+          "key": "sourcePath",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "addons",
+      "summary": "Loaded addons",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "available",
+          "type": "bool",
+          "required": false,
+          "note": "also list unloaded addons"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "items",
+          "type": "array<string>",
+          "note": "guid|id|vanilla|loaded|title"
+        },
+        {
+          "key": "projectFile",
+          "type": "string",
+          "note": "home folder scrubbed"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "newGuid",
+      "summary": "New GUID",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "wait",
+      "summary": "Wait for a file",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "timeoutMs",
+          "type": "int",
+          "required": false,
+          "note": "default 1000, max 10000"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "found",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "register",
+      "summary": "Register a file",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "buildRuntime",
+          "type": "bool",
+          "required": false,
+          "note": "build the runtime resource"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "registered",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "rebuild",
+      "summary": "Rebuild and wait",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": false,
+          "note": "one file"
+        },
+        {
+          "key": "paths",
+          "type": "array<string>",
+          "required": false,
+          "note": "batch; max 200"
+        },
+        {
+          "key": "configuration",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "timeoutMs",
+          "type": "int",
+          "required": false,
+          "note": "per file wait, default 1000"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "count",
+          "type": "int"
+        },
+        {
+          "key": "rebuilt",
+          "type": "array<string>"
+        },
+        {
+          "key": "pending",
+          "type": "array<string>",
+          "note": "WaitForFile timed out"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "import",
+      "summary": "Register, set, rebuild",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "settings",
+          "type": "array<string>",
+          "required": false,
+          "note": "name=value; enum by name or number"
+        },
+        {
+          "key": "allPlatforms",
+          "type": "bool",
+          "required": false,
+          "note": "write every configuration"
+        },
+        {
+          "key": "configuration",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>"
+        },
+        {
+          "key": "after",
+          "type": "array<string>"
+        },
+        {
+          "key": "rebuilt",
+          "type": "array<string>"
+        },
+        {
+          "key": "registered",
+          "type": "bool",
+          "note": "registered now, also when refused after"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "create",
+      "summary": "New file from a class",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "root class, e.g. MatPBRBasic"
+        },
+        {
+          "key": "inherit",
+          "type": "string",
+          "required": false,
+          "note": "ancestor ResourceName, loose or packed"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "prefabFromModel",
+      "summary": ".et from an .xob",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "xobPath",
+          "type": "string",
+          "required": true,
+          "note": "the model ResourceName"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "inherit",
+          "type": "string",
+          "required": false,
+          "note": "parent prefab"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

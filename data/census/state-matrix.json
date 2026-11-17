@@ -1,0 +1,130 @@
+{
+  "$comment": "Declared state matrix (plan 4.3 `observed_states[]`, gate G3). `axes` are the plan's five axes; `resource_type` takes its values from the file-type rows (E09). `applies` says which containers must be enumerated in which combinations: G3 expands each entry into (container, state) pairs and fails a pair no source observed, unless the row is deferred with a reason and a work item. This first version was written by the Phase 0 ledger author from plan 4.3 and is a seed [unverified]: the main session owns this file from now on and widens or narrows `applies` as the live census learns which states change a container's content. Version 2 (DEC-056 ruling 11): child kinds (context-item, property, property-editor) are `enumerate_only`: the walkers stamp them with the container's state, G3 asks nothing of them; `values` narrows an axis to the states Phase 4 walks (prefab-edit and the stretch selections are deferred to W1); `except` names rows an entry does not reach.",
+  "version": 2,
+  "axes": {
+    "mode": ["edit", "play", "prefab-edit"],
+    "selection": [
+      "none",
+      "entity",
+      "prefab-instance",
+      "shape",
+      "terrain",
+      "layer",
+      "folder",
+      "multi"
+    ],
+    "resource_type": {
+      "from_kind": "file-type"
+    },
+    "world_type": ["with-terrain", "without-terrain"],
+    "script_debug": ["on", "off"]
+  },
+  "applies": [
+    {
+      "kind": "context-menu",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "Plan 4.5 L05: context-menu targets are derived per state in the state matrix; the World Editor's menus depend on mode and selection; prefab-edit and the stretch selections shape, terrain, folder, multi deferred to W1 (DEC-054 ruling 3, DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"],
+        "selection": ["none", "entity", "prefab-instance", "layer"]
+      }
+    },
+    {
+      "kind": "context-menu",
+      "module": "ResourceManager",
+      "axes": ["resource_type"],
+      "why": "Plan 4.5 L05: targets derived mechanically from the file-type list; the tab-strip and folder-tree menus do not depend on a file's resource type (DEC-056 ruling 11)",
+      "except": [
+        "ui:ResourceManager/context-menu/Tabs",
+        "ui:ResourceManager/context-menu/Tree view",
+        "ui:ResourceManager/context-menu/Tree view/SVN"
+      ]
+    },
+    {
+      "kind": "menu",
+      "module": "WorldEditor",
+      "axes": ["mode"],
+      "why": "Plan 4.3: mode is an axis; edit and play mode menus are walked separately; prefab-edit deferred to W1 (DEC-054 ruling 3, DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"]
+      }
+    },
+    {
+      "kind": "toolbar",
+      "module": "WorldEditor",
+      "axes": ["mode"],
+      "why": "Plan 4.3: mode is an axis; prefab-edit deferred to W1 (DEC-054 ruling 3, DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"]
+      }
+    },
+    {
+      "kind": "debug-panel",
+      "axes": ["mode"],
+      "why": "Plan 4.5 L15: in edit mode and in play mode; L15 reads edit and play only, never prefab-edit (DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"]
+      }
+    },
+    {
+      "kind": "diag-menu",
+      "axes": ["mode"],
+      "why": "Plan 4.5 L15: in edit mode and in play mode; L15 reads edit and play only, never prefab-edit (DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"]
+      }
+    },
+    {
+      "kind": "menu",
+      "module": "ScriptEditor",
+      "axes": ["script_debug"],
+      "why": "Plan 4.3: Script Debug Mode is an axis"
+    },
+    {
+      "kind": "panel",
+      "module": "WorldEditor",
+      "axes": ["world_type"],
+      "why": "Plan 4.3: world type (with or without terrain) is an axis; terrain tool panels depend on it"
+    },
+    {
+      "kind": "property-group",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "Design D8 (P4 L06 hand-off): grid rows differ by mode (edit/play) and selection (none/entity); without the axes the none and entity walks collapse into {}; prefab-edit and the stretch selections shape, terrain, folder, multi deferred to W1 (DEC-054 ruling 3, DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"],
+        "selection": ["none", "entity", "prefab-instance", "layer"]
+      }
+    },
+    {
+      "kind": "diag-option",
+      "axes": ["mode"],
+      "why": "Design D8 (P4 L15 hand-off): diag options are read in edit mode and in play mode; the axis keeps the two reads apart; L15 reads edit and play only, never prefab-edit (DEC-056 ruling 11)",
+      "values": {
+        "mode": ["edit", "play"]
+      }
+    },
+    {
+      "kind": "context-item",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "P4-FIX-K: a World Editor context menu's items are read in the menu's state (which items show and are enabled depends on mode and selection), so they carry the menu's axes and the menu's children_count counts them in that state; enumerate-only since DEC-056 ruling 11: the walker stamps the item with its container's state, but G3 asks the pairs of the container, whose per-state children_count proves the items",
+      "enumerate_only": true
+    },
+    {
+      "kind": "property",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "Design D8 (P4 L06 hand-off): grid rows differ by mode (edit/play) and selection (none/entity); without the axes the none and entity walks collapse into {}; enumerate-only since DEC-056 ruling 11: the walker stamps the item with its container's state, but G3 asks the pairs of the container, whose per-state children_count proves the items",
+      "enumerate_only": true
+    },
+    {
+      "kind": "property-editor",
+      "module": "WorldEditor",
+      "axes": ["mode", "selection"],
+      "why": "Design D8 (P4 L06 hand-off): grid rows differ by mode (edit/play) and selection (none/entity); without the axes the none and entity walks collapse into {}; enumerate-only since DEC-056 ruling 11: the walker stamps the item with its container's state, but G3 asks the pairs of the container, whose per-state children_count proves the items",
+      "enumerate_only": true
+    }
+  ]
+}

@@ -37,6 +37,18 @@ export function registerClassResource(server: McpServer, searchEngine: SearchEng
       const tree = searchEngine.getClassTree(name);
       const chain = searchEngine.getInheritanceChain(name);
       const inherited = searchEngine.getInheritedMembers(name);
+      // A class the source backfill added says so, as its methods do: the
+      // method arrays pass through whole, so a pak method's origin, pakFile,
+      // pakLine and guards reach the reader as stored.
+      const provenance =
+        cls.origin === "pak"
+          ? {
+              origin: cls.origin,
+              pakFile: cls.pakFile,
+              pakLine: cls.pakLine,
+              ...(cls.guards && cls.guards.length > 0 ? { guards: cls.guards } : {}),
+            }
+          : {};
 
       return {
         contents: [
@@ -46,11 +58,12 @@ export function registerClassResource(server: McpServer, searchEngine: SearchEng
               {
                 name: cls.name,
                 source: cls.source,
+                ...provenance,
                 group: cls.group,
                 brief: cls.brief,
                 description: cls.description,
                 parents: cls.parents,
-                children: cls.children,
+                children: searchEngine.getChildren(cls.name),
                 inheritanceChain: chain,
                 ancestors: tree.ancestors,
                 descendants: tree.descendants,

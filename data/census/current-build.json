@@ -1,0 +1,15 @@
+{
+  "tag": "1.9.0.37",
+  "branch": "stable",
+  "ui_language": "en",
+  "recorded_by": "pc-session-2026-11-06",
+  "carry_over": [
+    {
+      "from": "1.8.0.13",
+      "enumerators": ["L01", "L02", "L03", "L04", "L05", "L06", "L07", "L09", "L10", "L11", "L14", "L16"],
+      "status": "accepted",
+      "evidence": "EV-s019-carry-001",
+      "rule": "If the first 5 samples pass assume total pass with just changelog items being changed"
+    }
+  ]
+}

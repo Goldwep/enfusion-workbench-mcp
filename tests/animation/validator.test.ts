@@ -64,8 +64,12 @@ describe("V01: Integer Duration", () => {
       },
     ]);
     const result = validateGraph(agf);
-    expect(result.issues.some((i) => i.id === "V01")).toBe(true);
-    expect(result.errorCount).toBeGreaterThanOrEqual(1);
+    const v01 = result.issues.find((i) => i.id === "V01");
+    expect(v01).toBeDefined();
+    // Demoted (DEC-067 OD-4): vanilla graphs use integer durations.
+    expect(v01!.severity).toBe("warning");
+    expect(v01!.demoted).toMatch(/vanilla/);
+    expect(result.errorCount).toBe(0);
   });
 
   it("passes with decimal duration", () => {
@@ -300,6 +304,55 @@ describe("V11: BlendN threshold order", () => {
     const result = validateGraph(agf);
     expect(result.issues.some((i) => i.id === "V11")).toBe(true);
   });
+
+  // KD-W4-1: the parser gives numbers, a legacy file one blank-separated string; neither throws.
+  it.each([
+    ["numbers", [0, 1, 2, 3, 4], false],
+    ["one string", "0 0.5 1", false],
+    ["one string out of order", "1 0.5", true],
+    ["absent", undefined, false],
+  ])("takes thresholds as %s without throwing", (_label, thresholds, flagged) => {
+    const agf = makeAgf([
+      { type: "AnimSrcNodeBlendN", name: "BN", children: [], properties: { thresholds } },
+    ]);
+    const result = validateGraph(agf);
+    expect(result.issues.some((i) => i.id === "V11")).toBe(flagged);
+  });
+});
+
+describe("V06: DefaultRunNode in any node of the graph", () => {
+  it("matches a state machine and names from the graph's other files", () => {
+    const agf = makeAgf([{ type: "AnimSrcNodeStateMachine", name: "Master", children: [] }]);
+    expect(
+      validateGraph(agf, makeAgr({ defaultRunNode: "Master" })).issues.some((i) => i.id === "V06"),
+    ).toBe(false);
+    const other = validateGraph(
+      agf,
+      makeAgr({ defaultRunNode: "Elsewhere" }),
+      undefined,
+      undefined,
+      {
+        graphNodeNames: ["Elsewhere"],
+      },
+    );
+    expect(other.issues.some((i) => i.id === "V06")).toBe(false);
+    const missing = validateGraph(agf, makeAgr({ defaultRunNode: "Nope" }));
+    const v06 = missing.issues.find((i) => i.id === "V06")!;
+    expect(v06.severity).toBe("warning");
+    expect(missing.errorCount).toBe(0);
+  });
+});
+
+describe("V14 from the parsed struct", () => {
+  it("uses hasGlobalTags when no raw text is passed", () => {
+    const agf = makeAgf([]);
+    expect(
+      validateGraph(agf, makeAgr({ hasGlobalTags: false })).issues.some((i) => i.id === "V14"),
+    ).toBe(true);
+    expect(
+      validateGraph(agf, makeAgr({ hasGlobalTags: true })).issues.some((i) => i.id === "V14"),
+    ).toBe(false);
+  });
 });
 
 describe("V12: State Time mode mismatch", () => {
@@ -343,7 +396,7 @@ describe("V14: GlobalTags block missing", () => {
   it("flags when the AGR text has no GlobalTags block", () => {
     const agf = makeAgf([]);
     const agr = makeAgr({ globalTags: ["WEAPON", "STANCE"] });
-    const agrContent = `AnimGraphRoot {\n GraphFilesResourceNames {}\n}`;
+    const agrContent = "AnimGraphRoot {\n GraphFilesResourceNames {}\n}";
     const result = validateGraph(agf, agr, undefined, undefined, { agrContent });
     expect(result.issues.some((i) => i.id === "V14")).toBe(true);
   });
@@ -351,7 +404,7 @@ describe("V14: GlobalTags block missing", () => {
   it("does not flag when GlobalTags block is present (even if empty)", () => {
     const agf = makeAgf([]);
     const agr = makeAgr({ globalTags: ["WEAPON", "STANCE"] });
-    const agrContent = `AnimGraphRoot {\n GlobalTags {\n  "WEAPON"\n }\n}`;
+    const agrContent = 'AnimGraphRoot {\n GlobalTags {\n  "WEAPON"\n }\n}';
     const result = validateGraph(agf, agr, undefined, undefined, { agrContent });
     expect(result.issues.some((i) => i.id === "V14")).toBe(false);
   });
@@ -365,13 +418,14 @@ describe("V14: GlobalTags block missing", () => {
 });
 
 describe("V15: GlobalTags must contain WEAPON and STANCE", () => {
-  it("flags both missing entries as errors", () => {
+  it("flags both missing entries as demoted warnings", () => {
     const agf = makeAgf([]);
     const agr = makeAgr({ globalTags: [] });
     const result = validateGraph(agf, agr);
     const v15 = result.issues.filter((i) => i.id === "V15");
     expect(v15).toHaveLength(2);
-    expect(v15.every((i) => i.severity === "error")).toBe(true);
+    // Demoted (DEC-067 OD-4): only character graphs carry these tags.
+    expect(v15.every((i) => i.severity === "warning" && i.demoted)).toBe(true);
     expect(v15.some((i) => i.message.includes("WEAPON"))).toBe(true);
     expect(v15.some((i) => i.message.includes("STANCE"))).toBe(true);
   });
@@ -407,7 +461,13 @@ describe("V16: PascalCase state names", () => {
         children: [],
         properties: {
           states: [
-            { name: "walk_forward", startCondition: "1", timeMode: "Normtime", exit: false, child: null },
+            {
+              name: "walk_forward",
+              startCondition: "1",
+              timeMode: "Normtime",
+              exit: false,
+              child: null,
+            },
           ],
           transitions: [],
         },
@@ -445,7 +505,13 @@ describe("V16: PascalCase state names", () => {
         children: [],
         properties: {
           states: [
-            { name: "WalkForward", startCondition: "1", timeMode: "Normtime", exit: false, child: null },
+            {
+              name: "WalkForward",
+              startCondition: "1",
+              timeMode: "Normtime",
+              exit: false,
+              child: null,
+            },
           ],
           transitions: [],
         },
@@ -505,20 +571,18 @@ describe("V17: referenced .anm clip file existence", () => {
 
 describe("V18: m_BoneRemap references unknown bones", () => {
   it("flags bones not present in the supplied skeleton", () => {
-    const agrContent = `AnimGraphRoot {\n m_BoneRemap {\n  "FakeBone"\n  "Spine_01"\n }\n}`;
+    const agrContent = 'AnimGraphRoot {\n m_BoneRemap {\n  "FakeBone"\n  "Spine_01"\n }\n}';
     const agr = makeAgr({ globalTags: ["WEAPON", "STANCE"] });
     const result = validateGraph(makeAgf([]), agr, undefined, undefined, {
       agrContent,
       skeleton: { bones: ["Spine_01", "Pelvis", "Head"] },
     });
     expect(result.issues.some((i) => i.id === "V18" && i.message.includes("FakeBone"))).toBe(true);
-    expect(result.issues.some((i) => i.id === "V18" && i.message.includes("Spine_01"))).toBe(
-      false,
-    );
+    expect(result.issues.some((i) => i.id === "V18" && i.message.includes("Spine_01"))).toBe(false);
   });
 
   it("is silent when no m_BoneRemap block is present", () => {
-    const agrContent = `AnimGraphRoot {\n GlobalTags { "WEAPON" "STANCE" }\n}`;
+    const agrContent = 'AnimGraphRoot {\n GlobalTags { "WEAPON" "STANCE" }\n}';
     const agr = makeAgr({ globalTags: ["WEAPON", "STANCE"] });
     const result = validateGraph(makeAgf([]), agr, undefined, undefined, {
       agrContent,
@@ -528,7 +592,7 @@ describe("V18: m_BoneRemap references unknown bones", () => {
   });
 
   it("is skipped when no skeleton is supplied", () => {
-    const agrContent = `AnimGraphRoot {\n m_BoneRemap {\n  "FakeBone"\n }\n}`;
+    const agrContent = 'AnimGraphRoot {\n m_BoneRemap {\n  "FakeBone"\n }\n}';
     const agr = makeAgr({ globalTags: ["WEAPON", "STANCE"] });
     const result = validateGraph(makeAgf([]), agr, undefined, undefined, { agrContent });
     expect(result.issues.some((i) => i.id === "V18")).toBe(false);

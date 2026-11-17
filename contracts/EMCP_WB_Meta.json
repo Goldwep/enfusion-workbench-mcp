@@ -1,0 +1,503 @@
+{
+  "handler": "EMCP_WB_Meta",
+  "tool": "wb_meta",
+  "purpose": "A resource .meta: import settings per platform. path: the project-relative source file.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Meta.c",
+  "request": [
+    "action",
+    "path",
+    "platform",
+    "fields",
+    "cursor",
+    "limit",
+    "name",
+    "value",
+    "allPlatforms",
+    "confirm"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "resourceName",
+    "guid",
+    "sourcePath",
+    "platforms",
+    "tags",
+    "count",
+    "total",
+    "nextCursor",
+    "columns",
+    "rows",
+    "before",
+    "after",
+    "saved",
+    "dryRun"
+  ],
+  "actions": [
+    {
+      "name": "get",
+      "summary": "GUID, class and ancestor per platform, tags",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "source file or {GUID}path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "guid",
+          "type": "string"
+        },
+        {
+          "key": "sourcePath",
+          "type": "string"
+        },
+        {
+          "key": "platforms",
+          "type": "array<string>",
+          "note": "PLATFORM=Class:ancestor"
+        },
+        {
+          "key": "tags",
+          "type": "array<string>"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "note": "configurations"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "vars",
+      "summary": "Per-variable schema of one configuration",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "source file, not the .meta"
+        },
+        {
+          "key": "platform",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "fields",
+          "type": "string",
+          "required": false,
+          "note": "columns kept, comma-separated"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "columns",
+          "type": "string",
+          "note": "names of the kept columns"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "row-major cells of one page"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "set",
+      "summary": "Set an import setting",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "note": "variable name"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "new value as text"
+        },
+        {
+          "key": "platform",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "allPlatforms",
+          "type": "bool",
+          "required": false,
+          "note": "write every configuration"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "PLATFORM=value"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "PLATFORM=value"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "clear",
+      "summary": "Reset an import setting",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "note": "variable name"
+        },
+        {
+          "key": "platform",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "allPlatforms",
+          "type": "bool",
+          "required": false,
+          "note": "clear every configuration"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "PLATFORM=value"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "PLATFORM=value"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setAncestor",
+      "summary": "Set the base config",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "ancestor ResourceName"
+        },
+        {
+          "key": "platform",
+          "type": "string",
+          "required": false,
+          "note": "default PC"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>"
+        },
+        {
+          "key": "after",
+          "type": "array<string>"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "assignMaterial",
+      "summary": "Model material slot to .emat",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative source file"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "note": "source material slot"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": ".emat ResourceName"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "array<string>",
+          "note": "slot=material"
+        },
+        {
+          "key": "after",
+          "type": "array<string>",
+          "note": "slot=material"
+        },
+        {
+          "key": "saved",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

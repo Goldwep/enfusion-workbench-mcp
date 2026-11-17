@@ -1,11 +1,16 @@
 /**
- * Stamp a curated `templates.ts` template into a parsed layer root by
- * appending the template's entities as new top-level children.
+ * Stamp a curated `templates.ts` template into a scenario layer's text by
+ * inserting the template's entities after the layer's existing entities.
  *
- * Pure — no FS, no MCP. Tool wrapper owns I/O.
+ * Works on the lossless CST through `layer-cst.ts`: the result is the
+ * original text with one inserted span, so every existing byte (line ends,
+ * indents, comments, block order, a missing final line end) is kept. The
+ * inserted blocks take the file's line end and indent unit.
+ *
+ * Pure: no FS, no MCP. Tool wrapper owns I/O.
  */
 
-import type { EnfusionNode } from "../formats/enfusion-text.js";
+import { insertEntities, openLayer } from "./layer-cst.js";
 import {
   buildTemplate,
   type ApplyTemplateResult,
@@ -18,9 +23,13 @@ export interface ApplyTemplateOptions {
   position: Position;
   /** Yaw rotation in degrees, applied around the Y axis at `position`. */
   yawDeg: number;
+  /** As `openLayer`: true for a `.conf` / `.ent` target (insert inside its single root). */
+  singleRoot?: boolean;
 }
 
 export interface AppliedTemplate extends ApplyTemplateResult {
+  /** The target text with the template's entities inserted. */
+  text: string;
   /** Final stamped position (echoes the input). */
   position: Position;
   /** Final yaw rotation in degrees (echoes the input). */
@@ -30,20 +39,23 @@ export interface AppliedTemplate extends ApplyTemplateResult {
 }
 
 /**
- * Build the template's entities and APPEND them to the target's top-level
- * children. Mutates `target` in place AND returns metadata for the caller.
+ * Build the template's entities and insert them as new entities of the
+ * target: at the end of a `.layer`, or before the closing brace of a single
+ * root (`singleRoot`). The input text is not changed; the result carries the
+ * new text and the metadata for the caller.
  *
- * The append-only model is deliberate: the target layer is a sequence of
- * top-level nodes, and the template's entities are themselves valid
- * top-level nodes. Inserting elsewhere (e.g., inside an existing `$grp`)
- * would require reasoning about prefab inheritance — out of scope here.
+ * The append-only model is deliberate: the template's entities are valid
+ * top-level nodes. Inserting elsewhere (inside an existing `$grp`) would
+ * need reasoning about prefab inheritance, out of scope here.
  */
-export function applyTemplate(target: EnfusionNode, opts: ApplyTemplateOptions): AppliedTemplate {
+export function applyTemplate(
+  targetText: string | Uint8Array,
+  opts: ApplyTemplateOptions,
+): AppliedTemplate {
+  const layer = openLayer(targetText, { singleRoot: opts.singleRoot });
   const result = buildTemplate(opts.template, opts.position, opts.yawDeg);
-  for (const entity of result.entities) {
-    target.children.push(entity);
-  }
   return {
+    text: insertEntities(layer, result.entities),
     entities: result.entities,
     placeholders: result.placeholders,
     position: opts.position,

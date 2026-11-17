@@ -1,0 +1,43 @@
+{
+  "$comment": "L10 fake kernel answers. list, LocalizationEditor and ScriptEditor info and the window titles are slices of P3-3 gate 1 (p33-g1-04, p33-g1-06, 2026-10-10); the other modules' info answers are synthetic with the same shape, the Resource Manager title is an [unverified] guess; the Navmesh title is the one read live in P4-1 2026-10-12 (p4-l10-09 windowsAdded).",
+  "list": {
+    "modules": [
+      "AnimEditor",
+      "AudioEditor",
+      "BehaviorEditor",
+      "LocalizationEditor",
+      "NavmeshGeneratorMain",
+      "ProcAnimEditor",
+      "ResourceManager",
+      "ScriptEditor",
+      "WorldEditor"
+    ],
+    "open": [],
+    "unread": ["ParticleEditor"]
+  },
+  "info": {
+    "default": {
+      "isOpen": true,
+      "mayHaveOpened": true,
+      "containerCount": 0,
+      "containerClasses": []
+    },
+    "WorldEditor": {
+      "isOpen": true,
+      "mayHaveOpened": true,
+      "containerCount": 2,
+      "containerClasses": ["WorldEditorContainer", "WorldEditorContainer"]
+    }
+  },
+  "titles": {
+    "LocalizationEditor": "String Editor",
+    "BehaviorEditor": "Behavior Editor - EMCP2_sandbox",
+    "AudioEditor": "Audio Editor",
+    "AnimEditor": "Animation Editor",
+    "ProcAnimEditor": "Procedural Animation Editor",
+    "ScriptEditor": "Script Editor - Debugging: ArmaReforgerWorkbenchSteamDiag.exe on port: 1000 - Configuration: WORKBENCH",
+    "WorldEditor": "World Editor - <world>",
+    "ResourceManager": "Enfusion Workbench - EMCP2 sandbox (2.0 live lane)",
+    "NavmeshGeneratorMain": "Arma Reforger Workbench"
+  }
+}

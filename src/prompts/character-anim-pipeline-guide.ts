@@ -88,7 +88,7 @@ If you build out of order (e.g. start with AGR before clips exist), the editor w
 For any character anim work, these MCP tools are the ones to reach for:
 
 - **\`animation_graph\`** — unified vehicle-focused animation tool. Two relevant actions for *character* work:
-  - \`action: "inspect"\` — read and summarize any \`.agr\` / \`.agf\` / \`.ast\` / \`.asi\` / \`.aw\` file. Pass \`sub_action: "validate"\` to run pitfall checks. (Despite the vehicle-leaning author/setup actions, inspect works on character files too.)
+  - \`action: "inspect"\` — read and summarize any \`.agr\` / \`.agf\` / \`.ast\` / \`.asi\` / \`.aw\` file. Use \`action: "validate"\` (or the 1.x \`inspectAction: "validate"\`) to run pitfall checks. (Despite the vehicle-leaning author/setup actions, inspect works on character files too.)
 - **\`animation_find_unused_clips\`** — cross-references \`.anm\` files against AGF source nodes and ASI entries; surfaces clips that aren't reachable from any state. Use after a clip-heavy refactor.
 - **\`weapon_pose_lint\`** — string-level lint of weapon poses against the AGR's \`GlobalTags\`. Catches the classic "weapon ignores stance" bug where a pose name doesn't match any tag. Character-relevant when authoring weapon-aware AGRs.
 - **\`wb_knowledge\`** — search the pre-loaded BI knowledge base for animation patterns. Always run this *first* when you hit anything non-obvious. The character animation KB lives at \`data/kb/patterns/Character_And_Animation/animation/\` and includes:
@@ -115,7 +115,7 @@ If the results don't cover what you need, fall back to \`query: "index"\` to see
 - **Bone-name drift.** If the skeleton's bone names change after clips are recorded, every clip silently mis-targets — characters T-pose at random states. Fix: re-bind clips, do not rename bones after step 2.
 - **ASI desync.** ASI is generated from the AGF; if you save the AGF without regenerating ASI, script-side state IDs point at the wrong node. Symptom: a known animation plays the *previous* state's clip. Fix: always regenerate ASI after AGF edits.
 - **GlobalTags case sensitivity.** \`GlobalTags\` in the AGR are case-sensitive. \`weapon_pose_lint\` catches a lot of these — run it whenever you add weapon stances.
-- **Validate before commit.** Always run \`animation_graph action=inspect sub_action=validate\` against the AGR before you commit. The validator catches the top 5–10 recurring failure modes (missing bone remap, undeclared parameter, broken clip ref, etc.).
+- **Validate before commit.** Always run \`animation_graph action=validate\` against the AGR before you commit. The validator catches the top 5–10 recurring failure modes (missing bone remap, undeclared parameter, broken clip ref, etc.).
 - **Unused clips bloat the addon.** \`animation_find_unused_clips\` after a refactor — orphan \`.anm\` files cost disk space and confuse future maintainers.`);
   }
 

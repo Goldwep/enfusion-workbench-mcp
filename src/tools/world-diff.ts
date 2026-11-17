@@ -1,7 +1,8 @@
 /**
  * `world_diff` — semantic diff between two `.ent` (or any Enfusion text)
- * files. Groups entities by a stable key (preferring `node.id`, falling back
- * to type+className+position-hash, finally array index) and reports four
+ * files. Groups entities by a stable key (preferring the `ID` property, then
+ * `node.id`, falling back to type+className+inheritance+position-hash,
+ * finally array index) and reports four
  * categories: added, removed, moved (transform delta > epsilon), and
  * modified (property changed).
  *
@@ -105,14 +106,21 @@ function fmtVec3(v: Vec3): string {
 
 /**
  * Stable key for an entity. Order of preference:
- *   1. `node.id` — typically a 16-hex GUID for placed entities. Best key.
- *   2. `<type>:<className?>:<x|y|z>` where coords are rounded to int.
- *   3. `idx:<arrayIndex>` as last resort — caller passes the index.
+ *   1. The `ID` property — the 16-hex entity ID the engine writes into every
+ *      placed entity (`GenericEntity : "{res}" { ID "..." coords ... }`).
+ *      The parser stores it as a property, not as `node.id`. Best key.
+ *   2. `node.id` — the name or quoted id written after the type.
+ *   3. `<type>:<className?>:<inheritance?>:<x|y|z>` with coords rounded to int.
+ *   4. `idx:<arrayIndex>` as last resort — caller passes the index.
  *
  * Index-keyed entries are inherently unstable across reorders, but they at
  * least give the diff something to grip on for unnamed nodes.
  */
 export function entityKey(node: EnfusionNode, fallbackIndex: number): string {
+  const idProp = node.properties.find((p) => p.key === "ID");
+  if (idProp && typeof idProp.value === "string" && idProp.value.trim().length > 0) {
+    return `id:${idProp.value.trim()}`;
+  }
   if (node.id) return `id:${node.id}`;
   const pos = parsePosition(node);
   if (pos) {
@@ -120,9 +128,27 @@ export function entityKey(node: EnfusionNode, fallbackIndex: number): string {
     const yi = Math.round(pos.y);
     const zi = Math.round(pos.z);
     const cls = node.className ?? "";
-    return `pos:${node.type}:${cls}:${xi}|${yi}|${zi}`;
+    const inh = node.inheritance ?? "";
+    return `pos:${node.type}:${cls}:${inh}:${xi}|${yi}|${zi}`;
   }
   return `idx:${node.type}:${fallbackIndex}`;
+}
+
+/**
+ * Key every direct child. Two children that share a key (e.g. identical
+ * prefabs at the same rounded spot) get `#2`, `#3`... suffixes in file
+ * order, so neither is silently dropped from the diff.
+ */
+function keyChildren(parent: EnfusionNode): Map<string, EnfusionNode> {
+  const out = new Map<string, EnfusionNode>();
+  parent.children.forEach((c, i) => {
+    const base = entityKey(c, i);
+    let key = base;
+    let n = 2;
+    while (out.has(key)) key = `${base}#${n++}`;
+    out.set(key, c);
+  });
+  return out;
 }
 
 // ── Property comparison ──────────────────────────────────────────────────────
@@ -183,14 +209,8 @@ function diffProperties(before: EnfusionNode, after: EnfusionNode): PropertyChan
  * bucketing each match into added / removed / moved / modified.
  */
 export function diffWorlds(before: EnfusionNode, after: EnfusionNode, epsilon: number): DiffResult {
-  const beforeMap = new Map<string, EnfusionNode>();
-  before.children.forEach((c, i) => {
-    beforeMap.set(entityKey(c, i), c);
-  });
-  const afterMap = new Map<string, EnfusionNode>();
-  after.children.forEach((c, i) => {
-    afterMap.set(entityKey(c, i), c);
-  });
+  const beforeMap = keyChildren(before);
+  const afterMap = keyChildren(after);
 
   const added: AddedEntity[] = [];
   const removed: RemovedEntity[] = [];

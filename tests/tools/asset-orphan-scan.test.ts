@@ -38,29 +38,19 @@ describe("asset-orphan-scan: extractAssetRefs", () => {
         AmbientSound "{CCCC777788889999}sounds/wind.ogg"
       }`;
     const refs = extractAssetRefs(content, new Set(["edds"]));
-    expect(refs).toEqual([
-      "textures/wood.edds",
-      "textures/wood_n.edds",
-    ]);
+    expect(refs).toEqual(["textures/wood.edds", "textures/wood_n.edds"]);
   });
   it("skips refs without an extension and refs whose ext is filtered out", () => {
-    const content = `Foo {Bar "{AAAA111122223333}NoExt" Baz "{BBBB444455556666}ignored.fbx"}`;
+    const content = 'Foo {Bar "{AAAA111122223333}NoExt" Baz "{BBBB444455556666}ignored.fbx"}';
     expect(extractAssetRefs(content, new Set(["edds"]))).toEqual([]);
   });
 });
 
 describe("asset-orphan-scan: computeOrphans", () => {
   it("returns sorted disk paths absent from the referenced set", () => {
-    const onDisk = [
-      "textures/c.edds",
-      "textures/a.edds",
-      "textures/b.edds",
-    ];
+    const onDisk = ["textures/c.edds", "textures/a.edds", "textures/b.edds"];
     const referenced = new Set(["textures/b.edds"]);
-    expect(computeOrphans(onDisk, referenced)).toEqual([
-      "textures/a.edds",
-      "textures/c.edds",
-    ]);
+    expect(computeOrphans(onDisk, referenced)).toEqual(["textures/a.edds", "textures/c.edds"]);
   });
 });
 
@@ -85,11 +75,11 @@ describe("asset-orphan-scan: buildOrphanList", () => {
     const fileContent = new Map<string, string>([
       [
         join("/projects/p1", "materials/wood.emat"),
-        `MatPBRBasic { Albedo "{AAAA111122223333}textures/wood.edds" }`,
+        'MatPBRBasic { Albedo "{AAAA111122223333}textures/wood.edds" }',
       ],
       [
         join("/projects/p2", "materials/steel.emat"),
-        `MatPBRBasic { Albedo "{BBBB444455556666}textures/steel.edds" }`,
+        'MatPBRBasic { Albedo "{BBBB444455556666}textures/steel.edds" }',
       ],
     ]);
     const diskAssets = new Map<string, string[]>([
@@ -109,6 +99,66 @@ describe("asset-orphan-scan: buildOrphanList", () => {
   });
 });
 
+describe("asset-orphan-scan: samples held by an .acp", () => {
+  const group = (indexed: string[]) => ({
+    project_id: "p1",
+    root_path: "/projects/p1",
+    source: "user" as const,
+    indexed_files: indexed,
+  });
+  const acpText = 'AudioBankSampleClass { Filename "{DDDD111122223333}Sounds/held.wav" }';
+  const disk = (root: string, exts: Set<string>): string[] => {
+    if (root !== "/projects/p1") return [];
+    const all = ["Sounds/bank.acp", "Sounds/held.wav", "Sounds/dead.wav"];
+    return all.filter((p) => exts.has(p.slice(p.lastIndexOf(".") + 1)));
+  };
+  const read = (abs: string): string | null =>
+    abs === join("/projects/p1", "Sounds/bank.acp") ? acpText : null;
+
+  it("counts a .wav as referenced when an unindexed .acp holds it", () => {
+    const rows = buildOrphanList([group([])], new Set(["wav"]), read, disk);
+    expect(rows).toEqual([{ project_id: "p1", file_path: "Sounds/dead.wav" }]);
+  });
+
+  it("reads an .acp that is also indexed only once", () => {
+    let reads = 0;
+    const rows = buildOrphanList(
+      [group(["Sounds/bank.acp"])],
+      new Set(["wav"]),
+      (abs) => {
+        reads++;
+        return read(abs);
+      },
+      disk,
+    );
+    expect(reads).toBe(1);
+    expect(rows.map((r) => r.file_path)).toEqual(["Sounds/dead.wav"]);
+  });
+
+  it("also reads .sig and .afm files", () => {
+    const rows = buildOrphanList(
+      [group([])],
+      new Set(["wav"]),
+      (abs) =>
+        abs === join("/projects/p1", "Sounds/mix.afm")
+          ? 'X { r "{EEEE111122223333}Sounds/dead.wav" }'
+          : abs === join("/projects/p1", "Sounds/bank.acp")
+            ? acpText
+            : null,
+      (_root, exts) =>
+        exts.has("afm")
+          ? ["Sounds/mix.afm", "Sounds/bank.acp"]
+          : ["Sounds/held.wav", "Sounds/dead.wav"],
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("still reports a sample no file references", () => {
+    const rows = buildOrphanList([group([])], new Set(["wav"]), () => null, disk);
+    expect(rows.map((r) => r.file_path)).toEqual(["Sounds/dead.wav", "Sounds/held.wav"]);
+  });
+});
+
 describe("asset-orphan-scan: cursor encoding", () => {
   it("round-trips a payload bound to source + extensions", () => {
     const enc = encodeCursor({ o: 50, s: "user", e: "edds,fbx", v: 1 });
@@ -123,9 +173,7 @@ describe("asset-orphan-scan: cursor encoding", () => {
     expect(() => decodeCursor(enc, "user", "fbx")).toThrow("Invalid cursor");
   });
   it("rejects malformed cursors", () => {
-    expect(() => decodeCursor("!!!notbase64!!!", "*", "edds")).toThrow(
-      "Invalid cursor",
-    );
+    expect(() => decodeCursor("!!!notbase64!!!", "*", "edds")).toThrow("Invalid cursor");
   });
 });
 

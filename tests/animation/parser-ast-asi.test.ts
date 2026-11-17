@@ -1,43 +1,40 @@
 import { describe, it, expect } from "vitest";
 import { parseAstToStruct, parseAsiToStruct, parseAwToStruct } from "../../src/animation/parser.js";
 
-const SAMPLE_AST = `AnimSetTemplate {
- AnimSetTemplateSource_AnimationGroup Locomotion {
-  AnimationNames {
-   "Idle"
-   "WalkF"
-   "WalkB"
+// Layout taken from vanilla Binoculars_B12.ast / B12_player.asi (corpus sample).
+const SAMPLE_AST = `AnimSetTemplateSource {
+ Groups {
+  AnimSetTemplateSource_AnimationGroup "{54967D07EAF68C5D}" {
+   Name "Locomotion"
+   Animations {
+    "Idle"
+    "WalkF"
+    "WalkB"
+   }
+   Columns {
+    "Erc"
+    "Cro"
+   }
   }
-  ColumnNames {
-   "Erc"
-   "Cro"
-  }
- }
- AnimSetTemplateSource_AnimationGroup Actions {
-  AnimationNames {
-   "Reload"
-  }
-  ColumnNames {
-   "Default"
+  AnimSetTemplateSource_AnimationGroup "{54967D07EAF68C5E}" {
+   Name "Actions"
+   Animations {
+    "Reload"
+   }
+   Columns {
+    "Default"
+   }
   }
  }
 }`;
 
-const SAMPLE_ASI = `AnimSetInstance {
- AnimSetInstanceSource_AnimationGroup Locomotion {
-  AnimationNames {
-   "Idle"
-   "WalkF"
-   "WalkB"
+const SAMPLE_ASI = `AnimSetInstanceSource "{5D92904FBEB1F100}" {
+ Template "{11E615DD64637C57}ws/t.ast"
+ Lines {
+  AnimSetInstanceSource_Line "Locomotion.Erc.Idle" {
+   Resource "{E026D5F801FAF110}Anims/idle_erc.anm"
   }
-  ColumnInstances {
-   AnimSetInstanceColumn Erc {
-    Animations {
-     "{G1}Anims/idle_erc.anm"
-     "{G2}Anims/walk_fwd_erc.anm"
-     ""
-    }
-   }
+  AnimSetInstanceSource_Line "Locomotion.Erc.WalkB" {
   }
  }
 }`;
@@ -49,7 +46,7 @@ const SAMPLE_AW = `AnimSrcWorkspace {
   "{G1}path/to/instance1.asi"
   "{G2}path/to/instance2.asi"
  }
- AnimSrcWorkspacePreviewModel main {
+ AnimSrcWorkspacePreviewModel "{563EF338E13AB791}" {
   Model "{M1}Assets/Characters/main.xob"
  }
  AnimSrcWorkspaceChildPreviewModel weapon {
@@ -71,6 +68,7 @@ describe("parseAstToStruct", () => {
     expect(result.groups[0].name).toBe("Locomotion");
     expect(result.groups[0].animationNames).toEqual(["Idle", "WalkF", "WalkB"]);
     expect(result.groups[0].columnNames).toEqual(["Erc", "Cro"]);
+    expect(result.groups[1].name).toBe("Actions");
   });
 
   it("handles empty AST", () => {
@@ -87,7 +85,7 @@ describe("parseAsiToStruct", () => {
       (m) => m.group === "Locomotion" && m.column === "Erc" && m.animation === "Idle",
     );
     expect(idleMapping).toBeDefined();
-    expect(idleMapping!.anmPath).toContain("idle_erc.anm");
+    expect(idleMapping!.anmPath).toBe("Anims/idle_erc.anm");
   });
 
   it("marks empty slots as unmapped", () => {

@@ -87,6 +87,21 @@ class EMCP_WB_CreateEntity : NetApiHandler
 			return resp;
 		}
 
+		// The guard of the W-wave edit handlers (DEC-058, EditApi of EMCP_WB_Entity.c): the project
+		// is found, the editor is not in play mode.
+		if (!EMCP_WB_Guard.IsProjectFound())
+		{
+			resp.status = "error";
+			resp.message = EMCP_WB_Guard.NOT_IN_PROJECT + ": mutating actions need the handlers installed in the open project; nothing was changed";
+			return resp;
+		}
+		if (api.IsGameMode())
+		{
+			resp.status = "error";
+			resp.message = "WRONG_MODE: the World Editor is in play mode; nothing was changed - stop play first (wb_world stop)";
+			return resp;
+		}
+
 		// Position / rotation are optional (default origin / no rotation) but must parse when given.
 		vector pos = vector.Zero;
 		vector rot = vector.Zero;
@@ -142,7 +157,11 @@ class EMCP_WB_CreateEntity : NetApiHandler
 
 		resp.entityName = entSrc.GetName();
 		resp.entityClass = entSrc.GetClassName();
-		resp.position = EMCP_WB_Common.VectorToString(pos);
+		// The placed entity's world origin, read back (never the request echoed: live-tools-a-02);
+		// empty when the runtime entity is not there to read.
+		IEntity placedEnt = api.SourceToEntity(entSrc);
+		if (placedEnt)
+			resp.position = EMCP_WB_Common.VectorToString(placedEnt.GetOrigin());
 
 		if (renameFailed)
 		{

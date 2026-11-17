@@ -1,9 +1,9 @@
 import * as cheerio from "cheerio";
 import type { AnyNode } from "domhandler";
+import { parseParamsFromSignature, signatureName } from "./signature.js";
 import type {
   ClassInfo,
   MethodInfo,
-  ParamInfo,
   EnumInfo,
   EnumValue,
   PropertyInfo,
@@ -169,14 +169,23 @@ export function parseClassPage(
     // unusual map structures that don't conform to the expected pattern.
   }
 
-  // Parse public member functions
-  const methods = parseMemberTable($, "pub-methods");
+  // Member row anchor → method, so each method gets its own detailed docs
+  // (overloads share a name).
+  const anchors: AnchorMap = new Map();
 
-  // Parse protected member functions
-  const protectedMethods = parseMemberTable($, "pro-methods");
+  // Parse public member functions
+  const methods = parseMemberTable($, "pub-methods", anchors);
+
+  // Parse protected member functions. Doxygen lists protected static ones in
+  // a section of their own ("Static Protected Member Functions"); they are
+  // protected, so they join this array and keep `static` in their returnType.
+  const protectedMethods = [
+    ...parseMemberTable($, "pro-methods", anchors),
+    ...parseMemberTable($, "pro-static-methods", anchors),
+  ];
 
   // Parse static member functions
-  const staticMethods = parseMemberTable($, "pub-static-methods");
+  const staticMethods = parseMemberTable($, "pub-static-methods", anchors);
 
   // Parse public member variables (attributes)
   const properties = parsePropertyTable($, "pub-attribs");
@@ -189,13 +198,23 @@ export function parseClassPage(
   // Merge static attribs into properties
   properties.push(...staticAttribs);
 
+  // Member groups (sections titled by the group, e.g. "Override Functions")
+  // hold members the named sections do not list; they join the same arrays,
+  // after the named sections' members.
+  const groups = parseMemberGroups($, anchors);
+  methods.push(...groups.methods);
+  protectedMethods.push(...groups.protectedMethods);
+  staticMethods.push(...groups.staticMethods);
+  properties.push(...groups.properties);
+  protectedProperties.push(...groups.protectedProperties);
+
   // Parse enum types (standard Doxygen pub-types — rare in Enfusion)
   const enums = parseEnumSection($);
 
   // Enhance method descriptions with detailed docs
-  enrichMethodDescriptions($, methods);
-  enrichMethodDescriptions($, protectedMethods);
-  enrichMethodDescriptions($, staticMethods);
+  enrichMethodDescriptions($, methods, anchors);
+  enrichMethodDescriptions($, protectedMethods, anchors);
+  enrichMethodDescriptions($, staticMethods, anchors);
 
   // Extract source file if available
   const sourceFile = extractSourceFile($);
@@ -224,7 +243,30 @@ export function parseClassPage(
   };
 }
 
-function parseMemberTable($: cheerio.CheerioAPI, sectionId: string): MethodInfo[] {
+/**
+ * The member's own link in a member row's right cell: the `a.el` that points
+ * at the row's anchor (`#<hash>`, or `<page>#<hash>`), else the first one.
+ * The cell also links the parameter types and linked constants of default
+ * values; their text is not part of the name.
+ */
+function ownLink(
+  $: cheerio.CheerioAPI,
+  rightCell: cheerio.Cheerio<AnyNode>,
+  hash: string,
+): cheerio.Cheerio<AnyNode> {
+  const links = rightCell.find("a.el");
+  const own = links.filter((_i, a) => ($(a).attr("href") ?? "").endsWith(`#${hash}`));
+  return own.length ? own.first() : links.first();
+}
+
+/** Member row anchor hash → the method it produced, for matching the detailed docs. */
+type AnchorMap = Map<string, MethodInfo>;
+
+function parseMemberTable(
+  $: cheerio.CheerioAPI,
+  sectionId: string,
+  anchors?: AnchorMap,
+): MethodInfo[] {
   const methods: MethodInfo[] = [];
 
   // Find the heading row for this section
@@ -260,77 +302,146 @@ function parseMemberTable($: cheerio.CheerioAPI, sectionId: string): MethodInfo[
 
     // Parse memitem rows
     if (rowClass.startsWith("memitem:")) {
-      const returnType = $row.find("td.memItemLeft").text().trim();
-      const rightCell = $row.find("td.memItemRight");
-      const nameLink = rightCell.find("a.el");
-      const methodName = nameLink.text().trim();
-
-      if (!methodName) return;
-
-      // Get full text including params from the right cell
-      const fullRight = rightCell.text().trim();
-      const signature = `${returnType} ${fullRight}`.replace(/\s+/g, " ").trim();
-
-      // Parse params from the signature text
-      const params = parseParamsFromSignature(fullRight);
-
-      // Get description from next memdesc row
-      const hash = rowClass.split(":")[1];
-      const descRow = table.find(`tr.memdesc\\:${hash}`);
-      const desc = descRow.find("td.mdescRight").text().trim();
-
-      methods.push({
-        name: methodName,
-        returnType,
-        signature,
-        params,
-        description: desc,
-      });
+      const method = parseMethodRow($, table, $row, rowClass, anchors);
+      if (method) methods.push(method);
     }
   });
 
   return methods;
 }
 
-function parseParamsFromSignature(sigText: string): ParamInfo[] {
-  const params: ParamInfo[] = [];
+/** One method row (`tr.memitem:<hash>`) of a member table; undefined when the row names no member. */
+function parseMethodRow(
+  $: cheerio.CheerioAPI,
+  table: cheerio.Cheerio<AnyNode>,
+  $row: cheerio.Cheerio<AnyNode>,
+  rowClass: string,
+  anchors?: AnchorMap,
+): MethodInfo | undefined {
+  const returnType = $row.find("td.memItemLeft").text().trim();
+  const rightCell = $row.find("td.memItemRight");
+  const hash = rowClass.split(":")[1];
+  const linkName = ownLink($, rightCell, hash).text().trim();
 
-  // Extract content between parentheses
-  const parenMatch = sigText.match(/\(([^)]*)\)/);
-  if (!parenMatch || !parenMatch[1].trim()) return params;
+  if (!linkName) return undefined;
 
-  const paramStr = parenMatch[1].trim();
-  if (!paramStr) return params;
+  // Get full text including params from the right cell
+  const fullRight = rightCell.text().trim();
+  const signature = `${returnType} ${fullRight}`.replace(/\s+/g, " ").trim();
 
-  // Split by commas (simple split — doesn't handle nested generics)
-  const parts = paramStr.split(",");
+  // The name is the identifier the signature declares; the link text
+  // stands in only when the signature has none before its `(`.
+  const methodName = signatureName(signature) ?? linkName;
 
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
+  // Parse params from the signature text. The split is depth-aware: a
+  // generic's comma (`map< string, int >`) and a call in a default value
+  // (`Color.FromInt(Color.WHITE)`) stay inside their parameter.
+  const params = parseParamsFromSignature(fullRight);
 
-    // Handle default values (e.g., "EAddChildFlags flags = EAddChildFlags.AUTO_TRANSFORM")
-    let defaultValue = "";
-    let mainPart = trimmed;
-    const eqIdx = trimmed.indexOf("=");
-    if (eqIdx !== -1) {
-      defaultValue = trimmed.slice(eqIdx + 1).trim();
-      mainPart = trimmed.slice(0, eqIdx).trim();
-    }
+  // Get description from next memdesc row
+  const descRow = table.find(`tr.memdesc\\:${hash}`);
+  const desc = descRow.find("td.mdescRight").text().trim();
 
-    // Split into type and name — last token is name, rest is type
-    const tokens = mainPart.split(/\s+/);
-    if (tokens.length >= 2) {
-      const paramName = tokens[tokens.length - 1];
-      const paramType = tokens.slice(0, -1).join(" ");
-      params.push({ name: paramName, type: paramType, defaultValue });
-    } else if (tokens.length === 1) {
-      // Just a type with no name (rare but possible)
-      params.push({ name: "", type: tokens[0], defaultValue });
-    }
-  }
+  const method: MethodInfo = {
+    name: methodName,
+    returnType,
+    signature,
+    params,
+    description: desc,
+  };
+  if (hash) anchors?.set(hash, method);
+  return method;
+}
 
-  return params;
+/** Members of the member groups, sorted into the arrays the named sections fill. */
+interface MemberGroupMembers {
+  methods: MethodInfo[];
+  protectedMethods: MethodInfo[];
+  staticMethods: MethodInfo[];
+  properties: PropertyInfo[];
+  protectedProperties: PropertyInfo[];
+}
+
+/**
+ * The labels of a member's detailed docs (`protected`, `static`, `sealed`,
+ * `private`): Doxygen writes the member's anchor (`<a id="<hash>">`), its
+ * `h2.memtitle` and a `div.memitem` whose `div.memproto` holds the labels as
+ * `span.mlabel`. Empty when the page has no detailed docs for the member.
+ */
+function memberLabels($: cheerio.CheerioAPI, hash: string): Set<string> {
+  const labels = new Set<string>();
+  if (!hash) return labels;
+  const anchor = $(`a[id="${hash}"]`).first();
+  const memitem = anchor.next("h2.memtitle").next("div.memitem");
+  memitem.find("div.memproto span.mlabel").each((_i, el) => {
+    labels.add($(el).text().trim());
+  });
+  return labels;
+}
+
+/**
+ * Member groups (Doxygen's `member-group` sections, one table per group,
+ * headed by the group's own title, e.g. "Override Functions"): the summary
+ * table does not say a member's protection, so it is read from the member's
+ * detailed docs labels. The members go where the named sections put them:
+ *
+ *  - a method: protected (static or not) to `protectedMethods`, as
+ *    "Protected Member Functions" and "Static Protected Member Functions" do;
+ *    public static to `staticMethods`; public to `methods`;
+ *  - a variable: public (static or not) to `properties`, as "Public
+ *    Attributes" and "Static Public Attributes" do; protected to
+ *    `protectedProperties`, as "Protected Attributes" does. A protected
+ *    static variable is not read, as "Static Protected Attributes" is not;
+ *  - a private member is not read, nor are type rows (enum, typedef, class).
+ */
+function parseMemberGroups($: cheerio.CheerioAPI, anchors?: AnchorMap): MemberGroupMembers {
+  const out: MemberGroupMembers = {
+    methods: [],
+    protectedMethods: [],
+    staticMethods: [],
+    properties: [],
+    protectedProperties: [],
+  };
+
+  $('a[id="member-group"]').each((_i, a) => {
+    const heading = $(a).closest("tr");
+    const table = heading.closest("table.memberdecls");
+    if (!heading.length || !table.length) return;
+
+    heading.nextUntil("tr.heading").each((_j, row) => {
+      const $row = $(row);
+      const rowClass = $row.attr("class") || "";
+      if (!rowClass.startsWith("memitem:")) return;
+
+      const hash = rowClass.split(":")[1];
+      const left = $row.find("td.memItemLeft").text().trim();
+      if (/^(enum|typedef|class|interface|struct|using)\b/.test(left)) return;
+
+      const labels = memberLabels($, hash);
+      if (labels.has("private")) return;
+      const isProtected = labels.has("protected");
+      const isStatic = labels.has("static") || /^static\b/.test(left);
+
+      // A method's right cell is its name followed by its parameter list.
+      const right = $row.find("td.memItemRight").text().trim();
+      if (/^~?[A-Za-z_]\w*\s*\(/.test(right)) {
+        const method = parseMethodRow($, table, $row, rowClass, anchors);
+        if (!method) return;
+        if (isProtected) out.protectedMethods.push(method);
+        else if (isStatic) out.staticMethods.push(method);
+        else out.methods.push(method);
+        return;
+      }
+
+      if (isProtected && isStatic) return;
+      const property = parsePropertyRow($, table, $row, rowClass);
+      if (!property) return;
+      if (isProtected) out.protectedProperties.push(property);
+      else out.properties.push(property);
+    });
+  });
+
+  return out;
 }
 
 /**
@@ -369,27 +480,40 @@ function parsePropertyTable($: cheerio.CheerioAPI, sectionId: string): PropertyI
     if (!inSection) return;
 
     if (rowClass.startsWith("memitem:")) {
-      const propType = $row.find("td.memItemLeft").text().trim();
-      const rightCell = $row.find("td.memItemRight");
-      const nameLink = rightCell.find("a.el");
-      const propName = nameLink.text().trim() || rightCell.text().trim();
-
-      if (!propName) return;
-
-      // Get description from memdesc row
-      const hash = rowClass.split(":")[1];
-      const descRow = table.find(`tr.memdesc\\:${hash}`);
-      const desc = descRow.find("td.mdescRight").text().trim();
-
-      properties.push({
-        name: propName,
-        type: propType,
-        description: desc,
-      });
+      const property = parsePropertyRow($, table, $row, rowClass);
+      if (property) properties.push(property);
     }
   });
 
   return properties;
+}
+
+/** One variable row (`tr.memitem:<hash>`) of a member table; undefined when the row names no member. */
+function parsePropertyRow(
+  $: cheerio.CheerioAPI,
+  table: cheerio.Cheerio<AnyNode>,
+  $row: cheerio.Cheerio<AnyNode>,
+  rowClass: string,
+): PropertyInfo | undefined {
+  const propType = $row.find("td.memItemLeft").text().trim();
+  const rightCell = $row.find("td.memItemRight");
+  const hash = rowClass.split(":")[1];
+  // The member's own link only: a linked constant in the default value
+  // (`m_fRate = UIConstants.FADE_RATE_FAST`) is not part of the name.
+  const propName =
+    ownLink($, rightCell, hash).text().trim() || rightCell.text().trim().split(/\s*=/)[0].trim();
+
+  if (!propName) return undefined;
+
+  // Get description from memdesc row
+  const descRow = table.find(`tr.memdesc\\:${hash}`);
+  const desc = descRow.find("td.mdescRight").text().trim();
+
+  return {
+    name: propName,
+    type: propType,
+    description: desc,
+  };
 }
 
 /**
@@ -544,10 +668,17 @@ function parseEnumValuesFromBrief(
  * Doxygen puts detailed method docs in sections with:
  *   <h2 class="memtitle"><span class="permalink">...</span>MethodName()</h2>
  *   <div class="memdoc"> ... detailed text ... </div>
- * We match by method name and replace the brief description if the detailed one is longer.
+ * We match by the heading's permalink anchor (the member row's hash: overloads
+ * share a name, each has its own docs), by method name only when the heading
+ * has no anchor, and replace the brief description if the detailed one is longer.
  */
-function enrichMethodDescriptions($: cheerio.CheerioAPI, methods: MethodInfo[]): void {
+function enrichMethodDescriptions(
+  $: cheerio.CheerioAPI,
+  methods: MethodInfo[],
+  anchors?: AnchorMap,
+): void {
   if (methods.length === 0) return;
+  const inList = new Set(methods);
 
   // Build a map of method names to their memdoc contents
   $("h2.memtitle").each((_i, heading) => {
@@ -574,8 +705,17 @@ function enrichMethodDescriptions($: cheerio.CheerioAPI, methods: MethodInfo[]):
     const trimmedDetail =
       detailedText.length > maxLen ? detailedText.slice(0, maxLen) + "..." : detailedText;
 
-    for (const method of methods) {
-      if (method.name === methodName && trimmedDetail.length > method.description.length) {
+    const href = $heading.find("span.permalink a").attr("href") ?? "";
+    const anchor = href.includes("#") ? href.slice(href.indexOf("#") + 1) : "";
+    let targets: MethodInfo[];
+    if (anchor && anchors) {
+      const own = anchors.get(anchor);
+      targets = own && inList.has(own) ? [own] : [];
+    } else {
+      targets = methods.filter((m) => m.name === methodName);
+    }
+    for (const method of targets) {
+      if (trimmedDetail.length > method.description.length) {
         method.description = trimmedDetail;
       }
     }

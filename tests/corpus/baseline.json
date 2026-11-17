@@ -1,0 +1,172 @@
+{
+  "$comment": "Vanilla corpus scoreboard (tests/corpus/README.md). Counts only; no game content. roundtrip is rewritten by a CORPUS_FULL=1 CORPUS_UPDATE_BASELINE=1 run; readers is edited by hand with known-defects.json.",
+  "build": "1.9.0.37",
+  "pak_files": 251200,
+  "roundtrip": {
+    "parser": "src/formats/enfusion-text.ts parse then serialize; byte-exact against the file bytes",
+    "sample_per_ext": 200,
+    "sample_seed": "corpus-roundtrip-v1",
+    "extensions": {
+      "acp": {
+        "files_total": 720,
+        "full": { "files": 720, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 720, "parsed": 720, "round_trip_exact": 0 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 0 }
+      },
+      "ae": {
+        "files_total": 2,
+        "full": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 1 },
+        "sample": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 1 }
+      },
+      "aex": {
+        "files_total": 4,
+        "full": { "files": 4, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 4, "parsed": 4, "round_trip_exact": 1 },
+        "sample": { "files": 4, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 4, "parsed": 4, "round_trip_exact": 1 }
+      },
+      "afm": {
+        "files_total": 2,
+        "full": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 0 },
+        "sample": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 0 }
+      },
+      "agf": {
+        "files_total": 154,
+        "full": { "files": 154, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 154, "parsed": 154, "round_trip_exact": 2 },
+        "sample": { "files": 154, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 154, "parsed": 154, "round_trip_exact": 2 }
+      },
+      "agr": {
+        "files_total": 133,
+        "full": { "files": 133, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 133, "parsed": 133, "round_trip_exact": 3 },
+        "sample": { "files": 133, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 133, "parsed": 133, "round_trip_exact": 3 }
+      },
+      "asi": {
+        "files_total": 248,
+        "full": { "files": 248, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 248, "parsed": 248, "round_trip_exact": 242 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 195 }
+      },
+      "ast": {
+        "files_total": 131,
+        "full": { "files": 131, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 131, "parsed": 131, "round_trip_exact": 129 },
+        "sample": { "files": 131, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 131, "parsed": 131, "round_trip_exact": 129 }
+      },
+      "asy": {
+        "files_total": 2,
+        "full": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 2 },
+        "sample": { "files": 2, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2, "parsed": 2, "round_trip_exact": 2 }
+      },
+      "aw": {
+        "files_total": 131,
+        "full": { "files": 131, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 131, "parsed": 131, "round_trip_exact": 0 },
+        "sample": { "files": 131, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 131, "parsed": 131, "round_trip_exact": 0 }
+      },
+      "bt": {
+        "files_total": 121,
+        "full": { "files": 121, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 121, "parsed": 121, "round_trip_exact": 15 },
+        "sample": { "files": 121, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 121, "parsed": 121, "round_trip_exact": 15 }
+      },
+      "c": {
+        "files_total": 6719,
+        "full": { "files": 6719, "unreadable": 0, "empty": 3, "not_text": 0, "text_files": 6716, "parsed": 438, "round_trip_exact": 0 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 14, "round_trip_exact": 0 }
+      },
+      "conf": {
+        "files_total": 2706,
+        "full": { "files": 2706, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 2706, "parsed": 2694, "round_trip_exact": 1549 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 126 }
+      },
+      "ct": {
+        "files_total": 115,
+        "full": { "files": 115, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 115, "parsed": 115, "round_trip_exact": 42 },
+        "sample": { "files": 115, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 115, "parsed": 115, "round_trip_exact": 42 }
+      },
+      "emat": {
+        "files_total": 10634,
+        "full": { "files": 10634, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 10634, "parsed": 10630, "round_trip_exact": 3188 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 58 }
+      },
+      "et": {
+        "files_total": 20201,
+        "full": { "files": 20201, "unreadable": 0, "empty": 0, "not_text": 1, "text_files": 20200, "parsed": 20200, "round_trip_exact": 8711 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 77 }
+      },
+      "gamemat": {
+        "files_total": 192,
+        "full": { "files": 192, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 192, "parsed": 192, "round_trip_exact": 48 },
+        "sample": { "files": 192, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 192, "parsed": 192, "round_trip_exact": 48 }
+      },
+      "imageset": {
+        "files_total": 142,
+        "full": { "files": 142, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 142, "parsed": 142, "round_trip_exact": 87 },
+        "sample": { "files": 142, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 142, "parsed": 142, "round_trip_exact": 87 }
+      },
+      "json": {
+        "files_total": 1,
+        "full": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 0, "round_trip_exact": 0 },
+        "sample": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 0, "round_trip_exact": 0 }
+      },
+      "layout": {
+        "files_total": 1260,
+        "full": { "files": 1260, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1260, "parsed": 1259, "round_trip_exact": 68 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 10 }
+      },
+      "pap": {
+        "files_total": 47,
+        "full": { "files": 47, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 47, "parsed": 47, "round_trip_exact": 0 },
+        "sample": { "files": 47, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 47, "parsed": 47, "round_trip_exact": 0 }
+      },
+      "physmat": {
+        "files_total": 24,
+        "full": { "files": 24, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 24, "parsed": 24, "round_trip_exact": 24 },
+        "sample": { "files": 24, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 24, "parsed": 24, "round_trip_exact": 24 }
+      },
+      "ptc": {
+        "files_total": 442,
+        "full": { "files": 442, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 442, "parsed": 442, "round_trip_exact": 4 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 3 }
+      },
+      "ragdoll": {
+        "files_total": 1,
+        "full": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 1, "round_trip_exact": 0 },
+        "sample": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 1, "round_trip_exact": 0 }
+      },
+      "sig": {
+        "files_total": 287,
+        "full": { "files": 287, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 287, "parsed": 287, "round_trip_exact": 0 },
+        "sample": { "files": 200, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 200, "parsed": 200, "round_trip_exact": 0 }
+      },
+      "siga": {
+        "files_total": 46,
+        "full": { "files": 46, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 46, "parsed": 46, "round_trip_exact": 0 },
+        "sample": { "files": 46, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 46, "parsed": 46, "round_trip_exact": 0 }
+      },
+      "styles": {
+        "files_total": 6,
+        "full": { "files": 6, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 6, "parsed": 6, "round_trip_exact": 2 },
+        "sample": { "files": 6, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 6, "parsed": 6, "round_trip_exact": 2 }
+      },
+      "txt": {
+        "files_total": 1,
+        "full": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 0, "round_trip_exact": 0 },
+        "sample": { "files": 1, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 1, "parsed": 0, "round_trip_exact": 0 }
+      },
+      "vhcsurf": {
+        "files_total": 17,
+        "full": { "files": 17, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 17, "parsed": 17, "round_trip_exact": 17 },
+        "sample": { "files": 17, "unreadable": 0, "empty": 0, "not_text": 0, "text_files": 17, "parsed": 17, "round_trip_exact": 17 }
+      }
+    }
+  },
+  "readers": {
+    "reader:animation_graph:agf-transitions": { "counts": "AnimSrcNodeTransition block openers in every .agf", "files": 154, "independent": 6183, "reader_yield": 6183 },
+    "reader:animation_graph:agf-ik-bindings": { "counts": "AnimSrcIkBinding and AnimSrcIkTargetBinding block openers in every .agf (IK2Target nodes hold the latter, DEC-048 wave-1 review F2-1); the yield is the chains the reader lists on its nodes", "files": 154, "independent": 2079, "reader_yield": 2079 },
+    "reader:animation_graph:ast-groups": { "counts": "AnimSetTemplateSource_AnimationGroup block openers in every .ast", "files": 131, "independent": 302, "reader_yield": 302 },
+    "reader:animation_graph:asi-lines": { "counts": "AnimSetInstanceSource_Line block openers in every .asi", "files": 248, "independent": 17196, "reader_yield": 17196 },
+    "reader:animation_graph:aw-preview-models": { "counts": "AnimSrcWorkspacePreviewModel and AnimSrcWorkspaceChildPreviewModel block openers in every .aw", "files": 131, "independent": 302, "reader_yield": 302 },
+    "reader:particle_inspect:emitters": { "counts": "EmitterDef block openers in every .ptc", "files": 442, "independent": 2423, "reader_yield": 2423 },
+    "reader:particle_inspect:material-refs": {
+      "counts": "Material lines holding a {GUID } ref in every .ptc (each emitter's resource ref); the yield is the texture refs the reader lists over all emitters",
+      "files": 442,
+      "independent": 2340,
+      "reader_yield": 2340
+    },
+    "reader:ui_localization_audit:runtime-keys": { "counts": "quoted entries of the Ids block of every StringTableRuntime .conf", "files": 14, "independent": 213921, "reader_yield": 213921 }
+  }
+}

@@ -1,0 +1,743 @@
+{
+  "$comment": "The owned Options dialog walk (S-F sf-26-options-walk-2.json, 43 nodes as walked with --allow-owned). Placeholders only.",
+  "schema": "emcp-uia-walk/1",
+  "provider": "uia",
+  "view": "raw",
+  "bounds": {
+    "max_depth": 40,
+    "max_nodes": 5000,
+    "budget_ms": 60000,
+    "row_sample": 40,
+    "max_children": 1000,
+    "count_cap": 2000,
+    "call_timeout_ms": 2000,
+    "slow_call_ms": 250,
+    "max_consecutive_errors": 3
+  },
+  "target": {
+    "pid": 1,
+    "hwnd": 1,
+    "className": "Qt683QWindowIcon",
+    "uiaClassName": "MainOptionsDialog",
+    "title": "Options",
+    "titlePattern": "^Options$"
+  },
+  "completed": true,
+  "partial": false,
+  "stop_reason": null,
+  "counts": {
+    "nodes": 43
+  },
+  "sampling": {
+    "containers_sampled": 0,
+    "rows_not_read_at_least": 0,
+    "applied": []
+  },
+  "tree": {
+    "controlType": "Window",
+    "name": "Options",
+    "automationId": "Arma4WorkbenchApp.MainOptionsDialog",
+    "className": "MainOptionsDialog",
+    "enabled": true,
+    "patterns": ["Invoke", "Value", "Window", "Transform", "LegacyIAccessible"],
+    "legacyDefaultAction": "Press",
+    "gridRowCount": 0,
+    "gridColumnCount": 0,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "enabled": true,
+        "patterns": ["Value", "LegacyIAccessible"],
+        "legacyDescription": "Displays the name of the window and contains controls to manipulate it",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "enabled": true,
+            "patterns": ["LegacyIAccessible"],
+            "accessKey": "Alt+Space",
+            "legacyShortcut": "Alt+Space",
+            "legacyDescription": "Contains commands to manipulate the window",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "enabled": true,
+                "patterns": ["Invoke", "ExpandCollapse", "LegacyIAccessible"],
+                "accessKey": "Space",
+                "legacyShortcut": "Space",
+                "legacyDefaultAction": "Open",
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "children": [],
+                "childCount": 0
+              }
+            ],
+            "childCount": 1
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "legacyDescription": "Closes the window",
+            "legacyDefaultAction": "Press",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          }
+        ],
+        "childCount": 2
+      },
+      {
+        "controlType": "List",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+        "className": "QListWidget",
+        "enabled": true,
+        "patterns": ["Value", "Selection", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [
+          {
+            "controlType": "ListItem",
+            "name": "General",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "World Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Animation Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Script Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Audio Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Behavior Editor",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          },
+          {
+            "controlType": "ListItem",
+            "name": "Shortcuts",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QListWidget",
+            "className": "",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "SelectionItem", "LegacyIAccessible"],
+            "legacyDefaultAction": "Double Click",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [],
+            "childCount": 0
+          }
+        ],
+        "childCount": 7
+      },
+      {
+        "controlType": "Custom",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget",
+        "className": "QStackedWidget",
+        "enabled": true,
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "legacyDefaultAction": "Press",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel",
+            "className": "ShortcutsOptionsPanel",
+            "enabled": true,
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "legacyDefaultAction": "Press",
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "children": [
+              {
+                "controlType": "Tree",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                "className": "PropertyGrid",
+                "enabled": true,
+                "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                "gridRowCount": 392,
+                "gridColumnCount": 1,
+                "children": [
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Camera",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "ExpandCollapse",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Forward",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Backward",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Left",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Right",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Up",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move Down",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Common",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "ExpandCollapse",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Undo",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Redo",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Rename",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Move",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Rotate",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Scale",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Toggle Gizmo Space",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Focus Selection",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Create New Layout",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Manage Layouts",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Reset Default Layouts",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.PropertyGrid",
+                    "className": "",
+                    "enabled": true,
+                    "patterns": [
+                      "Invoke",
+                      "Value",
+                      "SelectionItem",
+                      "GridItem",
+                      "TableItem",
+                      "LegacyIAccessible"
+                    ],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  }
+                ],
+                "childCount": 19
+              },
+              {
+                "controlType": "Button",
+                "name": "Reset All",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.QPushButton",
+                "className": "QPushButton",
+                "enabled": true,
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "legacyDefaultAction": "Press",
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "children": [],
+                "childCount": 0
+              },
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.WBEditBox",
+                "className": "WBEditBox",
+                "enabled": true,
+                "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                "legacyDefaultAction": "Press",
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.WBEditBox.QLineEditIconButton",
+                    "className": "QLineEditIconButton",
+                    "enabled": true,
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "legacyDefaultAction": "Press",
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "children": [],
+                    "childCount": 0
+                  }
+                ],
+                "childCount": 1
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QStackedWidget.ShortcutsOptionsPanel.QPushButton",
+                "className": "QPushButton",
+                "enabled": true,
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "legacyDefaultAction": "Press",
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "children": [],
+                "childCount": 0
+              }
+            ],
+            "childCount": 4
+          }
+        ],
+        "childCount": 1
+      },
+      {
+        "controlType": "Button",
+        "name": "OK",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "accessKey": "Enter",
+        "legacyShortcut": "Enter",
+        "legacyDefaultAction": "Press",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [],
+        "childCount": 0
+      },
+      {
+        "controlType": "Button",
+        "name": "Cancel",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "legacyDefaultAction": "Press",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [],
+        "childCount": 0
+      },
+      {
+        "controlType": "Button",
+        "name": "Register \"enfusion://\" Protocol",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "legacyDefaultAction": "Press",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [],
+        "childCount": 0
+      },
+      {
+        "controlType": "Button",
+        "name": "Export All Settings",
+        "automationId": "Arma4WorkbenchApp.MainOptionsDialog.QPushButton",
+        "className": "QPushButton",
+        "enabled": true,
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "legacyDefaultAction": "Press",
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "children": [],
+        "childCount": 0
+      }
+    ],
+    "childCount": 7
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "$comment": "Redacted slice of the World Editor walk (P3-3 gate 2, p33-g2-04-walk.json, view raw; 358 nodes): the root window and the children that matter to L07 - the tab strip, the floating Create dock (negative rect), the status bar, the Terrain Minimap dock and the central widget with their subtrees as read, the Hierarchy dock and the menu bar. Window title and pid are placeholders; rects are x,y,width,height as the walk wrote them.",
+  "schema": "emcp-uia-walk/1",
+  "view": "raw",
+  "counts": {
+    "nodes": 358,
+    "note": "slice"
+  },
+  "target": {
+    "pid": 4242,
+    "hwnd": 6884278,
+    "className": "Qt683QWindowIcon",
+    "uiaClassName": "WorldEditorQt",
+    "title": "World Editor - <world>",
+    "titlePattern": "^World Editor"
+  },
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - <world>",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "rect": [319, 155, 1920, 1080],
+    "enabled": true,
+    "offscreen": false,
+    "childCount": 18,
+    "children": [
+      {
+        "controlType": "Tab",
+        "name": "Object Properties",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+        "className": "QMainWindowTabBar",
+        "rect": [1869, 907, 370, 23],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 2
+      },
+      {
+        "controlType": "Window",
+        "name": "Create",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock",
+        "className": "QDockWidget",
+        "rect": [-393, -1350, 212, 1005],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 3
+      },
+      {
+        "controlType": "StatusBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar",
+        "className": "QStatusBar",
+        "rect": [319, 1213, 1920, 22],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 7
+      },
+      {
+        "controlType": "Window",
+        "name": "Terrain Minimap",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock",
+        "className": "QDockWidget",
+        "rect": [1869, 935, 370, 278],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap",
+            "className": "TerrainMinimap",
+            "rect": [1869, 958, 370, 255],
+            "enabled": true,
+            "offscreen": false,
+            "childCount": 7,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.TerrainMinimapViewport",
+                "className": "TerrainMinimapViewport",
+                "rect": [1873, 990, 362, 200],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "100%",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.TerrainMinimapViewport.QPushButton",
+                    "className": "QPushButton",
+                    "rect": [1878, 995, 39, 22],
+                    "enabled": false,
+                    "offscreen": false,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons",
+                "className": "QWidget",
+                "rect": [1873, 962, 48, 24],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 2,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons.toolButtonLeft",
+                    "className": "QToolButton",
+                    "rect": [1873, 962, 24, 24],
+                    "enabled": false,
+                    "offscreen": false,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons.toolButtonRight",
+                    "className": "QToolButton",
+                    "rect": [1897, 962, 24, 24],
+                    "enabled": false,
+                    "offscreen": false,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QToolButton",
+                "className": "QToolButton",
+                "rect": [1924, 962, 24, 23],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QToolButton",
+                "className": "QToolButton",
+                "rect": [1951, 962, 24, 24],
+                "enabled": false,
+                "offscreen": false,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QPushButton",
+                "className": "QPushButton",
+                "rect": [2184, 963, 24, 22],
+                "enabled": false,
+                "offscreen": false,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QPushButton",
+                "className": "QPushButton",
+                "rect": [2211, 963, 24, 22],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Text",
+                "name": "Don't hesitate to create a terrain!",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QLabel",
+                "className": "QLabel",
+                "rect": [1873, 1194, 362, 15],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "rect": [2220, 939, 18, 14],
+            "enabled": true,
+            "offscreen": false,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "rect": [2201, 939, 18, 14],
+            "enabled": true,
+            "offscreen": false,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Hierarchy",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock",
+        "className": "QDockWidget",
+        "rect": [319, 221, 341, 969],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 3
+      },
+      {
+        "controlType": "Group",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget",
+        "className": "QWidget",
+        "rect": [665, 221, 1199, 681],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 1,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow",
+            "className": "QWidget",
+            "rect": [665, 221, 1199, 681],
+            "enabled": true,
+            "offscreen": false,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow",
+                "className": "WorldEditWindow",
+                "rect": [665, 221, 1199, 681],
+                "enabled": true,
+                "offscreen": false,
+                "childCount": 3,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.WorldRenderWindowQt",
+                    "className": "WorldRenderWindowQt",
+                    "rect": [665, 244, 1199, 658],
+                    "enabled": true,
+                    "offscreen": false,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "ToolBar",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar",
+                    "className": "QToolBar",
+                    "rect": [665, 221, 1139, 23],
+                    "enabled": true,
+                    "offscreen": false,
+                    "childCount": 4,
+                    "children": [
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Camera",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "rect": [667, 223, 52, 19],
+                        "enabled": true,
+                        "offscreen": false,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Shading",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "rect": [720, 223, 54, 19],
+                        "enabled": true,
+                        "offscreen": false,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Placement",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "rect": [775, 223, 65, 19],
+                        "enabled": true,
+                        "offscreen": false,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Selection",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "rect": [841, 223, 59, 19],
+                        "enabled": true,
+                        "offscreen": false,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "ToolBar",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar",
+                    "className": "QToolBar",
+                    "rect": [1804, 221, 60, 23],
+                    "enabled": true,
+                    "offscreen": false,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "controlType": "MenuBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar",
+        "className": "QMenuBar",
+        "rect": [319, 155, 1920, 30],
+        "enabled": true,
+        "offscreen": false,
+        "childCount": 9
+      }
+    ]
+  }
+}

@@ -94,6 +94,7 @@ export function crawl(db: Database.Database, sources: CrawlSource[]): CrawlResul
       resourcesUpserted: 0,
       errors: [],
       unindexable: [],
+      filesRemoved: 0,
     },
     refs: { totalExtracted: 0, totalUnique: 0 },
     errors: [],
@@ -297,6 +298,7 @@ function indexOneProject(
   result.files.resourcesUpserted += scanResult.resourcesUpserted;
   result.files.errors.push(...scanResult.errors);
   result.files.unindexable.push(...scanResult.unindexable);
+  result.files.filesRemoved += scanResult.filesRemoved;
 }
 
 /** Extract dep GUIDs from a parsed .gproj's Dependencies block. */

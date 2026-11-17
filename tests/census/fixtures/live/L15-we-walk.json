@@ -1,0 +1,137 @@
+{
+  "schema": "emcp-uia-walk/1",
+  "provider": "uia",
+  "view": "raw",
+  "completed": true,
+  "partial": false,
+  "target": {
+    "className": "Qt683QWindowIcon",
+    "uiaClassName": "WorldEditorQt",
+    "title": "World Editor - Unnamed empty world",
+    "titlePattern": "^World Editor - Unnamed empty world$"
+  },
+  "$comment": "Slice of the P3-3 gate-2 World Editor walk (p33-g2-04): root, toolBar with its Play button, and the central widget down to WorldRenderWindowQt. Hwnd, pid, rect and the window selection dropped; no paths.",
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - Unnamed empty world",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "childCount": 18,
+    "gridRowCount": 0,
+    "children": [
+      {
+        "controlType": "ToolBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar",
+        "className": "QToolBar",
+        "childCount": 18,
+        "gridRowCount": 0,
+        "children": [
+          {
+            "controlType": "Button",
+            "name": "Play Game Button",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.play",
+            "className": "QToolButton",
+            "childCount": 0,
+            "gridRowCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Group",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget",
+        "className": "QWidget",
+        "childCount": 1,
+        "gridRowCount": 0,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow",
+            "className": "QWidget",
+            "childCount": 1,
+            "gridRowCount": 0,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow",
+                "className": "WorldEditWindow",
+                "childCount": 3,
+                "gridRowCount": 0,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.WorldRenderWindowQt",
+                    "className": "WorldRenderWindowQt",
+                    "childCount": 0,
+                    "gridRowCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "ToolBar",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar",
+                    "className": "QToolBar",
+                    "childCount": 4,
+                    "gridRowCount": 0,
+                    "children": [
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Camera",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "childCount": 0,
+                        "gridRowCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Shading",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "childCount": 0,
+                        "gridRowCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Placement",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "childCount": 0,
+                        "gridRowCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Selection",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar.QToolButton",
+                        "className": "QToolButton",
+                        "childCount": 0,
+                        "gridRowCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "ToolBar",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.centralWidget.contentWindow.WorldEditWindow.QToolBar",
+                    "className": "QToolBar",
+                    "childCount": 0,
+                    "gridRowCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

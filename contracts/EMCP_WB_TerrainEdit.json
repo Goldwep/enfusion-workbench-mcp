@@ -1,0 +1,675 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_TerrainEdit",
+  "tool": "wb_terrain_edit",
+  "purpose": "Terrain writes on the open project world; each is a dry run unless confirm.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TerrainEdit.c",
+  "request": [
+    "action",
+    "tileX",
+    "tileY",
+    "terrainIndex",
+    "cursor",
+    "limit",
+    "patches",
+    "undoLabel",
+    "confirm",
+    "centre",
+    "radius",
+    "strength",
+    "falloff",
+    "mode",
+    "delta",
+    "height",
+    "passes",
+    "scale",
+    "seed",
+    "op",
+    "entity",
+    "mins",
+    "maxs",
+    "priority",
+    "falloffStart",
+    "kind",
+    "preview",
+    "directory",
+    "label",
+    "backupId"
+  ],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "next",
+    "side",
+    "layout",
+    "rows",
+    "total",
+    "nextCursor",
+    "tiles",
+    "samples",
+    "minDelta",
+    "maxDelta",
+    "meanDelta",
+    "dryRun",
+    "undoName",
+    "id",
+    "built",
+    "exported",
+    "backupId",
+    "files"
+  ],
+  "actions": [
+    {
+      "name": "tileRead",
+      "summary": "Packed height rows of a tile",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "tileX",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "tileY",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 16, max 64"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "side",
+          "type": "int",
+          "note": "samples per tile row"
+        },
+        {
+          "key": "layout",
+          "type": "string",
+          "note": "disjoint, sharedEdge or single"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "\"r|v v v ...\" heights as text"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "rows in the tile"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string",
+          "note": "empty on the last page"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "tileWrite",
+      "summary": "Height runs, one undo",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-01 (U18) passes, and outside _throwaway/ (DEC-075); NO_BACKUP until backup ran; NOT_IN_PROJECT for a world outside the project.",
+      "params": [
+        {
+          "key": "patches",
+          "type": "array<string>",
+          "required": true,
+          "note": "\"tx ty row col|v v ...\", max 64"
+        },
+        {
+          "key": "undoLabel",
+          "type": "string",
+          "required": false,
+          "note": "undo name suffix"
+        },
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "tiles",
+          "type": "int",
+          "note": "tiles touched"
+        },
+        {
+          "key": "samples",
+          "type": "int",
+          "note": "samples changed"
+        },
+        {
+          "key": "minDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "maxDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "meanDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        },
+        {
+          "key": "layout",
+          "type": "string",
+          "note": "disjoint, sharedEdge or single"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "brush",
+      "summary": "(TS) sculpt, flatten, smooth, noise",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: tileRead, brush maths in src/formats/terrain-brush.ts, then tileWrite. GATED and NO_BACKUP as tileWrite.",
+      "params": [
+        {
+          "key": "centre",
+          "type": "string",
+          "required": true,
+          "note": "\"x z\" world"
+        },
+        {
+          "key": "radius",
+          "type": "string",
+          "required": true,
+          "note": "metres"
+        },
+        {
+          "key": "strength",
+          "type": "string",
+          "required": false,
+          "note": "0..1, default 0.5"
+        },
+        {
+          "key": "falloff",
+          "type": "string",
+          "required": false,
+          "note": "linear|smooth|none"
+        },
+        {
+          "key": "mode",
+          "type": "string",
+          "required": true,
+          "note": "sculpt|flatten|smooth|noise"
+        },
+        {
+          "key": "delta",
+          "type": "string",
+          "required": false,
+          "note": "metres; signed for sculpt"
+        },
+        {
+          "key": "height",
+          "type": "string",
+          "required": false,
+          "note": "flatten: metres"
+        },
+        {
+          "key": "passes",
+          "type": "int",
+          "required": false,
+          "note": "smooth: 1..8, default 1"
+        },
+        {
+          "key": "scale",
+          "type": "string",
+          "required": false,
+          "note": "noise: period, metres"
+        },
+        {
+          "key": "seed",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "tiles",
+          "type": "int",
+          "note": "tiles touched"
+        },
+        {
+          "key": "samples",
+          "type": "int",
+          "note": "samples changed"
+        },
+        {
+          "key": "minDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "maxDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "meanDelta",
+          "type": "string",
+          "note": "metres"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "flatter",
+      "summary": "Add or remove a flattener",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-06 passes, and outside _throwaway/ (DEC-075).",
+      "params": [
+        {
+          "key": "op",
+          "type": "string",
+          "required": true,
+          "note": "add|remove"
+        },
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "mins",
+          "type": "string",
+          "required": false,
+          "note": "\"x y z\" local; add"
+        },
+        {
+          "key": "maxs",
+          "type": "string",
+          "required": false,
+          "note": "\"x y z\" local; add"
+        },
+        {
+          "key": "priority",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "falloffStart",
+          "type": "string",
+          "required": false,
+          "note": "metres"
+        },
+        {
+          "key": "falloff",
+          "type": "string",
+          "required": false,
+          "note": "metres"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "maps",
+      "summary": "Shore or flow maps, saved",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-07 passes, and outside _throwaway/ (DEC-075); overwrites the world map files (no undo).",
+      "params": [
+        {
+          "key": "kind",
+          "type": "string",
+          "required": true,
+          "note": "shore|flow"
+        },
+        {
+          "key": "preview",
+          "type": "bool",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "built",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "exportMasks",
+      "summary": "Surface masks to a folder",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-08 passes; the engine writes the files, the handler does not.",
+      "params": [
+        {
+          "key": "directory",
+          "type": "string",
+          "required": true,
+          "note": "new project folder"
+        },
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "exported",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "backup",
+      "summary": "(TS) terrain files to artifacts",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: copies the terrain files P-W7-03 names to the artifacts folder; no handler call.",
+      "params": [
+        {
+          "key": "label",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "backupId",
+          "type": "string"
+        },
+        {
+          "key": "files",
+          "type": "int"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "restore",
+      "summary": "(TS) put a backup back",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: refuses WORLD_OPEN while the world is open; copies the backup over the terrain files.",
+      "params": [
+        {
+          "key": "backupId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "files",
+          "type": "int"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

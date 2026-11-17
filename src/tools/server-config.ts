@@ -17,6 +17,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { writeFileSync, existsSync } from "node:fs";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 import { resolve } from "node:path";
 import type { Config } from "../config.js";
 import {
@@ -160,9 +161,13 @@ export function registerServerConfig(server: McpServer, config: Config): void {
                     `Generated config (redacted, not written):\n\n\`\`\`json\n${redactedJson}\n\`\`\``,
                 },
               ],
+              isError: true,
             };
           }
-          writeFileSync(targetPath, rawJson, "utf-8");
+          // overwrite replaces through write-then-rename; otherwise a new file only, flag wx
+          // (write-safety gap 20).
+          if (overwrite) writeFileAtomic(targetPath, rawJson);
+          else writeFileSync(targetPath, rawJson, { encoding: "utf-8", flag: "wx" });
           return {
             content: [
               {

@@ -1,6 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WorkbenchClient } from "../workbench/client.js";
+import { routeAlias } from "../manifest/aliases.js";
+import { VocabularyError, errorResponse } from "../manifest/vocabulary.js";
+import { runModule, toToolResult, type ModuleArgs } from "./wb-module.js";
+import { runEntity } from "./wb-entity.js";
+import { runView } from "./wb-view.js";
+import { runContainer } from "./wb-container.js";
 import { formatConnectionStatus, requireEditMode, requirePlayMode } from "../workbench/status.js";
 import {
   isHandlerError,
@@ -20,6 +26,47 @@ export function openResourceFailed(result: Record<string, unknown>): boolean {
   if (isHandlerError(result)) return true;
   const msg = typeof result.message === "string" ? result.message : "";
   return /returned false/i.test(msg);
+}
+
+/** A routed tool's JSON response as a tool result (the shape every Phase 3 and W1 tool answers). */
+function jsonResult(r: { ok: boolean }) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(r, null, 2) }],
+    ...(r.ok ? {} : { isError: true as const }),
+  };
+}
+
+/**
+ * Routes a 1.x name through aliases.ts into its Phase 3 or W1 tool (wb_module, wb_entity, wb_view
+ * or wb_container) and runs it; a refused argument is a coded error. The name is historical: the
+ * census enumerator (E11) reads alias links from calls to this function.
+ */
+export async function runAliasViaModule(
+  client: WorkbenchClient,
+  name: string,
+  args: Record<string, unknown>,
+) {
+  try {
+    const routed = routeAlias(name, args);
+    if (!routed) throw new Error(`${name} alias is not routed`);
+    switch (routed.tool) {
+      case "wb_module":
+        return toToolResult(await runModule(client, routed.args as unknown as ModuleArgs));
+      case "wb_entity":
+        return jsonResult(await runEntity(client, routed.args));
+      case "wb_view":
+        return jsonResult(await runView(client, routed.args));
+      case "wb_container":
+        return jsonResult(await runContainer(client, routed.args));
+      default:
+        throw new Error(`${name} routes to ${routed.tool}, which runAliasViaModule cannot run`);
+    }
+  } catch (e) {
+    if (e instanceof VocabularyError) {
+      return toToolResult(errorResponse(name, "open:WorldEditor", e.code, e.message));
+    }
+    throw e;
+  }
 }
 
 export function registerWbEditorTools(server: McpServer, client: WorkbenchClient): void {
@@ -54,6 +101,7 @@ export function registerWbEditorTools(server: McpServer, client: WorkbenchClient
         if (isHandlerError(result)) {
           return handlerErrorResponse(result, client, "Error starting play mode");
         }
+        client.noteMode("play");
 
         return {
           content: [
@@ -98,6 +146,7 @@ export function registerWbEditorTools(server: McpServer, client: WorkbenchClient
         if (isHandlerError(result)) {
           return handlerErrorResponse(result, client, "Error stopping play mode");
         }
+        client.noteMode("edit");
 
         return {
           content: [
@@ -122,112 +171,30 @@ export function registerWbEditorTools(server: McpServer, client: WorkbenchClient
     },
   );
 
-  // wb_save — Save the current world
+  // wb_save — alias of wb_module save (dry run unless confirm: true; design section 6)
   server.registerTool(
     "wb_save",
     {
       description:
-        "Save the current world in the World Editor. Optionally save to a new path (Save As). Only works in edit mode. " +
-        "Note: Save As is not currently supported by the Workbench script API — passing `path` reports an error rather than silently overwriting the current world.",
+        "Alias of wb_module save on the World Editor. Without confirm: true this is a dry run that names the world and writes nothing; confirm: true saves. " +
+        "Save As is not supported: passing `path` is refused with INVALID_ARGUMENT.",
       inputSchema: {
         path: z
           .string()
           .optional()
-          .describe("File path for Save As. Omit to save to the current file."),
+          .describe("Save As path (1.x name): refused, Save As is not supported."),
+        confirm: z.boolean().optional().describe("true writes the world; otherwise a dry run"),
+      },
+      annotations: {
+        title: "Save the world",
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
-    async ({ path }) => {
-      const modeErr = requireEditMode(client, "save");
-      if (modeErr) {
-        return modeGateResponse(modeErr, client);
-      }
-      try {
-        const params: Record<string, unknown> = {
-          action: path ? "saveAs" : "save",
-        };
-        if (path) params.path = path;
-
-        // Save can open a modal dialog for unsaved worlds — use longer timeout
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_EditorControl", params, {
-          timeout: 30_000,
-        });
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, path ? "Error in Save As" : "Error saving");
-        }
-
-        const message = typeof result.message === "string" ? result.message : "";
-
-        if (path) {
-          // Only claim "Saved as: <path>" when the handler confirms the new
-          // path in its message. Anything else (e.g. "SaveAs not available,
-          // used Save instead") means the current world was written — or
-          // nothing was — and the caller must not believe a new file exists.
-          if (!message.includes(path)) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**Save As NOT performed** — the handler did not confirm a save to \`${path}\`.\n${message || "(no handler message)"}\n\nThe world was not saved under the requested path.${formatConnectionStatus(client)}`,
-                },
-              ],
-              isError: true,
-            };
-          }
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `**Save Complete**\n\nSaved as: ${path}\n${message}${formatConnectionStatus(client)}`,
-              },
-            ],
-          };
-        }
-
-        // Plain save: the handler currently reports "Save returned false"
-        // with status ok when nothing was written. Treat that as a failure.
-        if (/returned false/i.test(message)) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `**Save NOT confirmed** — ${message}${formatConnectionStatus(client)}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Save Complete**\n\nWorld saved.${message ? `\n${message}` : ""}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (msg.includes("timed out")) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `**Save Pending** — Workbench opened a save dialog that requires user confirmation. The world will be saved once the user clicks OK in Workbench. This is normal for worlds that haven't been saved before.${formatConnectionStatus(client)}`,
-              },
-            ],
-          };
-        }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error saving: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async ({ path, confirm }) =>
+      runAliasViaModule(client, "wb_save", { path, ...(confirm === undefined ? {} : { confirm }) }),
   );
 
   // wb_undo_redo — Undo or redo
@@ -272,58 +239,27 @@ export function registerWbEditorTools(server: McpServer, client: WorkbenchClient
     },
   );
 
-  // wb_open_resource — Open a resource in Workbench
+  // wb_open_resource — alias of wb_module setResource in the owning module (absolute paths refused)
   server.registerTool(
     "wb_open_resource",
     {
       description:
-        "Open a resource file in the appropriate Workbench editor (e.g., a .et prefab in the Prefab Editor, a .c script in the Script Editor).",
+        "Alias of wb_module setResource: opens a project-relative resource in the module that owns its file type (a .ent or .et in the World Editor, a .conf, .emat or .layout in the Resource Manager). An absolute path is refused with ABSOLUTE_PATH.",
       inputSchema: {
         path: z
           .string()
           .describe(
-            "Resource path to open (e.g., 'Prefabs/Weapons/AK47.et', 'Scripts/Game/MyScript.c')",
+            "Project-relative resource path (e.g., 'Worlds/Test.ent'); absolute paths are refused",
           ),
       },
+      annotations: {
+        title: "Open a resource",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
-    async ({ path }) => {
-      try {
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_EditorControl", {
-          action: "openResource",
-          path,
-        });
-        if (openResourceFailed(result)) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `**Resource NOT opened**: ${path}\n${handlerErrorMessage(result)}${formatConnectionStatus(client)}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Resource Opened**\n\nOpened: ${path}${result.message ? `\n${result.message}` : ""}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error opening resource: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async ({ path }) => runAliasViaModule(client, "wb_open_resource", { path }),
   );
 }

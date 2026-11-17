@@ -1,0 +1,51 @@
+{
+  "$comment": "Redacted slices for the L09 test. nodes: the World Editor walk nodes named Hierarchy or Log Console (P3-3 gate 2, p33-g2-04-walk.json, tree paths as read); g2_05: the dock counts and answers of p33-g2-05-module-action.json (Window > Hierarchy sent twice). pid and world title are placeholders.",
+  "window": { "pid": 4242, "className": "Qt683QWindowIcon", "title": "World Editor - <world>" },
+  "nodes": [
+    {
+      "path": "0/2",
+      "name": "Hierarchy",
+      "controlType": "Tab",
+      "className": "QMainWindowTabBar",
+      "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+      "dock": "Hierarchy"
+    },
+    {
+      "path": "0/2/0",
+      "name": "Hierarchy",
+      "controlType": "TabItem",
+      "className": "",
+      "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+      "dock": "Hierarchy"
+    },
+    {
+      "path": "0/3/2",
+      "name": "Log Console",
+      "controlType": "TabItem",
+      "className": "",
+      "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+      "dock": "Log Console"
+    },
+    {
+      "path": "0/9",
+      "name": "Log Console",
+      "controlType": "Window",
+      "className": "QDockWidget",
+      "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock",
+      "dock": "Log Console"
+    },
+    {
+      "path": "0/13",
+      "name": "Hierarchy",
+      "controlType": "Window",
+      "className": "QDockWidget",
+      "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock",
+      "dock": "Hierarchy"
+    }
+  ],
+  "g2_05": {
+    "first": { "ok": true, "readback": { "menuPath": "Window > Hierarchy", "result": true } },
+    "second": { "ok": true, "readback": { "menuPath": "Window > Hierarchy", "result": true } },
+    "dock": { "before": 3, "afterFirst": 0, "after": 3 }
+  }
+}

@@ -1,0 +1,714 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_ScriptEditor",
+  "tool": "wb_script_editor",
+  "purpose": "Script Editor: the active file, 0-based lines.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_ScriptEditor.c",
+  "request": [
+    "action",
+    "path",
+    "symbol",
+    "line",
+    "text",
+    "start",
+    "count",
+    "lines",
+    "expected",
+    "cursor",
+    "limit",
+    "confirm"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "file",
+    "relPath",
+    "inProject",
+    "line",
+    "linesCount",
+    "link",
+    "rows",
+    "start",
+    "total",
+    "nextCursor",
+    "before",
+    "after",
+    "removed",
+    "result",
+    "opened",
+    "dryRun",
+    "saved",
+    "closed",
+    "warnings",
+    "mayHaveOpened"
+  ],
+  "actions": [
+    {
+      "name": "state",
+      "summary": "Open file, caret line, line count",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "opened",
+          "type": "bool",
+          "note": "GetCurrentFile returned true"
+        },
+        {
+          "key": "file",
+          "type": "string",
+          "note": "as GetCurrentFile gave it"
+        },
+        {
+          "key": "relPath",
+          "type": "string",
+          "note": "project-relative; empty outside"
+        },
+        {
+          "key": "inProject",
+          "type": "bool",
+          "note": "edits allowed (guard)"
+        },
+        {
+          "key": "line",
+          "type": "int",
+          "note": "caret, 0-based"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "link",
+          "type": "string",
+          "note": "enfusion://ScriptEditor/<rel>;<line>"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "getLines",
+      "summary": "Read lines, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "start",
+          "type": "int",
+          "required": false,
+          "note": "0-based first line, default 0"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 100, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "start",
+          "type": "int",
+          "note": "line number of rows[0]"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "line texts, in order"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "line count at first read"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string",
+          "note": "empty on the last page"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "open",
+      "summary": "Open a script in a tab",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "clean relative .c path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "SetOpenedResource"
+        },
+        {
+          "key": "file",
+          "type": "string",
+          "note": "GetCurrentFile after"
+        },
+        {
+          "key": "relPath",
+          "type": "string"
+        },
+        {
+          "key": "inProject",
+          "type": "bool"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "jump",
+      "summary": "Go to a symbol's definition",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "symbol",
+          "type": "string",
+          "required": true,
+          "note": "Class or Class.Member"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "JumpToScriptSymbol"
+        },
+        {
+          "key": "file",
+          "type": "string",
+          "note": "file shown after the jump"
+        },
+        {
+          "key": "relPath",
+          "type": "string"
+        },
+        {
+          "key": "line",
+          "type": "int",
+          "note": "caret after the jump, 0-based"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setLine",
+      "summary": "Replace one line",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "line",
+          "type": "int",
+          "required": true,
+          "note": "0-based"
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "note": "no line break"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "line",
+          "type": "int"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "old text, to restore"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "read back"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "insertLine",
+      "summary": "Insert a line before N",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "line",
+          "type": "int",
+          "required": true,
+          "note": "0..linesCount; count appends"
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "required": true,
+          "note": "no line break"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "line",
+          "type": "int"
+        },
+        {
+          "key": "after",
+          "type": "string",
+          "note": "read back"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "removeLine",
+      "summary": "Remove one line",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "line",
+          "type": "int",
+          "required": true,
+          "note": "0-based"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "line",
+          "type": "int"
+        },
+        {
+          "key": "before",
+          "type": "string",
+          "note": "removed text, to restore"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "replaceRange",
+      "summary": "Replace N lines with new ones",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "start",
+          "type": "int",
+          "required": true,
+          "note": "0-based first line"
+        },
+        {
+          "key": "count",
+          "type": "int",
+          "required": true,
+          "note": "lines replaced; 0 inserts"
+        },
+        {
+          "key": "lines",
+          "type": "array<string>",
+          "required": true,
+          "note": "new lines; empty deletes"
+        },
+        {
+          "key": "expected",
+          "type": "array<string>",
+          "required": false,
+          "note": "current text; else TEXT_CHANGED"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "start",
+          "type": "int"
+        },
+        {
+          "key": "removed",
+          "type": "array<string>",
+          "note": "old lines, to restore"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "new lines read back"
+        },
+        {
+          "key": "linesCount",
+          "type": "int"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Save (confirm; else a dry run)",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true saves, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "file",
+          "type": "string"
+        },
+        {
+          "key": "relPath",
+          "type": "string"
+        },
+        {
+          "key": "saved",
+          "type": "bool",
+          "note": "false outside script folders (W3 run 3)"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed editor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "close",
+      "summary": "Close the editor (confirm)",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "GATED until probe P-W3-04 passes (W3 OD-3, DEC-063)",
+      "params": [
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true closes, else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "closed",
+          "type": "bool",
+          "note": "CloseModule result"
+        },
+        {
+          "key": "warnings",
+          "type": "array<string>"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

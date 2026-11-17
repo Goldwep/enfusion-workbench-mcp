@@ -1,0 +1,463 @@
+{
+  "$comment": "L02 fake menus tree (tools/uia/menus.py FakeMenuProvider format). File popup: a redacted slice of S-F file-menu-owner-2-walk.json (owner-clicked passive walk of the Resource Manager File menu, 12 nodes; vanilla labels only). The other titles, the Window popup and its Recent sub-menu are synthetic test data, not Workbench facts. Placeholders: <project>.",
+  "foreground": 999,
+  "windows": [
+    {
+      "hwnd": 100,
+      "pid": 4242,
+      "className": "Qt683QWindowIcon",
+      "title": "Enfusion Workbench - <project>",
+      "owned": false,
+      "tree": {
+        "controlType": "Window",
+        "name": "Enfusion Workbench - <project>",
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "",
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "patterns": ["ExpandCollapse"],
+                "children": [
+                  {
+                    "controlType": "MenuItem",
+                    "name": "Close",
+                    "className": "QAction",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                    "patterns": ["Invoke"]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "MenuBar",
+            "name": "",
+            "className": "QMenuBar",
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "File",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+F",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "enabled": true,
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Save",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"],
+                        "accessKey": "Ctrl+S"
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Save All",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"],
+                        "accessKey": "Ctrl+Shift+S"
+                      },
+                      {
+                        "controlType": "Separator",
+                        "name": "",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": false,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Project Settings...",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Options...",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "",
+                        "className": "QWidgetAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QWidgetAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "User Profile",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Publish to Workshop",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": false,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Remove from Workshop",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": false,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Check Pending Invitations",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": false,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "Separator",
+                        "name": "",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": false,
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Exit",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "enabled": true,
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 301,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Editors",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+E",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Editors item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 311,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "View",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+V",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "View item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 312,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Edit",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+E",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Edit item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 313,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Window",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+W",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Log Console\tCtrl+L",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      },
+                      {
+                        "controlType": "Separator",
+                        "name": "",
+                        "className": "QAction",
+                        "patterns": []
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Recent",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke", "ExpandCollapse"],
+                        "state": 0,
+                        "popup": {
+                          "hwnd": 303,
+                          "pid": 4242,
+                          "className": "Qt683QWindowPopupDropShadowSaveBits",
+                          "title": "Arma Reforger Workbench",
+                          "owned": false
+                        },
+                        "children": [
+                          {
+                            "controlType": "Menu",
+                            "name": "",
+                            "className": "QMenu",
+                            "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                            "patterns": ["Invoke"],
+                            "children": [
+                              {
+                                "controlType": "MenuItem",
+                                "name": "Layout A",
+                                "className": "QAction",
+                                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                                "patterns": ["Invoke"]
+                              },
+                              {
+                                "controlType": "MenuItem",
+                                "name": "Layout B",
+                                "className": "QAction",
+                                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                                "patterns": ["Invoke"],
+                                "checked": true
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Close All",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"],
+                        "enabled": false
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 302,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Utilities",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+U",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Utilities item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 315,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Plugins",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+P",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Plugins item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 316,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              },
+              {
+                "controlType": "MenuItem",
+                "name": "Help",
+                "className": "QAction",
+                "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction",
+                "patterns": ["Invoke", "ExpandCollapse"],
+                "accessKey": "Alt+H",
+                "children": [
+                  {
+                    "controlType": "Menu",
+                    "name": "",
+                    "className": "QMenu",
+                    "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu",
+                    "patterns": ["Invoke"],
+                    "children": [
+                      {
+                        "controlType": "MenuItem",
+                        "name": "Help item",
+                        "className": "QAction",
+                        "automationId": "Arma4WorkbenchApp.ResourceManagerMain.menubar.QAction.QMenu.QAction",
+                        "patterns": ["Invoke"]
+                      }
+                    ]
+                  }
+                ],
+                "popup": {
+                  "hwnd": 317,
+                  "pid": 4242,
+                  "className": "Qt683QWindowPopupDropShadowSaveBits",
+                  "title": "Arma Reforger Workbench",
+                  "owned": false
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "hwnd": 999,
+      "pid": 1,
+      "className": "Other",
+      "title": "Other app"
+    }
+  ]
+}

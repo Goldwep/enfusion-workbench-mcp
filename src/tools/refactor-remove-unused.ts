@@ -182,12 +182,15 @@ export function registerRefactorRemoveUnused(
         for (const row of result.rows) {
           // Resource file_path is relative to its owning project's root_path,
           // so it's useless verbatim (neither absolute nor reliably
-          // CWD-relative). Resolve against the owning project's root via the
-          // schema-v2 project_id FK (RBE-8). Fall back to the bare file_path
-          // only when the row has no owning project (NULL project_id).
+          // CWD-relative). Resolve against the row's OWN project root (RBE-8;
+          // schema v4: a GUID may be claimed by files in several projects, so
+          // the GUID alone could name another project's file). Fall back to
+          // the bare file_path only when the row has no owning project.
           let exists = false;
           let sizeBytes = 0;
-          const resolved = index.resolveAbsPathByGuid(row.guid);
+          const resolved = row.project_id
+            ? index.resolveAbsPath(row.project_id, row.file_path)
+            : null;
           const absPath = resolved ?? row.file_path;
           if (existsSync(absPath)) {
             try {

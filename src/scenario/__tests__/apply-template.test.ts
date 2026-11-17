@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolve, sep } from "node:path";
 import { applyTemplate } from "../apply-template.js";
 import { buildTemplate, describeTemplate, TEMPLATE_NAMES } from "../templates.js";
-import { parseLayer, serializeLayer } from "../clone-area.js";
+import { parseCst } from "../../formats/enfusion-cst.js";
 import { assertInsideRoot, isPathInsideRoot } from "../../utils/path-guard.js";
 
 const EMPTY_TARGET = `GenericEntity : "{AABB000000000001}Prefabs/Stub.et" {
@@ -66,8 +66,8 @@ describe("buildTemplate", () => {
     // are within ~4.01 of the stamp origin.
     const r = buildTemplate("fob_basic", { x: 0, y: 0, z: 0 }, 90);
     for (const e of r.entities) {
-      const coords = e.properties.find((p) => p.key === "coords")?.value;
-      const parts = coords!.split(" ").map((s) => parseFloat(s));
+      const coords = e.properties.find((p) => p.key === "coords")?.value as string;
+      const parts = coords.split(" ").map((s) => parseFloat(s));
       const dist = Math.hypot(parts[0], parts[2]);
       expect(dist).toBeLessThan(4.01);
       expect(dist).toBeGreaterThanOrEqual(0);
@@ -91,45 +91,114 @@ describe("describeTemplate", () => {
 });
 
 describe("applyTemplate", () => {
-  it("appends template entities to the target's top-level children", () => {
-    const root = parseLayer(EMPTY_TARGET);
-    expect(root.children.length).toBe(1);
-    const result = applyTemplate(root, {
+  it("appends template entities after the target's top-level entities", () => {
+    const result = applyTemplate(EMPTY_TARGET, {
       template: "fob_basic",
       position: { x: 100, y: 0, z: 200 },
       yawDeg: 0,
     });
     expect(result.entityCount).toBe(5);
-    expect(root.children.length).toBe(6); // 1 existing + 5 stamped
+    const doc = parseCst(result.text);
+    expect(doc.diagnostics).toEqual([]);
+    expect(doc.root.children.filter((c) => c.kind === "object").length).toBe(6); // 1 + 5
   });
 
-  it("leaves existing entities untouched", () => {
-    const root = parseLayer(EMPTY_TARGET);
-    const originalIdProp = root.children[0].properties.find((p) => p.key === "ID");
-    applyTemplate(root, {
+  it("keeps every byte of the target: the result is the target plus one inserted span", () => {
+    const result = applyTemplate(EMPTY_TARGET, {
       template: "fob_basic",
       position: { x: 0, y: 0, z: 0 },
       yawDeg: 0,
     });
-    expect(originalIdProp?.value).toBe("1111111111111111");
-    expect(root.children[0].properties.find((p) => p.key === "coords")?.value).toBe("0 0 0");
+    expect(result.text.startsWith(EMPTY_TARGET)).toBe(true);
+    expect(result.text).toContain('ID "1111111111111111"');
+    expect(result.text).toContain('coords "0 0 0"');
   });
 
-  it("produces a serializable layer after stamping", () => {
-    const root = parseLayer(EMPTY_TARGET);
-    applyTemplate(root, {
+  it("writes the stamped entities in the serializer's shape (bare coords, quoted ID)", () => {
+    const result = applyTemplate(EMPTY_TARGET, {
+      template: "fob_basic",
+      position: { x: 100, y: 0, z: 200 },
+      yawDeg: 0,
+    });
+    const added = result.text.slice(EMPTY_TARGET.length);
+    expect(added).toMatch(
+      /^GenericEntity : "\{0000000000000001\}Prefabs\/Cover\/Sandbag_Wall\.et" \{\n ID "[0-9A-F]{16}"\n coords 104 0 200\n\}\n/,
+    );
+    expect(added.endsWith("}\n")).toBe(true);
+  });
+
+  it("takes the target's CRLF line ends and tab indent for the inserted blocks", () => {
+    const crlfTab = 'GenericEntity : "{AAAAAAAAAAAAAAAA}Prefabs/X.et" {\r\n\tcoords 1 0 1\r\n}\r\n';
+    const result = applyTemplate(crlfTab, {
+      template: "checkpoint",
+      position: { x: 0, y: 0, z: 0 },
+      yawDeg: 0,
+    });
+    expect(result.text.startsWith(crlfTab)).toBe(true);
+    const added = result.text.slice(crlfTab.length);
+    expect(added.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);
+    expect(added).toMatch(/\r\n\tID "/);
+    expect(added.endsWith("}\r\n")).toBe(true);
+  });
+
+  it("keeps a target that ends without a line end ending without one", () => {
+    const noEol = 'GenericEntity : "{AAAAAAAAAAAAAAAA}Prefabs/X.et" {\n coords 1 0 1\n}';
+    const result = applyTemplate(noEol, {
+      template: "checkpoint",
+      position: { x: 0, y: 0, z: 0 },
+      yawDeg: 0,
+    });
+    expect(result.text.startsWith(noEol + "\nGenericEntity")).toBe(true);
+    expect(result.text.endsWith("}")).toBe(true);
+    expect(parseCst(result.text).root.children.length).toBe(5);
+  });
+
+  it("appends at the top level of a one-entity .layer, not inside the entity", () => {
+    const result = applyTemplate(EMPTY_TARGET, {
       template: "checkpoint",
       position: { x: 50, y: 0, z: 75 },
       yawDeg: 45,
     });
-    const text = serializeLayer(root);
-    const reparsed = parseLayer(text);
-    expect(reparsed.children.length).toBe(5); // 1 + 4 checkpoint entities
+    const doc = parseCst(result.text);
+    expect(doc.root.children.length).toBe(5); // 1 + 4 checkpoint entities
+    const first = doc.root.children[0];
+    expect(first.kind === "object" && first.children.length).toBe(2);
+  });
+
+  it("inserts inside the single root of a .conf (singleRoot), before its closing brace", () => {
+    const conf =
+      'SCR_MissionHeaderCampaign {\n m_sName "Mission Foo"\n' +
+      ' GenericEntity : "{AABB000000000010}Prefabs/A.et" {\n  coords 50 0 50\n }\n}\n';
+    const result = applyTemplate(conf, {
+      template: "checkpoint",
+      position: { x: 0, y: 0, z: 0 },
+      yawDeg: 0,
+      singleRoot: true,
+    });
+    const closeAt = conf.lastIndexOf("}");
+    expect(result.text.startsWith(conf.slice(0, closeAt))).toBe(true);
+    expect(result.text.endsWith("\n}\n")).toBe(true);
+    const doc = parseCst(result.text);
+    expect(doc.diagnostics).toEqual([]);
+    expect(doc.root.children.length).toBe(1);
+    const root = doc.root.children[0];
+    expect(root.kind === "object" && root.children.length).toBe(2 + 4);
+    expect(result.text).toMatch(/\n GenericEntity : "\{0000000000000001\}/);
+    expect(result.text).toMatch(/\n  ID "/);
+  });
+
+  it("refuses a target the CST cannot parse cleanly", () => {
+    expect(() =>
+      applyTemplate('GenericEntity : "{AAAAAAAAAAAAAAAA}Prefabs/X.et" {\n coords 1 0 1\n', {
+        template: "checkpoint",
+        position: { x: 0, y: 0, z: 0 },
+        yawDeg: 0,
+      }),
+    ).toThrow(/does not parse cleanly/);
   });
 
   it("echoes position and yawDeg back in the result", () => {
-    const root = parseLayer(EMPTY_TARGET);
-    const result = applyTemplate(root, {
+    const result = applyTemplate(EMPTY_TARGET, {
       template: "patrol_grid",
       position: { x: 100, y: 0, z: 200 },
       yawDeg: 30,

@@ -1,18 +1,109 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { WorkbenchClient } from "../workbench/client.js";
+import type { WorkbenchClient, DiagnosticReport } from "../workbench/client.js";
+import { describeLease } from "../workbench/lease.js";
+import { readNativeReadiness, type NativeReadiness } from "./wb-scripts.js";
+
+/** Lines for the lease / no-autolaunch section of the report. */
+function formatLeaseSection(r: DiagnosticReport): string[] {
+  const lines: string[] = ["\n### Workbench Lease and Auto-launch"];
+  if (!r.lease || !r.noAutolaunch) {
+    lines.push("- **Lease:** config not loaded");
+    return lines;
+  }
+  const c = r.lease.check;
+  switch (c.state) {
+    case "free":
+      lines.push("- **Lease:** FREE — no session holds Workbench");
+      break;
+    case "held":
+      lines.push(
+        r.lease.ours
+          ? `- **Lease:** HELD BY THIS SERVER — ${describeLease(c.lease)}`
+          : `- **Lease:** HELD BY ANOTHER SESSION — ${describeLease(c.lease)}. Live calls and launches are refused until it is released.`,
+      );
+      break;
+    case "stale":
+      lines.push(
+        `- **Lease:** STALE (heartbeat expired, Workbench pid gone; the next live call takes it over) — ${describeLease(c.lease)}`,
+      );
+      break;
+    case "orphaned":
+      lines.push(
+        r.lease.ours
+          ? `- **Lease:** HELD BY THIS SERVER (heartbeat expired; refreshed on the next live call) — ${describeLease(c.lease)}`
+          : `- **Lease:** ORPHANED (heartbeat expired but its Workbench pid is still running; owner decision needed) — ${describeLease(c.lease)}`,
+      );
+      break;
+    case "corrupt":
+      lines.push(
+        `- **Lease:** CORRUPT — ${c.reason}. Live calls are refused until the file is inspected.`,
+      );
+      break;
+  }
+  lines.push(`- **Lease file:** \`${r.lease.path}\` (this server: ${r.lease.session})`);
+  lines.push(
+    r.noAutolaunch.exists
+      ? `- **No-autolaunch marker:** PRESENT — \`${r.noAutolaunch.path}\`. Workbench is never started implicitly; wb_launch with an explicit gprojPath still works.`
+      : `- **No-autolaunch marker:** absent — \`${r.noAutolaunch.path}\``,
+  );
+  return lines;
+}
+
+/** Lines for the native-readiness section: IsWorkbenchRunning, ScriptsCompiled, Ping, build stamp. */
+export function formatNativeSection(ready: NativeReadiness, rawError?: string): string[] {
+  const lines: string[] = [];
+  if (ready.error) {
+    lines.push(`- **Status:** ${ready.error.code} — ${ready.error.message}`);
+    return lines;
+  }
+  if (!ready.running) {
+    lines.push("- **Status:** NOT RUNNING — IsWorkbenchRunning was refused (no listener).");
+    lines.push("  - Start Workbench and enable NET API: File > Options > General > Net API");
+    if (rawError) lines.push(`  - Raw error: \`${rawError}\``);
+    return lines;
+  }
+  lines.push("- **Status:** RUNNING — IsWorkbenchRunning answered");
+  lines.push(
+    `- **ScriptsCompiled:** ${ready.scriptsCompiled === null ? "not reported" : String(ready.scriptsCompiled)}`,
+  );
+  if (ready.handlersAnswer) {
+    lines.push("- **Handlers:** EMCP_WB_Ping answers. All wb_* tools are available.");
+  } else {
+    lines.push("- **Handlers:** NOT LOADED — EMCP_WB_Ping did not answer");
+    lines.push("  - Handler scripts were not compiled. Check:");
+    lines.push("    1. Are handlers installed in the mod listed above?");
+    lines.push(
+      "    2. Does that mod have script errors preventing compilation (wb_scripts validate)?",
+    );
+    lines.push("    3. Is Workbench open with that mod's .gproj loaded?");
+    if (rawError) lines.push(`  - Raw error: \`${rawError}\``);
+  }
+  if (ready.buildStamp) {
+    lines.push(`- **Build stamp:** ${ready.buildStamp.status}`);
+    if (ready.buildStamp.warning) lines.push(`  - ${ready.buildStamp.warning}`);
+  }
+  return lines;
+}
 
 export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): void {
   server.registerTool(
     "wb_diagnose",
     {
       description:
-        "Run a full diagnostic of the EnfusionMCP ↔ Workbench connection. " +
-        "Reports config, handler script locations, and NET API status without auto-launching Workbench. " +
-        "Use this when wb_launch fails or wb_connect returns errors.",
+        "Diagnose the EnfusionMCP to Workbench connection when wb_launch fails or wb_connect errors.\n" +
+        "Read: config, handler script locations, lease holder, no-autolaunch marker, native readiness (IsWorkbenchRunning, ScriptsCompiled, build-stamp match). Never launches Workbench or takes the lease.",
       inputSchema: {},
+      annotations: {
+        title: "Workbench diagnostics",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => {
       const r = await client.diagnose();
+      const ready = await readNativeReadiness(client);
 
       const lines: string[] = ["## EnfusionMCP Diagnostic Report\n"];
 
@@ -53,41 +144,11 @@ export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): 
         }
       }
 
-      // --- NET API ---
+      // --- NET API (native readiness, not handler guesses) ---
       lines.push("\n### NET API Connection");
-      switch (r.netApi) {
-        case "up_with_handlers":
-          lines.push(
-            "- **Status:** CONNECTED — EMCP_WB_Ping responded. All wb_* tools are available.",
-          );
-          break;
-        case "up_no_handlers":
-          lines.push("- **Status:** PORT OPEN, HANDLERS NOT LOADED");
-          lines.push("  - Workbench NET API is reachable but EMCP_WB_Ping is not registered.");
-          lines.push("  - Handler scripts were not compiled. Check:");
-          lines.push("    1. Are handlers installed in the mod listed above?");
-          lines.push("    2. Does that mod have script errors preventing compilation?");
-          lines.push("    3. Is Workbench open with that mod's .gproj loaded?");
-          if (r.netApiError) lines.push(`  - Raw error: \`${r.netApiError}\``);
-          break;
-        case "refused":
-          lines.push(
-            "- **Status:** CONNECTION REFUSED — Workbench is not running or NET API is disabled.",
-          );
-          lines.push("  - Start Workbench and enable NET API: File > Options > General > Net API");
-          if (r.netApiError) lines.push(`  - Raw error: \`${r.netApiError}\``);
-          break;
-        case "timeout":
-          lines.push(
-            "- **Status:** TIMEOUT — connection hung. Possible firewall or port conflict.",
-          );
-          if (r.netApiError) lines.push(`  - Raw error: \`${r.netApiError}\``);
-          break;
-        case "error":
-          lines.push("- **Status:** ERROR");
-          if (r.netApiError) lines.push(`  - Raw error: \`${r.netApiError}\``);
-          break;
-      }
+      lines.push(...formatNativeSection(ready, r.netApiError));
+
+      lines.push(...formatLeaseSection(r));
 
       // --- Recommendations ---
       const problems: string[] = [];
@@ -99,11 +160,11 @@ export function registerWbDiagnose(server: McpServer, client: WorkbenchClient): 
       if (r.standaloneAddon.exists && r.installedMods.length > 0) {
         problems.push(
           "A standalone addon AND mod-injected handlers coexist — this causes duplicate class errors. " +
-            "Run wb_launch to clean up the standalone addon automatically, or delete it manually: " +
+            "wb_launch removes it only while it holds just the generated 1.x files; otherwise delete it manually: " +
             `\`${r.standaloneAddon.path}\``,
         );
       }
-      if (r.netApi === "up_no_handlers" && r.installedMods.length === 0) {
+      if (ready.running && !ready.handlersAnswer && r.installedMods.length === 0) {
         problems.push(
           "NET API is up but no handler scripts are installed anywhere. " +
             "Call wb_launch with a gprojPath to inject handlers into the correct mod.",

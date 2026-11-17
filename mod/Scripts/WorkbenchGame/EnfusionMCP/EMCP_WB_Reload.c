@@ -1,7 +1,13 @@
 /**
- * EMCP_WB_Reload.c - Script and plugin reload handler
+ * EMCP_WB_Reload.c - retired reload handler (KD-007 fixed)
  *
- * Triggers script compilation via ScriptEditor module.
+ * The 1.x handler guessed ScriptEditor, WorldEditor and ResourceManager menu
+ * labels through ExecuteAction; none was confirmed by a measured source. Script
+ * reload is the native NET function ReloadScripts (DEC-040 U4, DEC-044), which
+ * the server calls directly (src/workbench/native.ts reloadScripts; the
+ * wb_scripts tool, with wb_reload as its alias). Enforce script has no API that
+ * reloads the script modules from inside a handler, so this handler no longer
+ * acts: it validates the target and answers which native route to use.
  * Called via NET API TCP protocol: APIFunc = "EMCP_WB_Reload"
  */
 
@@ -50,103 +56,10 @@ class EMCP_WB_Reload : NetApiHandler
 			return resp;
 		}
 
-		array<string> results = {};
-		bool scriptsOk = true;
-		bool pluginsOk = true;
-
-		if (target == "scripts" || target == "both")
-		{
-			ScriptEditor scriptEditor = Workbench.GetModule(ScriptEditor);
-			if (scriptEditor)
-			{
-				// Try known menu paths for script compilation in ScriptEditor
-				array<string> menuPath = {};
-				bool compiled = false;
-
-				// Try "Script, Compile" first
-				menuPath.Insert("Script");
-				menuPath.Insert("Compile");
-				compiled = scriptEditor.ExecuteAction(menuPath);
-
-				if (!compiled)
-				{
-					// Try "Build, Compile All"
-					menuPath.Clear();
-					menuPath.Insert("Build");
-					menuPath.Insert("Compile All");
-					compiled = scriptEditor.ExecuteAction(menuPath);
-				}
-
-				if (!compiled)
-				{
-					// Try "Script, Compile All"
-					menuPath.Clear();
-					menuPath.Insert("Script");
-					menuPath.Insert("Compile All");
-					compiled = scriptEditor.ExecuteAction(menuPath);
-				}
-
-				if (!compiled)
-				{
-					// Try via WorldEditor as fallback
-					WorldEditor worldEditor = Workbench.GetModule(WorldEditor);
-					if (worldEditor)
-					{
-						menuPath.Clear();
-						menuPath.Insert("Plugins");
-						menuPath.Insert("Reload Scripts");
-						compiled = worldEditor.ExecuteAction(menuPath);
-					}
-				}
-
-				scriptsOk = compiled;
-				if (compiled)
-					results.Insert("Scripts: compilation triggered");
-				else
-					results.Insert("Scripts: every ExecuteAction path returned false (Script/Compile, Build/Compile All, Script/Compile All, Plugins/Reload Scripts)");
-			}
-			else
-			{
-				scriptsOk = false;
-				results.Insert("Scripts: ScriptEditor module not available");
-			}
-		}
-
-		if (target == "plugins" || target == "both")
-		{
-			ResourceManager resMgr = Workbench.GetModule(ResourceManager);
-			if (resMgr)
-			{
-				array<string> menuPath = {};
-				menuPath.Insert("Plugins");
-				menuPath.Insert("Reload");
-				bool result = resMgr.ExecuteAction(menuPath);
-				pluginsOk = result;
-				if (result)
-					results.Insert("Plugins: reload triggered");
-				else
-					results.Insert("Plugins: ExecuteAction(Plugins, Reload) returned false");
-			}
-			else
-			{
-				pluginsOk = false;
-				results.Insert("Plugins: ResourceManager module not available");
-			}
-		}
-
-		if (scriptsOk && pluginsOk)
-			resp.status = "ok";
-		else
-			resp.status = "error";
-
-		string msg = "";
-		for (int i = 0; i < results.Count(); i++)
-		{
-			if (i > 0)
-				msg = msg + " | ";
-			msg = msg + results[i];
-		}
-		resp.message = msg;
+		// No ExecuteAction and no menu label: the reload runs as the native NET
+		// function ReloadScripts, called by the client, not by a handler.
+		resp.status = "error";
+		resp.message = "EMCP_WB_Reload no longer reloads (target " + target + "): call the native NET function ReloadScripts (wb_scripts action reload; wb_reload is its alias).";
 
 		return resp;
 	}

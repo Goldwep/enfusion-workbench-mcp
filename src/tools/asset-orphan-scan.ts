@@ -29,6 +29,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 import { z } from "zod";
 import type { ProjectIndex } from "../project-index/project-index.js";
+import { isParsedTextPath } from "../project-index/resource-scan.js";
 import type { ResourceSource } from "../project-index/types.js";
 
 // ── Cursor ───────────────────────────────────────────────────────────────────
@@ -74,6 +75,13 @@ export function decodeCursor(
 /** Default asset extensions when the caller doesn't specify any. */
 export const DEFAULT_ASSET_EXTENSIONS = ["edds", "acp", "fbx", "ogg", "wav"];
 
+/**
+ * Audio Editor text files that hold sample references (`.wav`) even though
+ * the project index may not list them. They are always read as reference
+ * sources, so a sample held by an `.acp` is never reported as an orphan.
+ */
+export const AUDIO_REFERENCE_EXTENSIONS = new Set(["acp", "sig", "afm"]);
+
 /** Skip dirs during the disk walk — mirrors resource-scan.ts. */
 const SKIP_DIRS = new Set<string>(["node_modules", ".git", "dist"]);
 
@@ -88,9 +96,7 @@ export function normalizeExtensions(input: string[]): {
 } {
   const cleaned = Array.from(
     new Set(
-      input
-        .map((e) => e.trim().toLowerCase().replace(/^\./, ""))
-        .filter((e) => e.length > 0),
+      input.map((e) => e.trim().toLowerCase().replace(/^\./, "")).filter((e) => e.length > 0),
     ),
   ).sort();
   return { set: new Set(cleaned), joined: cleaned.join(",") };
@@ -101,10 +107,7 @@ export function normalizeExtensions(input: string[]): {
  * in `extensions`. Inaccessible directories silently skipped. Yields
  * project-relative paths using forward slashes (matches index storage).
  */
-export function* walkForAssets(
-  projectRoot: string,
-  extensions: Set<string>,
-): Generator<string> {
+export function* walkForAssets(projectRoot: string, extensions: Set<string>): Generator<string> {
   function* recurse(dir: string): Generator<string> {
     let entries;
     try {
@@ -133,10 +136,7 @@ export function* walkForAssets(
  * one of `extensions` from a chunk of Enfusion text. Used to build the
  * referenced-asset set without re-parsing each file.
  */
-export function extractAssetRefs(
-  content: string,
-  extensions: Set<string>,
-): string[] {
+export function extractAssetRefs(content: string, extensions: Set<string>): string[] {
   const out: string[] = [];
   const re = /\{[0-9A-Fa-f]{16}\}([^"\s]+)/g;
   let m: RegExpExecArray | null;
@@ -153,10 +153,7 @@ export function extractAssetRefs(
 }
 
 /** Compute orphans = on-disk paths not present in the referenced set. */
-export function computeOrphans(
-  onDisk: string[],
-  referenced: Set<string>,
-): string[] {
+export function computeOrphans(onDisk: string[], referenced: Set<string>): string[] {
   const orphans = onDisk.filter((p) => !referenced.has(p));
   orphans.sort();
   return orphans;
@@ -232,7 +229,18 @@ export function buildOrphanList(
   const allRows: OrphanRow[] = [];
   for (const group of groups) {
     const referenced = new Set<string>();
-    for (const rel of group.indexed_files) {
+    // Reference sources: indexed files plus every audio project file on disk
+    // (.acp/.sig/.afm), deduped by normalized relative path.
+    const sources = new Set<string>(group.indexed_files);
+    const seenNorm = new Set(group.indexed_files.map((f) => f.split("\\").join("/").toLowerCase()));
+    for (const rel of listDiskAssets(group.root_path, AUDIO_REFERENCE_EXTENSIONS)) {
+      const ext = rel.slice(rel.lastIndexOf(".") + 1).toLowerCase();
+      if (!AUDIO_REFERENCE_EXTENSIONS.has(ext)) continue;
+      if (seenNorm.has(rel.toLowerCase())) continue;
+      seenNorm.add(rel.toLowerCase());
+      sources.add(rel);
+    }
+    for (const rel of sources) {
       const abs = join(group.root_path, rel);
       const content = readContent(abs);
       if (content === null) continue;
@@ -257,10 +265,7 @@ export function buildOrphanList(
 
 // ── Registration ─────────────────────────────────────────────────────────────
 
-export function registerAssetOrphanScan(
-  server: McpServer,
-  index: ProjectIndex,
-): void {
+export function registerAssetOrphanScan(server: McpServer, index: ProjectIndex): void {
   server.registerTool(
     "asset_orphan_scan",
     {
@@ -310,22 +315,16 @@ export function registerAssetOrphanScan(
 
         // Group indexed files by their owning project.
         //
-        // Audit-fix BUG-2: `listIndexedProjectFiles` now LEFT JOINs through
-        // resources, so untyped files (SubScene, etc.) can surface with NULL
-        // project_id / root_path. The orphan scan is project-scoped (needs
-        // root_path to walk the disk + read content), so we explicitly opt
-        // OUT of untyped rows via `include_untyped: false`. The defensive
-        // null-guard below catches any future schema drift.
-        //
-        // KNOWN LIMITATION: the SubScene false-positive case the audit BUG-2
-        // describes is only fully resolved once Schema v3 lands a
-        // `files.project_id` FK — then untyped files can be tied to a
-        // project without going through resources, and we can flip
-        // `include_untyped: true` here to read their content into the
-        // referenced-asset set.
-        const flatRows = index.listIndexedProjectFiles(source, {
-          include_untyped: false,
-        });
+        // Every indexed Enfusion text file is a reference source, whether or
+        // not it has a resources row (audit refactor-index-05): an .emat,
+        // .conf or .layout root carries no own GUID, and a file without a
+        // .meta has no row either, yet their `{GUID}path` values reference
+        // textures. Schema v3 ties every `files` row to its project, so the
+        // untyped rows are included. Binary resources also have `files` rows
+        // (schema v4 indexes every file with a .meta); they are not read.
+        const flatRows = index
+          .listIndexedProjectFiles(source, { include_untyped: true })
+          .filter((row) => isParsedTextPath(row.file_path));
         const groupMap = new Map<string, ProjectFileGroup>();
         for (const row of flatRows) {
           // Defensive null guard — typed rows always have project info, but
@@ -383,9 +382,7 @@ export function registerAssetOrphanScan(
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return {
-          content: [
-            { type: "text" as const, text: `Error scanning orphans: ${msg}` },
-          ],
+          content: [{ type: "text" as const, text: `Error scanning orphans: ${msg}` }],
           isError: true,
         };
       }

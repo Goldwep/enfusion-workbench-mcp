@@ -1,0 +1,742 @@
+{
+  "absent_candidates": [],
+  "build": {
+    "branch": "stable",
+    "tag": "1.9.0.37",
+    "ui_language": "en"
+  },
+  "carry_over": [
+    {
+      "enumerators": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "L09",
+        "L10",
+        "L11",
+        "L14",
+        "L16"
+      ],
+      "evidence": "EV-s019-carry-001",
+      "from": "1.8.0.13",
+      "rows": {
+        "L01": {
+          "carried": 721,
+          "own_build": 676
+        },
+        "L02": {
+          "carried": 343,
+          "own_build": 352
+        },
+        "L03": {
+          "carried": 215,
+          "own_build": 207
+        },
+        "L04": {
+          "carried": 30,
+          "own_build": 0
+        },
+        "L05": {
+          "carried": 99,
+          "own_build": 0
+        },
+        "L06": {
+          "carried": 10,
+          "own_build": 6
+        },
+        "L07": {
+          "carried": 17,
+          "own_build": 3
+        },
+        "L09": {
+          "carried": 2,
+          "own_build": 0
+        },
+        "L10": {
+          "carried": 8,
+          "own_build": 2
+        },
+        "L11": {
+          "carried": 3,
+          "own_build": 0
+        },
+        "L14": {
+          "carried": 7,
+          "own_build": 0
+        },
+        "L16": {
+          "carried": 1,
+          "own_build": 0
+        }
+      },
+      "status": "accepted",
+      "to": "1.9.0.37"
+    }
+  ],
+  "counts": {
+    "aggregate": 346,
+    "by_dim": {
+      "api": 12629,
+      "cli": 253,
+      "diag": 1616,
+      "file": 131,
+      "link": 33,
+      "mcp": 955,
+      "net": 285,
+      "plugin": 1283,
+      "schema": 15947,
+      "setting": 596,
+      "ui": 4788
+    },
+    "by_kind": {
+      "attribute": 9353,
+      "blender-operator": 57,
+      "canvas-gesture": 89,
+      "class": 744,
+      "cli-switch": 253,
+      "context-item": 174,
+      "context-menu": 52,
+      "control": 845,
+      "debug-panel": 1,
+      "diag-menu": 154,
+      "diag-option": 1462,
+      "dialog": 122,
+      "dock": 160,
+      "enum": 50,
+      "enum-value": 176,
+      "event": 52,
+      "file-type": 131,
+      "handler-action": 260,
+      "hazard-dialog": 4,
+      "link-format": 33,
+      "mcp-action": 529,
+      "mcp-tool": 166,
+      "menu": 224,
+      "menu-item": 1002,
+      "method": 1921,
+      "module": 40,
+      "net-field": 186,
+      "net-function": 21,
+      "net-handler": 78,
+      "option": 205,
+      "panel": 259,
+      "plugin": 525,
+      "plugin-button": 180,
+      "plugin-cli-arg": 28,
+      "plugin-setting": 529,
+      "property": 78,
+      "property-editor": 32,
+      "property-group": 114,
+      "region": 277,
+      "schema-class": 4201,
+      "schema-key": 11673,
+      "setting-key": 580,
+      "shortcut": 474,
+      "static-method": 333,
+      "status-item": 13,
+      "tab": 156,
+      "tool": 114,
+      "toolbar": 52,
+      "toolbar-button": 325,
+      "window": 29
+    },
+    "by_module": {
+      "AnimEditor": 1116,
+      "AudioEditor": 988,
+      "BehaviorEditor": 1985,
+      "BlenderTools": 57,
+      "DialogueEditor": 19,
+      "Launcher": 28,
+      "LocalizationEditor": 436,
+      "NavmeshGeneratorMain": 75,
+      "ParticleEditor": 248,
+      "ProcAnimEditor": 286,
+      "ResourceManager": 3541,
+      "ResourceManager.Config": 4532,
+      "ResourceManager.Font": 31,
+      "ResourceManager.Imageset": 91,
+      "ResourceManager.Layout": 2350,
+      "ResourceManager.Material": 67,
+      "ResourceManager.Model": 103,
+      "ResourceManager.Styles": 83,
+      "ResourceManager.Texture": 78,
+      "ScriptEditor": 1157,
+      "Shared": 5347,
+      "WorldEditor": 5221,
+      "none": 10677
+    },
+    "by_shard": {
+      "attribute": 9353,
+      "core": 11600,
+      "diag": 1616,
+      "schema": 15947
+    },
+    "by_tier": {
+      "T0": 3758,
+      "T1": 2698,
+      "T2": 30986,
+      "T3": 519,
+      "T4": 15,
+      "T5": 540
+    },
+    "provisional": 2377,
+    "rows": 38516
+  },
+  "enumerators": {
+    "carried": ["L01", "L02", "L03", "L04", "L05", "L06", "L07", "L09", "L10", "L11", "L14", "L16"],
+    "done": [
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10",
+      "E11",
+      "E13",
+      "E14",
+      "E15",
+      "E16",
+      "E17",
+      "E18",
+      "E19",
+      "L01",
+      "L02",
+      "L03",
+      "L06",
+      "L07",
+      "L10",
+      "L15"
+    ],
+    "pending": ["E01", "E12", "L08", "L12", "L13", "L17"]
+  },
+  "inputs": {
+    "aliases_sha256": "f4d7da574122bab66fc4ec42b5119136d73a4e3ce46dff42d89fe52d28bb1647",
+    "live_results": [
+      {
+        "file": "live-results/1.9.0.37.jsonl",
+        "sha256": "0e80979ff91229f8af4452f582fa0e7ccf43126f2cba07cf0322c6066ed9132e"
+      }
+    ],
+    "observations": [
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E01",
+        "file": "observations/E01/1.8.0.13.jsonl",
+        "rows": 2675,
+        "sha256": "e916e8c53921ac3a313efa1502403531a3de33447f7750127b67050a20d2edd1"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E02",
+        "file": "observations/E02/1.8.0.13.jsonl",
+        "rows": 2653,
+        "sha256": "11d800ef3c9c5ede535bff5707e878d3d7e2b2550c330e4deb182013a9961365"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E02",
+        "file": "observations/E02/1.9.0.37.jsonl",
+        "rows": 2697,
+        "sha256": "090037e77281b376e958f0715fed89af47227a22bf6604126a8b78407b8fc492"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E03",
+        "file": "observations/E03/1.8.0.13.jsonl",
+        "rows": 874,
+        "sha256": "42076929b8e40cfc9e616a7c0488053a878982d20f8ec7504aa13b02e5c34a64"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E03",
+        "file": "observations/E03/1.9.0.37.jsonl",
+        "rows": 872,
+        "sha256": "3a0f96e9d3150dcae20cf657bf0fb535d52b8461fe0f00c0349259e75e734cdc"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E04",
+        "file": "observations/E04/1.8.0.13.jsonl",
+        "rows": 191,
+        "sha256": "32f53b94a12b42715be81c272e341118f9b7f3df862d911cd9f1d3e3219a638d"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E04",
+        "file": "observations/E04/1.9.0.37.jsonl",
+        "rows": 227,
+        "sha256": "b622b901965217b204650b4c454a2a9f4e5a25b199cc1b7f6eee6044938ab658"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E05",
+        "file": "observations/E05/1.8.0.13.jsonl",
+        "rows": 241,
+        "sha256": "9d78abb0a116e556f02cfbda1ef7cf54c837caf1f0d5e3c42eaf30602c2da430"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E05",
+        "file": "observations/E05/1.9.0.37.jsonl",
+        "rows": 244,
+        "sha256": "952356ede29389f1211a6c9d2887f9d5d5d97a3f752f7bcc237380dfd6e64155"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E06",
+        "file": "observations/E06/1.8.0.13.jsonl",
+        "rows": 1294,
+        "sha256": "6a146964e8bdee40095514e4729d286a1303ae198dc2e755e76170e00dbf1afe"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E06",
+        "file": "observations/E06/1.9.0.37.jsonl",
+        "rows": 1296,
+        "sha256": "850581c3552b6d86058cc3444ffabf6dc94bc0942f1ea40909f65869dd7637c5"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E07",
+        "file": "observations/E07/1.8.0.13.jsonl",
+        "rows": 1135,
+        "sha256": "1139915717a31a11e05bd87fa6496a254216b05c74a7202a59471a907ab0522f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E07",
+        "file": "observations/E07/1.9.0.37.jsonl",
+        "rows": 1135,
+        "sha256": "5876661eb02a17561b98c09c9700c7557c67959f8640b8a2137b11acff8afa43"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E08",
+        "file": "observations/E08/1.8.0.13.jsonl",
+        "rows": 152,
+        "sha256": "b8499322a569381897c33da91afb74a22d03af2ddda5a7ffa2389810459a19d1"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E08",
+        "file": "observations/E08/1.9.0.37.jsonl",
+        "rows": 148,
+        "sha256": "564a09d078c93b1555f6be8eca23cc9e19d3e534ef0e27dcc7848e53d29644ba"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E09",
+        "file": "observations/E09/1.8.0.13.jsonl",
+        "rows": 68,
+        "sha256": "ccc6213921a75e5d59c189d42f6c879fb8d022ec14761890b6b06c92ac7cd45f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E09",
+        "file": "observations/E09/1.9.0.37.jsonl",
+        "rows": 71,
+        "sha256": "5636282832eb3ec54db02a1e25553b243ac19e95c8bdb7f56138573b849a2216"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E10",
+        "file": "observations/E10/1.8.0.13.jsonl",
+        "rows": 15366,
+        "sha256": "80c27de2a52431b9148cbb4e363ffb8fa1a18e77f68b285f2b90ff35510a9bce"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E10",
+        "file": "observations/E10/1.9.0.37.jsonl",
+        "rows": 15816,
+        "sha256": "354ce414233b020a02b5600dd05f4c59e3c50baef07a6e435640f65b33a4f079"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E11",
+        "file": "observations/E11/1.8.0.13.jsonl",
+        "rows": 446,
+        "sha256": "5429235ca3d888893e1bf5bd0b358a1e4dadcbaec1a858a921c16aa4909ffc76"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E11",
+        "file": "observations/E11/1.9.0.37.jsonl",
+        "rows": 916,
+        "sha256": "88b51170e28c259ea14d52d71eef96d0371b4b94d66bfd6e6aeb54f49114966a"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E12",
+        "file": "observations/E12/1.8.0.13.jsonl",
+        "rows": 2414,
+        "sha256": "524614ed9cde4d052085eec8ea53e51ec70005b2b9ade75286356c06d6f580e8"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E13",
+        "file": "observations/E13/1.8.0.13.jsonl",
+        "rows": 5,
+        "sha256": "935e62b02ae491ed1bb2e043b611bc32eb50800a34164eab210048b3ece90e76"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E13",
+        "file": "observations/E13/1.9.0.37.jsonl",
+        "rows": 2,
+        "sha256": "9834ac989686937c0a8c6ff8447b5c4d0f60c49923ed8bc31208437f180b3572"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E14",
+        "file": "observations/E14/1.8.0.13.jsonl",
+        "rows": 1608,
+        "sha256": "98c13113b5b4cc344320935e593e2d287cb625f6d4436dcc90dbc2428fc19fc9"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E14",
+        "file": "observations/E14/1.9.0.37.jsonl",
+        "rows": 1611,
+        "sha256": "f466a775c13629b57121aa1bb7b35969c3b92e676371a75ee63ae5bc16ae24a9"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E15",
+        "file": "observations/E15/1.8.0.13.jsonl",
+        "rows": 9683,
+        "sha256": "860bac5970252b7452a18f60d1261d7a089e54331bf893bad510488805d9833f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E15",
+        "file": "observations/E15/1.9.0.37.jsonl",
+        "rows": 9852,
+        "sha256": "68907f4b66195402843505cb0b4b927a2c4ce379f963b2042392389c2023d890"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E16",
+        "file": "observations/E16/1.8.0.13.jsonl",
+        "rows": 37,
+        "sha256": "d5f26a72f0b5ae6b82afd638de46609bf53a85d1f038d636b44d26383f29c6ae"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E16",
+        "file": "observations/E16/1.9.0.37.jsonl",
+        "rows": 38,
+        "sha256": "db431deab344456241b11d85a70341af0121ac8287f10d431c5f93080b0ad15f"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E17",
+        "file": "observations/E17/1.8.0.13.jsonl",
+        "rows": 31,
+        "sha256": "ff36ff7d5413db65747b7811fde18c58c1fa8c4a3d651823d305d6b9f24ea244"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E17",
+        "file": "observations/E17/1.9.0.37.jsonl",
+        "rows": 31,
+        "sha256": "8428354df72fe45af848e7ea2bcbcc6be5183143c24842110eb9139c4d6324e3"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E18",
+        "file": "observations/E18/1.8.0.13.jsonl",
+        "rows": 40,
+        "sha256": "6f31ff87625b039771c2ec2320e876aec66c2c73faea5e4a8081fc3b534d1f2f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E18",
+        "file": "observations/E18/1.9.0.37.jsonl",
+        "rows": 40,
+        "sha256": "575099ff4b357602b5db0359084c190c48ec3dc27e75f72fcb0a255e3c3963c5"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "E19",
+        "file": "observations/E19/1.8.0.13.jsonl",
+        "rows": 45,
+        "sha256": "16886ca4c7113e1ad1bc0ccdd65fec09080617b1eba442e5f0d86e28c372b70f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "E19",
+        "file": "observations/E19/1.9.0.37.jsonl",
+        "rows": 48,
+        "sha256": "1a5931c2c8153247451f0584937c2c388b28e8b27a6b9c006093b540e7e6d939"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L01",
+        "file": "observations/L01/1.8.0.13.jsonl",
+        "rows": 1053,
+        "sha256": "7d7673ddda642fbeb9f33bafef68a38a7a306e7aafb0784ede1faf3111583818"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L01",
+        "file": "observations/L01/1.9.0.37.jsonl",
+        "rows": 692,
+        "sha256": "88f28edb30157f880ee7875663a9d870443edd5a761a30ea60e825e233976ec8"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L02",
+        "file": "observations/L02/1.8.0.13.jsonl",
+        "rows": 680,
+        "sha256": "39613fd558d1941c3b44d2ae0df539045c212d6902e107a03ec4fc54a0f87cd9"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L02",
+        "file": "observations/L02/1.9.0.37.jsonl",
+        "rows": 352,
+        "sha256": "08f938a7e717622f84faa58c2cf7ed726521baa69ea528331c7254e917b7b848"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L03",
+        "file": "observations/L03/1.8.0.13.jsonl",
+        "rows": 302,
+        "sha256": "5953ee153965d3878e13a8e49d65833d26e4c9033e6987a00c00ff8fa48435f9"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L03",
+        "file": "observations/L03/1.9.0.37.jsonl",
+        "rows": 207,
+        "sha256": "8a52a59bf9965c9ba14465f708daabb28f4b93cd29b4808510332e1d20a3560b"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L04",
+        "file": "observations/L04/1.8.0.13.jsonl",
+        "rows": 30,
+        "sha256": "d67f821b5277d17906f17af5e735c90de13e901e4ba925ddb0b3e111ba9c1158"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L05",
+        "file": "observations/L05/1.8.0.13.jsonl",
+        "rows": 99,
+        "sha256": "1e80d2cfb078cee6658b0f04f2fb71c45885d53e059551931a4e6bb57c0fac5a"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L06",
+        "file": "observations/L06/1.8.0.13.jsonl",
+        "rows": 20,
+        "sha256": "8e822e36bd7ca42790fc09d6771fe3c6511f83b2f3ed60b08431db0bffc7a3c6"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L06",
+        "file": "observations/L06/1.9.0.37.jsonl",
+        "rows": 6,
+        "sha256": "67cc0ef1385a7d679e2db469d9ceaa243e5b4af781b698d9315f59bd8cd7429b"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L07",
+        "file": "observations/L07/1.8.0.13.jsonl",
+        "rows": 18,
+        "sha256": "7df4e8b2bd33dd8834b42298bbac9cdb9b50599dd963d04cdda2896e734fa773"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L07",
+        "file": "observations/L07/1.9.0.37.jsonl",
+        "rows": 3,
+        "sha256": "3bcf1a62852b90e69859c507cd852219d069b4ffd8d66ea010446535de521adc"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L09",
+        "file": "observations/L09/1.8.0.13.jsonl",
+        "rows": 2,
+        "sha256": "9bb8628b6afa654224b238114338d0060d28810d7a8e54099e3509358b87a260"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L10",
+        "file": "observations/L10/1.8.0.13.jsonl",
+        "rows": 10,
+        "sha256": "de8798ac26247ffbcc57a6a025fbddecff71b01c8e1178e1329ebadbdcb6b17f"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L10",
+        "file": "observations/L10/1.9.0.37.jsonl",
+        "rows": 2,
+        "sha256": "f9a5523c3648af4caace8d2a04de91f5c56c6a6a22ee93da180748c80af1935b"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L11",
+        "file": "observations/L11/1.8.0.13.jsonl",
+        "rows": 3,
+        "sha256": "03a554a6194c8669c1d96f8d6ab2bc14bf7517e83f6203055c43a7fc753c4f17"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L14",
+        "file": "observations/L14/1.8.0.13.jsonl",
+        "rows": 7,
+        "sha256": "17dbdd78a369e805e5c08a0bcb65ac4b00cfe21eb1f6582c315e68774efd2185"
+      },
+      {
+        "build": "1.9.0.37",
+        "enumerator": "L15",
+        "file": "observations/L15/1.9.0.37.jsonl",
+        "rows": 402,
+        "sha256": "8b25ea49d47a9d9d30462205bf107c4e50745d94d6971df0d9f0fcc087e3c684"
+      },
+      {
+        "build": "1.8.0.13",
+        "enumerator": "L16",
+        "file": "observations/L16/1.8.0.13.jsonl",
+        "rows": 1,
+        "sha256": "8a625dd5d92d8364a8d877e2e7b98c5a6ee7055b3550d5cc1fcd41f7372f6f92"
+      }
+    ],
+    "policy_sha256": "2ea6472ce1aa589ae27a592184cbadf16c24d6cc10533255e8a05ac88b9545fe",
+    "probes_sha256": "474c367f83aead22b274aea160682d87f830b61ce41b192ce462eaffe252af7b",
+    "state_matrix_sha256": "54228437c66223e4d6c2958d477d41ed2c1367b7b2f4a21ee183fa26dbfe720e",
+    "state_sha256": "2d5ffe59db357155f0b6840b65432f78ab0f3addb90a1c7affbf3b80fb4df073",
+    "universes_sha256": "69b3c9ca15653e8fc3273a81735b135f42c7112146ebfb8aff461d9987c2c272"
+  },
+  "problems": [],
+  "rejected": [],
+  "retired": [
+    "ui:AnimEditor/tab/@QMainWindowTabBar.1/Channel Curves",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.1/Graph",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.1/Log Console",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.2/Controls",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.2/Errors",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.2/File Browser",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.2/Live Debug",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.2/Properties",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.3/Animation Sets",
+    "ui:AnimEditor/tab/@QMainWindowTabBar.3/Workspace",
+    "ui:AudioEditor/tab/@QMainWindowTabBar.2/Item explorer",
+    "ui:AudioEditor/tab/@QMainWindowTabBar.2/Resource browser",
+    "ui:AudioEditor/tab/@QMainWindowTabBar.2/Signal Simulation",
+    "ui:AudioEditor/tab/@QMainWindowTabBar.3/Item detail",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.1/Item explorer",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.1/Nodes palette",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.2/Breakpoints",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.2/Debug",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.3/Node parameters",
+    "ui:BehaviorEditor/tab/@QMainWindowTabBar.3/Resource Browser",
+    "ui:ResourceManager.Imageset/control/@QTreeWidget.1/UI%2FTextures%2FWidgetLibrary%2FScrollBarRectangles.edds",
+    "ui:ResourceManager.Model/control/BSP (0) %2F Portals (0)",
+    "ui:ResourceManager.Model/control/Bones (0 + 0)",
+    "ui:ResourceManager.Model/control/Colliders (0)",
+    "ui:ResourceManager.Model/control/LODs (1)",
+    "ui:ResourceManager.Model/control/Land Contacts (0)",
+    "ui:ResourceManager.Model/control/Materials (1)",
+    "ui:ResourceManager.Model/control/Morphs (0)",
+    "ui:ResourceManager.Model/control/Occluders (0)",
+    "ui:ResourceManager.Model/control/Probe Volumes (0)",
+    "ui:ResourceManager.Styles/control/Widget Style/@QTreeWidget.1/SliderWidget",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.1/Outline",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.1/Projects",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.2/Bookmarks",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.2/Find Entity",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.2/Find File",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.2/Find Symbol",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.3/Breakpoints",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.3/Callstack",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.3/Output",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.4/Remote Console",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.4/Text Search",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.5/Errors",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.5/Find Results",
+    "ui:ScriptEditor/tab/@QMainWindowTabBar.5/Watch",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.1/Create",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.1/Hierarchy",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.1/Log Console",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.1/Prefab Library",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.1/Resource Browser",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.2/Create",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.2/Hierarchy",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.2/Move",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.2/Object Properties",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.3/Log Console",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.3/Move",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.3/Object Properties",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.3/Prefab Library",
+    "ui:WorldEditor/tab/@QMainWindowTabBar.3/Resource Browser"
+  ],
+  "schema_version": 1,
+  "shards": [
+    {
+      "file": "ledger.jsonl",
+      "name": "core",
+      "rows": 11600,
+      "sha256": "b9ad0914459cd19bd6b29b52e748884029ecebb3ea9b700b4a8b7b8198c2e5a6"
+    },
+    {
+      "file": "ledger.attribute.jsonl",
+      "name": "attribute",
+      "rows": 9353,
+      "sha256": "cd0d85bbef27f90567287930028590fc69e322279fe91557c82cfd82b56e5664"
+    },
+    {
+      "file": "ledger.schema.jsonl",
+      "name": "schema",
+      "rows": 15947,
+      "sha256": "5b7dff041856222eec7a3b83195b5464481e409e26a4d667371bd063b2d851d6"
+    },
+    {
+      "file": "ledger.diag.jsonl",
+      "name": "diag",
+      "rows": 1616,
+      "sha256": "415497b890144ae2464b181a044ac69b16b88d76ce765c9b854688db5b866ddd"
+    }
+  ],
+  "unverified_refs": {
+    "E02": 5350,
+    "E03": 1746,
+    "E04": 418,
+    "E05": 485,
+    "E06": 2590,
+    "E07": 2270,
+    "E08": 300,
+    "E09": 139,
+    "E10": 31182,
+    "E11": 2,
+    "E13": 7,
+    "E14": 3219,
+    "E15": 19535,
+    "E16": 75,
+    "E17": 62,
+    "E18": 80,
+    "E19": 93,
+    "L01": 1745,
+    "L02": 1032,
+    "L03": 509,
+    "L04": 30,
+    "L05": 99,
+    "L06": 26,
+    "L07": 21,
+    "L09": 2,
+    "L10": 12,
+    "L11": 3,
+    "L14": 7,
+    "L15": 402,
+    "L16": 1
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$comment": "Public export filter for scripts/export-public.ts (plan 5.2). A tracked path at the gate tag is exported when it matches an include glob, matches no exclude glob, and carries no tag listed in excludeTags. Globs: ** spans directories, * and ? stay within one path segment. .githooks/** is included on purpose. docs/v2/** (the 2.0 programme record) is excluded since 2.0.0-rc.1 (owner, 2026-11-16). Files tagged executable-derived (E05 label tables, decision D2 default) are excluded until the owner decides otherwise. transforms: name to globs of exported files rewritten on the way out; redact-e05 replaces each E05 source quote and every exe:0x ref in the ledger shards with a length and a hash (D2), keeping row ids, tiers and other sources.",
+  "include": ["**"],
+  "exclude": [
+    "docs/v2/STATE.md",
+    "docs/v2/LIVE-LOG.md",
+    "docs/v2/sessions/**",
+    "docs/v2/inbox/**",
+    "data/census/evidence/**",
+    "data/census/observations/E05*/**",
+    "docs/v2/**"
+  ],
+  "tags": {
+    "executable-derived": ["data/census/observations/E05/**", "data/census/observations/E05*/**"]
+  },
+  "excludeTags": ["executable-derived"],
+  "transforms": {
+    "redact-e05": ["data/census/ledger*.jsonl"]
+  }
+}

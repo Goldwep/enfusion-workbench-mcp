@@ -2,8 +2,9 @@
  * `scenario_apply_template` — stamp a curated template (FOB / checkpoint /
  * patrol-grid) into an existing scenario layer at a world position.
  *
- * Pure-FS tool. Reads the target layer, parses it, appends the template's
- * entities, re-serializes, and writes via `writeWithBackup`. Defaults
+ * Pure-FS tool. Reads the target layer, parses it on the lossless CST,
+ * inserts the template's entities (every existing byte kept), and writes via
+ * `writeWithBackup`. Defaults
  * `dry_run` to TRUE — stamping mutates production layer files, so the safe
  * default is preview-and-confirm.
  *
@@ -23,7 +24,6 @@ import {
   TEMPLATE_NAMES,
   type TemplateName,
 } from "../scenario/templates.js";
-import { parseLayer, serializeLayer } from "../scenario/clone-area.js";
 import { writeWithBackup } from "../refactor/byte-edit.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
 
@@ -145,20 +145,17 @@ export function registerScenarioApplyTemplate(server: McpServer, config: Config)
           };
         }
 
-        const targetText = readFileSync(targetAbs, "utf-8");
-        // Audit fix H-4: dispatch on file extension. `.conf` / `.ent` keep
-        // the real root so the header's own properties survive when we
-        // re-serialize. `.layer` files stay multi-root.
+        const targetBytes = readFileSync(targetAbs);
+        // Audit fix H-4: dispatch on file extension. `.conf` / `.ent` insert
+        // inside their single root; `.layer` files append at the top level.
         const isSingleRoot = /\.(conf|ent)$/i.test(targetAbs);
-        const targetRoot = parseLayer(targetText, { singleRoot: isSingleRoot });
-
-        const result = applyTemplate(targetRoot, {
+        const result = applyTemplate(targetBytes, {
           template: template_name,
           position,
           yawDeg: rotation_yaw_deg,
+          singleRoot: isSingleRoot,
         });
-
-        const newText = serializeLayer(targetRoot);
+        const newText = result.text;
 
         if (dry_run) {
           return {

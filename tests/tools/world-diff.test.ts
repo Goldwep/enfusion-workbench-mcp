@@ -19,19 +19,22 @@ describe("world-diff helpers", () => {
   });
 
   it("entityKey prefers id over position", () => {
+    // The engine writes the entity ID as an `ID` property; that is the key.
     const n = parse('Entity {\n ID "AAAA0000BBBB1111"\n coords "1 2 3"\n}');
-    // `.id` is parsed only from the post-type slot; `ID` here is a property,
-    // so this entity has no node.id and falls through to position-keyed.
-    // Verify the *real* id-preference path with a node whose post-type id is set:
+    expect(entityKey(n, 0)).toBe("id:AAAA0000BBBB1111");
+    // A post-type id is used when there is no ID property.
     const withId = parse('Entity "DEADBEEFDEADBEEF" {\n coords "1 2 3"\n}');
     expect(entityKey(withId, 0)).toBe("id:DEADBEEFDEADBEEF");
-    // And the property-`ID`-only node falls through to position-hash:
-    expect(entityKey(n, 0)).toMatch(/^pos:Entity::/);
+  });
+
+  it("entityKey keys a placed layer entity on its ID property", () => {
+    const n = parse('GenericEntity : "{A}x.et" {\n ID "1111111111111111"\n coords 100 0 200\n}');
+    expect(entityKey(n, 0)).toBe("id:1111111111111111");
   });
 
   it("entityKey falls back to position-hash when no id is set", () => {
     const n = parse('Entity {\n coords "100 0 200"\n}');
-    expect(entityKey(n, 7)).toBe("pos:Entity::100|0|200");
+    expect(entityKey(n, 7)).toBe("pos:Entity:::100|0|200");
   });
 
   it("entityKey falls back to array index when no id and no position", () => {
@@ -41,6 +44,27 @@ describe("world-diff helpers", () => {
 });
 
 describe("diffWorlds", () => {
+  it("reports a placed entity moved by more than a metre as moved, not removed+added", () => {
+    const before = parse(world(' GenericEntity : "{A}x.et" {\n  ID "1111111111111111"\n  coords 100 0 200\n }'));
+    const after = parse(world(' GenericEntity : "{A}x.et" {\n  ID "1111111111111111"\n  coords 150 0 200\n }'));
+    const result = diffWorlds(before, after, 0.01);
+    expect(result.added).toHaveLength(0);
+    expect(result.removed).toHaveLength(0);
+    expect(result.moved).toHaveLength(1);
+    expect(result.moved[0].key).toBe("id:1111111111111111");
+  });
+
+  it("keeps two unnamed entities that share a rounded position", () => {
+    const before = parse(world(""));
+    const after = parse(
+      world(
+        ' GenericEntity : "{A}a.et" {\n  coords 10 0 10\n }\n GenericEntity : "{B}b.et" {\n  coords 10.2 0 10.1\n }\n GenericEntity : "{B}b.et" {\n  coords 10.1 0 10\n }',
+      ),
+    );
+    const result = diffWorlds(before, after, 0.01);
+    expect(result.added).toHaveLength(3);
+  });
+
   it("detects added and removed entities", () => {
     const before = parse(world(' A "1111111111111111" {\n  coords "0 0 0"\n }'));
     const after = parse(

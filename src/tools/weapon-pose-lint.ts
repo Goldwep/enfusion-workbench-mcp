@@ -21,6 +21,13 @@ import {
 } from "../animation/weapon-pose-lint.js";
 import { readTextFileBounded } from "../utils/safe-read.js";
 
+/** At most 400 characters (DEC-067 OD-7); the longer prose is in the anim-lint-tools KB page. */
+export const WEAPON_POSE_LINT_DESCRIPTION =
+  "Regex-only check of a character `.agr` GlobalTags block (WEAPON, ADS, STANCE ...). " +
+  "Missing tags are error findings (not a tool error), unknown tags warnings. No parser and no .anm cross-reference, so " +
+  "it is a fast pre-publish gate; `animation_graph inspect` goes deeper. Why regex-only and " +
+  "the default tag set: KB anim-lint-tools.";
+
 function rejectFlagShape(label: string, raw: string): void {
   if (raw.startsWith("-")) {
     throw new Error(`Invalid ${label}: must not start with '-' (flag-smuggle guard)`);
@@ -31,13 +38,7 @@ export function registerWeaponPoseLint(server: McpServer): void {
   server.registerTool(
     "weapon_pose_lint",
     {
-      description:
-        "String-level check of a character `.agr` (Animation Graph Runtime) file against the expected " +
-        "`GlobalTags { \"WEAPON\" \"ADS\" \"STANCE\" ... }` block. " +
-        "Reports missing tags as errors and unknown tags as warnings. " +
-        "Intentionally regex-only — no Enforce parser, no .anm cross-reference. " +
-        "Use this as a fast pre-publish gate to confirm a character's weapon-related tag set matches " +
-        "the engine's expectations. Pair with `animation_graph action=inspect` for deeper analysis.",
+      description: WEAPON_POSE_LINT_DESCRIPTION,
       inputSchema: {
         agr_path: z
           .string()
@@ -61,9 +62,7 @@ export function registerWeaponPoseLint(server: McpServer): void {
         const abs = resolve(agr_path);
         if (!existsSync(abs)) {
           return {
-            content: [
-              { type: "text" as const, text: `AGR file not found: ${abs}` },
-            ],
+            content: [{ type: "text" as const, text: `AGR file not found: ${abs}` }],
             isError: true,
           };
         }
@@ -75,9 +74,7 @@ export function registerWeaponPoseLint(server: McpServer): void {
         }
         if (!isFile) {
           return {
-            content: [
-              { type: "text" as const, text: `Not a regular file: ${abs}` },
-            ],
+            content: [{ type: "text" as const, text: `Not a regular file: ${abs}` }],
             isError: true,
           };
         }
@@ -101,18 +98,17 @@ export function registerWeaponPoseLint(server: McpServer): void {
         const result = lintWeaponPose(content, expected_tags);
         const text = formatPoseLintMarkdown({ filePath: abs, result });
 
-        // MCP convention: surface as isError when the lint actually fails so
-        // callers/CIs can branch on it without parsing the body.
+        // Findings (missing tags, no GlobalTags block) are the lint's answer, not a tool error:
+        // W4 run 1 (w4-49-lint-tools) read the old `isError: !result.ok` on a vanilla
+        // non-character .agr as TOOL_ERROR. isError stays for argument and I/O failures only;
+        // callers branch on the "Status:" line of the report.
         return {
           content: [{ type: "text" as const, text }],
-          isError: !result.ok,
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return {
-          content: [
-            { type: "text" as const, text: `Error in weapon_pose_lint: ${msg}` },
-          ],
+          content: [{ type: "text" as const, text: `Error in weapon_pose_lint: ${msg}` }],
           isError: true,
         };
       }

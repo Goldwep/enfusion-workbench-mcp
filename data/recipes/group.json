@@ -5,21 +5,11 @@
   "entityType": "SCR_AIGroup",
   "subdirectory": "Prefabs/Groups",
   "defaultParent": "Prefabs/Groups/PlayableGroup.et",
-  "overrideComponents": [
-    {
-      "type": "SCR_AIGroup",
-      "properties": { "m_sFactionKey": "" },
-      "comment": "Faction key (US, USSR, FIA, or custom)"
-    },
-    {
-      "type": "SCR_GroupIdentity",
-      "properties": { "m_sCallsign": "" },
-      "comment": "Group callsign/name"
-    }
-  ],
+  "overrideComponents": [],
   "postCreateNotes": [
-    "Set faction key in SCR_AIGroup.m_sFactionKey",
-    "Configure group callsign and unit type",
+    "Set the faction key (US, USSR, FIA, or custom) in the group entity's own m_faction (not a component), as vanilla Prefabs/Groups/BLUFOR/Group_US_Base.et does; it is not pre-written, since an empty m_faction would override a parent's faction",
+    "Callsigns come from SCR_CallsignGroupComponent (inherited from PlayableGroup.et), which holds no settable callsign attribute",
+    "Configure unit type",
     "Set up group composition (squad leader + members)",
     "Define AI behavior and skill levels",
     "Configure loadouts for each member",

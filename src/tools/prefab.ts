@@ -17,7 +17,7 @@ import {
   type AncestorLevel,
 } from "../utils/prefab-ancestry.js";
 import { validateFilename } from "../utils/safe-path.js";
-import { assertInsideRoot } from "../utils/path-guard.js";
+import { assertInsideRoot, pinnedProjectRoot } from "../utils/path-guard.js";
 
 // ── Inspect helpers ────────────────────────────────────────────────────────────
 
@@ -309,7 +309,8 @@ export function registerPrefab(server: McpServer, config: Config): void {
               };
             }
 
-            writeFileSync(targetPath, content, "utf-8");
+            // A new file only: flag wx refuses one that appeared after the check (write-safety gap 20).
+            writeFileSync(targetPath, content, { encoding: "utf-8", flag: "wx" });
 
             const variantTag = variant ? ` (variant: ${variant})` : "";
             return {
@@ -350,6 +351,8 @@ export function registerPrefab(server: McpServer, config: Config): void {
           };
         }
 
+        // The same containment as create: a caller projectPath stays inside the configured root.
+        pinnedProjectRoot(projectPath, config.projectPath);
         const { levels, warnings } = walkChain(inputPath, config, projectPath);
 
         if (levels.length === 0) {

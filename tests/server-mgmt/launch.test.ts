@@ -13,6 +13,7 @@ import {
   pidFilePathFor,
   PID_FILE_NAME,
   prepareLaunchInputs,
+  resolveScenarioId,
   probeServerExe,
   readPidFile,
   validateExtraArgs,
@@ -119,6 +120,12 @@ describe("server-mgmt/launch — prepareLaunchInputs", () => {
     ).toThrow(/CLI flag/);
   });
 
+  it("leaves the scenario optional (the file carries it)", () => {
+    const r = prepareLaunchInputs({ serverConfigPath: "server.json" });
+    expect(r.scenarioId).toBeUndefined();
+    expect(r.extraArgs).toEqual([]);
+  });
+
   it("returns an absolute config path and the validated scenarioId", () => {
     const { absoluteConfigPath, scenarioId, extraArgs } = prepareLaunchInputs({
       serverConfigPath: "server.json",
@@ -132,34 +139,45 @@ describe("server-mgmt/launch — prepareLaunchInputs", () => {
 });
 
 describe("server-mgmt/launch — buildLaunchArgv", () => {
-  it("emits -config / -scenarioId / extras in order", () => {
+  it("emits -config then the extras, and no scenario switch (KD-005 fixed)", () => {
     const argv = buildLaunchArgv({
       serverConfigPath: "C:\\path\\server.json",
-      scenarioId: "{ABCD}M.conf",
       extraArgs: ["-maxFPS=120", "-logVerbose"],
     });
-    expect(argv).toEqual([
-      "-config",
-      "C:\\path\\server.json",
-      "-scenarioId",
-      "{ABCD}M.conf",
-      "-maxFPS=120",
-      "-logVerbose",
-    ]);
+    expect(argv).toEqual(["-config", "C:\\path\\server.json", "-maxFPS=120", "-logVerbose"]);
   });
 
-  it("emits only the mandatory flags when extras are empty", () => {
-    const argv = buildLaunchArgv({
-      serverConfigPath: "server.json",
-      scenarioId: "{ABCD}M.conf",
-      extraArgs: [],
-    });
-    expect(argv).toEqual([
-      "-config",
-      "server.json",
-      "-scenarioId",
-      "{ABCD}M.conf",
-    ]);
+  it("emits only -config when extras are empty", () => {
+    const argv = buildLaunchArgv({ serverConfigPath: "server.json", extraArgs: [] });
+    expect(argv).toEqual(["-config", "server.json"]);
+    expect(argv.some((a) => /scenario/i.test(a))).toBe(false);
+  });
+});
+
+describe("server-mgmt/launch — resolveScenarioId (the server.json route)", () => {
+  const ID = "{ABCD1234DEAD5678}Missions/M.conf";
+
+  it("takes the file's game.scenarioId when none is requested", () => {
+    expect(resolveScenarioId(undefined, ID)).toBe(ID);
+  });
+
+  it("accepts a requested scenario equal to the file's", () => {
+    expect(resolveScenarioId(ID, ID)).toBe(ID);
+  });
+
+  it("refuses a requested scenario that differs from the file's", () => {
+    expect(() => resolveScenarioId("{1111222233334444}Missions/X.conf", ID)).toThrow(
+      /differs from the server\.json's game\.scenarioId/,
+    );
+  });
+
+  it("refuses a file with no or an empty game.scenarioId", () => {
+    expect(() => resolveScenarioId(undefined, undefined)).toThrow(/no game\.scenarioId/);
+    expect(() => resolveScenarioId(ID, "  ")).toThrow(/no game\.scenarioId/);
+  });
+
+  it("refuses a flag-shaped scenario in the file", () => {
+    expect(() => resolveScenarioId(undefined, "-evil")).toThrow(/looks like a CLI flag/);
   });
 });
 

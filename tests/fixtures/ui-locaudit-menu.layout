@@ -1,0 +1,25 @@
+FrameWidgetClass {
+ Name "Root"
+ {
+  TextWidgetClass "{0000000000000001}" {
+   Name "Title"
+   Text "#MOD-Title"
+  }
+  TextWidgetClass "{0000000000000002}" {
+   Name "Play"
+   Text "<action name=\"Play\" /> #MOD-Play"
+  }
+  TextWidgetClass "{0000000000000003}" {
+   Name "Gone"
+   Text "#MOD-Gone"
+  }
+  TextWidgetClass "{0000000000000004}" {
+   Name "Cased"
+   Text "#mod-title"
+  }
+  TextWidgetClass "{0000000000000005}" {
+   Name "Colour"
+   Text "<color rgba=\"1 0 0 1\"/>#FF8800 plain"
+  }
+ }
+}

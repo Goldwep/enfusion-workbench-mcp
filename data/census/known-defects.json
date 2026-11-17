@@ -1,0 +1,33 @@
+{
+  "$comment": "The exact list of known defects the expected-failure tests assert against (plan 3.3 principle 7, plan 4.2). A case is listed only while the defect is present on this branch and a test asserts it. The test named in asserted_by passes while the defect is present and fails the moment it is fixed (or a new one of the same kind appears), so a fix removes its entry in the same change. The list must be empty at release (definition of done 6). Main-owned; tests/census/known-defects.test.ts checks the shape below.",
+  "version": 1,
+  "shape": {
+    "id": "KD-nnn, unique, never reused",
+    "title": "the defect in one sentence",
+    "where": "the file, tool or handler that carries it (repository-relative paths, no machine paths)",
+    "found_by": "the plan, decision or recon reference that named it",
+    "evidence": "what a reader can re-run or re-read to see it, with the measured source named",
+    "asserted_by": "{ file, test, case? }: a test file that exists and holds an it or test whose literal title equals `test` exactly. For a parametrised test (it.each with a title such as \"$id\") `test` is that title and `case` names the one case: a string literal that the file holds. The test that asserts the entry also names the entry back (KD-nnn titles in tests/census/known-defects.test.ts, the switch in the flag test)",
+    "fixed_by": "the work item or unknown that fixes it (U1, kernel 3.1, W1, Phase 1 item 1 and so on)",
+    "switch": "CLI-flag entries only: the switch with its leading dash",
+    "files": "CLI-flag entries only: every repository file whose code holds the defective occurrence of the switch (a literal passed to Workbench, or for the dedicated server's switches to ArmaReforgerServer.exe); the flag test fails when a file is added or removed",
+    "defect_kind": "CLI-flag entries only: unknown-switch (no measured source knows it) or misused-switch (a measured source knows the name but documents another meaning)"
+  },
+  "defects": [
+    {
+      "id": "KD-001",
+      "title": "The S-A headless script passes -wbProjectPath on purpose, which is not a Workbench parameter",
+      "where": "scripts/live/s-a-headless.ts (S-A-1, the U1 measurement of the old arguments, never run); the three headless tools were fixed by DEC-048 package B and pass -gproj",
+      "found_by": "PLAN 2.1 finding 1; docs/v2/recon/plugins-netapi-cli.md; Appendix D",
+      "evidence": "The switch has no cli-switch row in E05 (the Workbench executable's switch table) or in E08 (Bohemia's Page_CLI). The recon found it absent from the executable in ASCII and UTF-16 and from all 274 cached documentation pages; wb_launch passes the real flag, -gproj. Verdicts from these tools may describe the project the launcher preselected, not the requested one. The S-A session script passes it on purpose in step S-A-1, the U1 measurement of the old arguments, only with the EMCP2_decoy precondition (DEC-029).",
+      "asserted_by": {
+        "file": "tests/census/cli-flags.test.ts",
+        "test": "passes only switches a measured source knows, apart from the listed defects"
+      },
+      "fixed_by": "U1",
+      "switch": "-wbProjectPath",
+      "files": ["scripts/live/s-a-headless.ts"],
+      "defect_kind": "unknown-switch"
+    }
+  ]
+}

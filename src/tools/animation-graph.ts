@@ -1,11 +1,51 @@
+/**
+ * `animation_graph`: animation graph files (.agr .agf .ast .asi .aw), offline.
+ *
+ * Wave W4 (phase5-w4-spec.md 2.4, 4; DEC-067): the readers walk the lossless
+ * parser (src/formats/enfusion-cst.ts); validate runs the re-grounded rules
+ * (every 1.x rule that fires on vanilla is a warning, OD-4); nodes lists the
+ * Animation Editor's classes from the census index (node-catalog.ts); edit
+ * changes .agf/.agr files in the project through lossless splices
+ * (src/animation/graph-edit.ts), a dry run unless confirm:true, with a
+ * `.bak` copy of the file before a write.
+ *
+ * The 1.x actions stay: author and setup as they were, inspect (with
+ * inspectAction=validate as the alias of validate).
+ *
+ * New actions answer {ok, action, target, changed, readback, next, warnings}
+ * (src/manifest/vocabulary.ts) as JSON text. No Workbench call.
+ */
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { writeFileAtomic } from "../utils/atomic-write.js";
+import { backUp, backupRel } from "../utils/backup.js";
+import { dirname, extname, join, resolve } from "node:path";
 import { z } from "zod";
-import { writeFileSync, mkdirSync, readFileSync, existsSync } from "node:fs";
-import { dirname, join, extname } from "node:path";
 import type { Config } from "../config.js";
 import { validateProjectPath } from "../utils/safe-path.js";
+import { assertInsideRoot, pinnedProjectRoot } from "../utils/path-guard.js";
 import { PakVirtualFS } from "../pak/vfs.js";
 import {
+  CstEditError,
+  parseCstBytes,
+  type CstDocument,
+  type CstEntry,
+} from "../formats/enfusion-cst.js";
+import {
+  VocabularyError,
+  checkCursor,
+  checkRelativePath,
+  errorResponse,
+  nextCursor,
+  parseCursor,
+  LIMIT_DEFAULT,
+  LIMIT_MAX,
+  type ActionResponse,
+  type ErrorCode,
+} from "../manifest/vocabulary.js";
+import {
+  parseAgrDoc,
+  parseAgfDoc,
   parseAgrToStruct,
   parseAgfToStruct,
   parseAstToStruct,
@@ -22,6 +62,25 @@ import {
 } from "../animation/formatter.js";
 import { generateSuggestions, formatSuggestions } from "../animation/suggestions.js";
 import { generateGuide } from "../animation/guides.js";
+import { validateGraph } from "../animation/validator.js";
+import type { ParsedAgf, ParsedAgr, ParsedAsi, ValidationIssue } from "../animation/types.js";
+import {
+  NODE_CATALOG_BUILD,
+  catalog,
+  catalogClass,
+  catalogEnums,
+  type CatalogKind,
+} from "../animation/node-catalog.js";
+import {
+  GRAPH_OPS,
+  VAR_TYPES,
+  applyGraphEdit,
+  opExtension,
+  type GraphEditOp,
+  type GraphOp,
+  type PropValue,
+} from "../animation/graph-edit.js";
+import { lineDiff } from "./config-edit.js";
 
 // ── Shared interface ──────────────────────────────────────────────────────────
 
@@ -482,38 +541,6 @@ function generateAstAuthor(cfg: VehicleConfig): string {
   return lines.join("\n");
 }
 
-// ── Inspect helper (from animation-graph-inspect.ts) ─────────────────────────
-
-function readFileForTool(
-  filePath: string,
-  source: "mod" | "game",
-  projectPath: string | undefined,
-  config: Config,
-): string | null {
-  try {
-    if (source === "mod") {
-      const basePath = projectPath || config.projectPath;
-      if (!basePath) return null;
-      const fullPath = validateProjectPath(basePath, filePath);
-      if (!existsSync(fullPath)) return null;
-      return readFileSync(fullPath, "utf-8");
-    } else {
-      const dataPath = join(config.gamePath, "addons", "data");
-      const loosePath = validateProjectPath(dataPath, filePath);
-      if (existsSync(loosePath)) {
-        return readFileSync(loosePath, "utf-8");
-      }
-      const pakVfs = PakVirtualFS.get(config.gamePath);
-      if (pakVfs && pakVfs.exists(filePath)) {
-        return pakVfs.readFile(filePath).toString("utf-8");
-      }
-      return null;
-    }
-  } catch {
-    return null;
-  }
-}
-
 // ── Instruction generators (from animation-graph-setup.ts) ───────────────────
 
 function generateAgfInstructions(cfg: VehicleConfig): string {
@@ -770,33 +797,904 @@ function generateChecklist(cfg: VehicleConfig): string {
   return parts.join("\n");
 }
 
-// ── Merged tool registration ──────────────────────────────────────────────────
+// ── W4: shared plumbing ──────────────────────────────────────────────────────
+
+export const ANIMATION_GRAPH_ACTIONS = [
+  "author",
+  "inspect",
+  "setup",
+  "validate",
+  "nodes",
+  "edit",
+] as const;
+export type AnimationGraphAction = (typeof ANIMATION_GRAPH_ACTIONS)[number];
+
+export const ANIMATION_GRAPH_DESCRIPTION =
+  "Animation graph files (.agf .agr .ast .asi .aw), offline, lossless. " +
+  "inspect (format json pages it), validate (rules that fire on vanilla are warnings), " +
+  "nodes (Animation Editor class catalog), edit: .agf addNode removeNode setProp connect disconnect addSheet removeSheet; " +
+  ".agr addFile removeFile setDefaultRunNode addVariable removeVariable; project files, dry run unless confirm. author, setup.";
+
+const INSPECT_EXTENSIONS = [".agr", ".agf", ".ast", ".asi", ".aw"];
+
+export interface AnimationGraphArgs {
+  action: AnimationGraphAction;
+  // 1.x
+  vehicleName?: string;
+  vehicleType?: "wheeled" | "tracked" | "helicopter" | "boat";
+  wheelCount?: number;
+  hasTurret?: boolean;
+  hasSuspensionIK?: boolean;
+  hasShockAbsorbers?: boolean;
+  hasSteeringLinkage?: boolean;
+  seatTypes?: ("driver" | "gunner" | "commander" | "passenger")[];
+  dialList?: string[];
+  outputPath?: string;
+  modName?: string;
+  projectPath?: string;
+  path?: string;
+  inspectAction?: "inspect" | "validate";
+  source?: "mod" | "game";
+  agrPath?: string;
+  asiPath?: string;
+  step?: "all" | "agr" | "agf_instructions" | "prefab_setup" | "checklist";
+  agfPath?: string;
+  preset?: "character" | "weapon" | "prop" | "custom";
+  setupSubAction?: "setup" | "suggest" | "guide";
+  // W4
+  format?: "text" | "json";
+  cursor?: string;
+  limit?: number;
+  query?: string;
+  kind?: CatalogKind | "enum";
+  nodeClass?: string;
+  op?: GraphOp;
+  sheet?: string;
+  name?: string | null;
+  node?: string;
+  prop?: string;
+  value?: PropValue | null;
+  quoted?: boolean;
+  to?: string;
+  slot?: string;
+  file?: string;
+  varType?: (typeof VAR_TYPES)[number];
+  min?: number | string;
+  max?: number | string;
+  defaultValue?: number | string;
+  props?: Record<string, PropValue>;
+  editorPos?: [number, number];
+  raw?: string;
+  index?: number;
+  confirm?: boolean;
+}
+
+export interface ToolText {
+  text: string;
+  isError: boolean;
+}
+
+class Refusal extends Error {
+  constructor(
+    readonly code: ErrorCode,
+    message: string,
+    readonly next?: string,
+  ) {
+    super(message);
+    this.name = "Refusal";
+  }
+}
+
+const MESSAGE_CAP = 400;
+
+function failure(action: string, target: string, e: unknown): ActionResponse {
+  if (e instanceof Refusal) return errorResponse(action, target, e.code, e.message, e.next);
+  if (e instanceof VocabularyError) return errorResponse(action, target, e.code, e.message);
+  if (e instanceof CstEditError) {
+    return errorResponse(
+      action,
+      target,
+      e.code === "PATH_NOT_FOUND" ? "PATH_NOT_FOUND" : "INVALID_ARGUMENT",
+      e.message,
+    );
+  }
+  const msg = e instanceof Error ? e.message : String(e);
+  return errorResponse(action, target, "INVALID_ARGUMENT", msg.slice(0, MESSAGE_CAP));
+}
+
+function json(res: ActionResponse): ToolText {
+  return { text: JSON.stringify(res, null, 2), isError: !res.ok };
+}
+
+function stripRef(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^path:/, "")
+    .replace(/^\{[0-9A-Fa-f]{16}\}/, "");
+}
+
+function vfsOf(config: Config): PakVirtualFS | null {
+  try {
+    return config.gamePath ? PakVirtualFS.get(config.gamePath) : null;
+  } catch {
+    return null;
+  }
+}
+
+interface Source {
+  rel: string;
+  where: "project" | "game";
+  bytes: Buffer;
+}
+
+/** Reads a resource from the project (source mod) or the game data (loose, then paks); null when absent. */
+function readSource(
+  raw: string,
+  source: "mod" | "game",
+  projectPath: string | undefined,
+  config: Config,
+): Source | null {
+  const rel = checkRelativePath(stripRef(raw));
+  try {
+    if (source === "mod") {
+      const base = projectPath || config.projectPath;
+      if (!base) return null;
+      const full = validateProjectPath(base, rel);
+      if (!existsSync(full) || !statSync(full).isFile()) return null;
+      return { rel, where: "project", bytes: readFileSync(full) };
+    }
+    const dataPath = join(config.gamePath, "addons", "data");
+    const loose = validateProjectPath(dataPath, rel);
+    if (existsSync(loose) && statSync(loose).isFile()) {
+      return { rel, where: "game", bytes: readFileSync(loose) };
+    }
+    const vfs = vfsOf(config);
+    if (vfs && vfs.exists(rel)) return { rel, where: "game", bytes: vfs.readFile(rel) };
+    return null;
+  } catch (e) {
+    if (e instanceof VocabularyError) throw e;
+    return null;
+  }
+}
+
+/** A reference an .agr holds: the project first, then the game data. */
+function readRef(raw: string, a: AnimationGraphArgs, config: Config): Source | null {
+  if ((a.source ?? "mod") === "mod") {
+    const p = readSource(raw, "mod", a.projectPath, config);
+    if (p) return p;
+  }
+  return readSource(raw, "game", a.projectPath, config);
+}
+
+function textOfBytes(b: Buffer): string {
+  return parseCstBytes(b).text;
+}
+
+function pageOf<T>(
+  items: T[],
+  a: AnimationGraphArgs,
+): { page: T[]; total: number; nextCursor?: string } {
+  const limit = Math.min(Math.max(a.limit ?? LIMIT_DEFAULT, 1), LIMIT_MAX);
+  let start = 0;
+  if (a.cursor) {
+    const c = parseCursor(a.cursor);
+    checkCursor(c, items.length);
+    start = c.start;
+  }
+  return {
+    page: items.slice(start, start + limit),
+    total: items.length,
+    nextCursor: nextCursor(start, limit, items.length),
+  };
+}
+
+// ── inspect (json) ───────────────────────────────────────────────────────────
+
+function inspectItems(
+  ext: string,
+  bytes: Buffer,
+): { summary: Record<string, unknown>; items: unknown[] } {
+  const doc = parseCstBytes(bytes);
+  const text = doc.text;
+  if (ext === ".agf") {
+    const agf = parseAgfDoc(doc);
+    const items = agf.sheets.flatMap((s) =>
+      s.nodes.map((n) => ({
+        sheet: s.name,
+        type: n.type,
+        name: n.name,
+        children: n.children,
+        editorPos: n.editorPos,
+        props: n.properties,
+      })),
+    );
+    return {
+      summary: {
+        sheets: agf.sheets.map((s) => ({ name: s.name, nodes: s.nodes.length })),
+        nodes: items.length,
+      },
+      items,
+    };
+  }
+  if (ext === ".agr") {
+    const agr = parseAgrDoc(doc);
+    const items = [
+      ...agr.variables.map((v) => ({ kind: "variable", ...v })),
+      ...agr.commands.map((c) => ({ kind: "command", name: c.name })),
+      ...agr.ikChains.map((c) => ({ kind: "ikChain", ...c })),
+      ...agr.boneMasks.map((m) => ({ kind: "boneMask", ...m })),
+      ...agr.globalTags.map((t) => ({ kind: "tag", name: t })),
+      ...agr.agfReferences.map((f) => ({ kind: "file", name: f })),
+    ];
+    return {
+      summary: {
+        defaultRunNode: agr.defaultRunNode,
+        animSetTemplate: agr.astReference,
+        variables: agr.variables.length,
+        commands: agr.commands.length,
+        ikChains: agr.ikChains.length,
+        boneMasks: agr.boneMasks.length,
+        tags: agr.globalTags.length,
+        files: agr.agfReferences.length,
+      },
+      items,
+    };
+  }
+  if (ext === ".ast") {
+    const ast = parseAstToStruct(text);
+    return { summary: { groups: ast.groups.length }, items: ast.groups };
+  }
+  if (ext === ".asi") {
+    const asi = parseAsiToStruct(text);
+    return { summary: { mappings: asi.mappings.length }, items: asi.mappings };
+  }
+  const aw = parseAwToStruct(text);
+  return {
+    summary: { animGraph: aw.animGraph, animSetTemplate: aw.animSetTemplate },
+    items: [
+      ...aw.animSetInstances.map((i) => ({ kind: "animSetInstance", ref: i })),
+      ...aw.previewModels.map((m) => ({ kind: "previewModel", ref: m })),
+      ...aw.childPreviewModels.map((m) => ({ kind: "childPreviewModel", ...m })),
+    ],
+  };
+}
+
+// ── validate ─────────────────────────────────────────────────────────────────
+
+interface FileIssue extends ValidationIssue {
+  file: string;
+}
+
+interface ValidateOutcome {
+  files: { path: string; errors: number; warnings: number }[];
+  issues: FileIssue[];
+  errorCount: number;
+  warningCount: number;
+  missing: string[];
+}
+
+function runValidate(
+  a: AnimationGraphArgs,
+  config: Config,
+  main: Source,
+  ext: string,
+): ValidateOutcome {
+  const out: ValidateOutcome = {
+    files: [],
+    issues: [],
+    errorCount: 0,
+    warningCount: 0,
+    missing: [],
+  };
+  const source = a.source ?? "mod";
+  const record = (path: string, issues: ValidationIssue[]) => {
+    const errors = issues.filter((i) => i.severity === "error").length;
+    out.files.push({ path, errors, warnings: issues.length - errors });
+    out.errorCount += errors;
+    out.warningCount += issues.length - errors;
+    for (const i of issues) out.issues.push({ file: path, ...i });
+  };
+  let asi: ParsedAsi | undefined;
+  if (a.asiPath) {
+    const s = readSource(a.asiPath, source, a.projectPath, config);
+    if (s) asi = parseAsiToStruct(textOfBytes(s.bytes));
+    else out.missing.push(a.asiPath);
+  }
+  if (ext === ".agf") {
+    const agf = parseAgfToStruct(textOfBytes(main.bytes));
+    let agr: ParsedAgr | undefined;
+    let agrContent: string | undefined;
+    const names: string[] = [];
+    if (a.agrPath) {
+      const s = readSource(a.agrPath, source, a.projectPath, config);
+      if (s) {
+        agrContent = textOfBytes(s.bytes);
+        agr = parseAgrToStruct(agrContent);
+        for (const ref of agr.agfReferences) {
+          if (stripRef(ref).toLowerCase() === main.rel.toLowerCase()) continue;
+          const o = readRef(ref, a, config);
+          if (o)
+            for (const sh of parseAgfToStruct(textOfBytes(o.bytes)).sheets)
+              for (const n of sh.nodes) names.push(n.name);
+        }
+      } else out.missing.push(a.agrPath);
+    }
+    const r = validateGraph(agf, agr, asi, main.rel, { agrContent, graphNodeNames: names });
+    record(main.rel, r.issues);
+    return out;
+  }
+  // .agr: every .agf it lists, each with the others' node names for V06.
+  const agrContent = textOfBytes(main.bytes);
+  const agr = parseAgrToStruct(agrContent);
+  const agfs: { rel: string; agf: ParsedAgf }[] = [];
+  for (const ref of agr.agfReferences) {
+    let s: Source | null = null;
+    try {
+      s = readRef(ref, a, config);
+    } catch {
+      s = null;
+    }
+    if (s) agfs.push({ rel: s.rel, agf: parseAgfToStruct(textOfBytes(s.bytes)) });
+    else out.missing.push(stripRef(ref));
+  }
+  if (agfs.length === 0) {
+    record(
+      main.rel,
+      validateGraph({ sheets: [] }, agr, asi, undefined, { agrContent }).issues.filter(
+        (i) => i.id !== "V06",
+      ),
+    );
+  }
+  for (const f of agfs) {
+    const others = agfs
+      .filter((x) => x !== f)
+      .flatMap((x) => x.agf.sheets.flatMap((s) => s.nodes.map((n) => n.name)));
+    record(
+      f.rel,
+      validateGraph(f.agf, agr, asi, f.rel, { agrContent, graphNodeNames: others }).issues,
+    );
+  }
+  return out;
+}
+
+function needInspectable(a: AnimationGraphArgs, exts: string[]): { rel: string; ext: string } {
+  if (!a.path) throw new Refusal("INVALID_ARGUMENT", `path is required for ${a.action}`);
+  const rel = checkRelativePath(stripRef(a.path));
+  const ext = extname(rel).toLowerCase();
+  if (!exts.includes(ext)) {
+    throw new Refusal(
+      "INVALID_ARGUMENT",
+      `${a.action} takes ${exts.join(" ")}, got ${ext || "no extension"}`,
+    );
+  }
+  return { rel, ext };
+}
+
+function mustRead(a: AnimationGraphArgs, config: Config, rel: string): Source {
+  const source = a.source ?? "mod";
+  if (source === "mod" && !(a.projectPath || config.projectPath)) {
+    throw new Refusal(
+      "NOT_IN_PROJECT",
+      "no project root: set ENFUSION_PROJECT_PATH or pass projectPath",
+    );
+  }
+  const s = readSource(rel, source, a.projectPath, config);
+  if (!s) {
+    throw new Refusal(
+      "PATH_NOT_FOUND",
+      `no file "${rel}" in the ${source === "mod" ? "project" : "game data"}`,
+      source === "mod"
+        ? "A game file is read with source:game."
+        : "Check the path with game_browse.",
+    );
+  }
+  return s;
+}
+
+function doValidate(a: AnimationGraphArgs, config: Config): ActionResponse {
+  const { rel, ext } = needInspectable(a, [".agf", ".agr"]);
+  const main = mustRead(a, config, rel);
+  const v = runValidate(a, config, main, ext);
+  const { page, total, nextCursor: nc } = pageOf(v.issues, a);
+  const warnings = v.missing.map((m) => `not found, not validated: ${m}`);
+  return {
+    ok: true,
+    action: "validate",
+    target: `path:${rel}`,
+    changed: null,
+    readback: {
+      source: main.where,
+      files: v.files,
+      errorCount: v.errorCount,
+      warningCount: v.warningCount,
+      issues: page,
+      total,
+      ...(nc ? { nextCursor: nc } : {}),
+    },
+    next:
+      v.errorCount === 0
+        ? "No error. Warnings marked demoted fire on shipping vanilla graphs too (DEC-067 OD-4)."
+        : "Fix the errors; edit changes .agf/.agr files in the project.",
+    warnings,
+  };
+}
+
+// ── nodes ────────────────────────────────────────────────────────────────────
+
+function doNodes(a: AnimationGraphArgs): ActionResponse {
+  const target = `catalog:${NODE_CATALOG_BUILD}`;
+  if (a.nodeClass) {
+    const c = catalogClass(a.nodeClass);
+    if (!c) {
+      const near = [...catalog().keys()]
+        .filter((k) =>
+          k.toLowerCase().includes(a.nodeClass!.toLowerCase().replace(/^animsrcnode/, "")),
+        )
+        .slice(0, 10);
+      throw new Refusal(
+        "ITEM_NOT_FOUND",
+        `no class ${a.nodeClass} in the ${NODE_CATALOG_BUILD} catalog${near.length ? ` (close: ${near.join(", ")})` : ""}`,
+        "List the classes with nodes and a query.",
+      );
+    }
+    return {
+      ok: true,
+      action: "nodes",
+      target,
+      changed: null,
+      readback: { build: NODE_CATALOG_BUILD, class: c },
+      next: "edit addNode takes this class; setProp takes these keys.",
+      warnings: [],
+    };
+  }
+  const q = a.query?.toLowerCase();
+  if (a.kind === "enum") {
+    const items = catalogEnums().filter(
+      (e) => !q || e.class.toLowerCase().includes(q) || e.key.toLowerCase().includes(q),
+    );
+    const { page, total, nextCursor: nc } = pageOf(items, a);
+    return {
+      ok: true,
+      action: "nodes",
+      target,
+      changed: null,
+      readback: {
+        build: NODE_CATALOG_BUILD,
+        kind: "enum",
+        items: page,
+        total,
+        ...(nc ? { nextCursor: nc } : {}),
+      },
+      warnings: [],
+    };
+  }
+  const items = [...catalog().values()]
+    .filter((c) => (!a.kind || c.kind === a.kind) && (!q || c.name.toLowerCase().includes(q)))
+    .map((c) => ({
+      name: c.name,
+      kind: c.kind,
+      ext: c.ext,
+      instances: c.instances,
+      files: c.files,
+      keys: c.keys.map((k) => k.name),
+    }));
+  const { page, total, nextCursor: nc } = pageOf(items, a);
+  return {
+    ok: true,
+    action: "nodes",
+    target,
+    changed: null,
+    readback: { build: NODE_CATALOG_BUILD, items: page, total, ...(nc ? { nextCursor: nc } : {}) },
+    next: "nodeClass:<name> gives one class with its key signatures and enum values.",
+    warnings: [],
+  };
+}
+
+// ── edit ─────────────────────────────────────────────────────────────────────
+
+function eachOpaque(entries: readonly CstEntry[], visit: (e: CstEntry) => void): void {
+  for (const e of entries) {
+    if (e.kind === "opaque") visit(e);
+    else if (e.kind === "object") eachOpaque(e.children, visit);
+  }
+}
+
+/** Why the writer will not touch this file, or undefined when it can. */
+function unwritableReason(doc: CstDocument, bytes: Buffer): string | undefined {
+  if (!doc.toBytes().equals(bytes)) return "the parser does not give the file back byte for byte";
+  if (doc.diagnostics.length > 0) {
+    const d = doc.diagnostics[0];
+    return `the file has ${doc.diagnostics.length} parse diagnostic(s), the first at line ${d.line}: ${d.message}`;
+  }
+  let opaque = 0;
+  eachOpaque(doc.root.children, () => opaque++);
+  if (opaque > 0) return `the file has ${opaque} entr(ies) the writer cannot address`;
+  return undefined;
+}
+
+function opOf(a: AnimationGraphArgs): GraphEditOp {
+  if (!a.op) throw new Refusal("INVALID_ARGUMENT", `edit needs op: ${GRAPH_OPS.join(", ")}`);
+  const o: GraphEditOp = { op: a.op };
+  const keys = [
+    "sheet",
+    "name",
+    "nodeClass",
+    "props",
+    "editorPos",
+    "node",
+    "prop",
+    "value",
+    "quoted",
+    "to",
+    "slot",
+    "file",
+    "varType",
+    "min",
+    "max",
+    "defaultValue",
+    "raw",
+    "index",
+  ] as const;
+  for (const k of keys) {
+    if (a[k] !== undefined) (o as unknown as Record<string, unknown>)[k] = a[k];
+  }
+  return o;
+}
+
+/** Warnings about references the edit makes that this tool can check offline. */
+function referenceWarnings(
+  a: AnimationGraphArgs,
+  op: GraphEditOp,
+  doc: CstDocument,
+  config: Config,
+): string[] {
+  const out: string[] = [];
+  if (
+    op.op === "setDefaultRunNode" &&
+    typeof op.name === "string" &&
+    op.name !== "" &&
+    op.raw === undefined
+  ) {
+    const agr = parseAgrDoc(doc);
+    const names = new Set<string>();
+    let read = 0;
+    for (const ref of agr.agfReferences) {
+      const s = readRef(ref, a, config);
+      if (!s) continue;
+      read++;
+      for (const sh of parseAgfToStruct(textOfBytes(s.bytes)).sheets)
+        for (const n of sh.nodes) names.add(n.name);
+    }
+    if (read > 0 && !names.has(op.name)) {
+      out.push(`no node '${op.name}' in the ${read} .agf file(s) of the graph read`);
+    }
+  }
+  if (op.op === "addFile" && op.file && op.raw === undefined) {
+    if (!readRef(op.file, a, config))
+      out.push(`${stripRef(op.file)} is not in the project or the game data`);
+  }
+  return out;
+}
+
+function doEdit(a: AnimationGraphArgs, config: Config): ActionResponse {
+  const op = opOf(a);
+  const want = opExtension(op.op);
+  const { rel, ext } = needInspectable(a, [".agf", ".agr"]);
+  if (ext !== want)
+    throw new Refusal("INVALID_ARGUMENT", `op ${op.op} edits a ${want} file, got ${ext}`);
+  const root = a.projectPath || config.projectPath;
+  if (!root)
+    throw new Refusal(
+      "NOT_IN_PROJECT",
+      "no project root: set ENFUSION_PROJECT_PATH or pass projectPath",
+    );
+  const abs = resolve(root, rel);
+  try {
+    assertInsideRoot(abs, root, "path");
+  } catch (e) {
+    throw new Refusal("NOT_IN_PROJECT", e instanceof Error ? e.message : String(e));
+  }
+  if (!existsSync(abs)) {
+    if (readSource(rel, "game", a.projectPath, config)) {
+      throw new Refusal(
+        "NOT_IN_PROJECT",
+        `${rel} is a game resource: read only; edit changes files inside the project`,
+        "Copy it into the project first (game_duplicate), then edit the copy.",
+      );
+    }
+    throw new Refusal("PATH_NOT_FOUND", `no file "${rel}" in the project`);
+  }
+  if (!statSync(abs).isFile()) throw new Refusal("INVALID_ARGUMENT", `${rel} is not a file`);
+  const bytes = readFileSync(abs);
+  const doc = parseCstBytes(bytes);
+  const why = unwritableReason(doc, bytes);
+  if (why) {
+    throw new Refusal(
+      "INVALID_ARGUMENT",
+      `${rel} is refused, not rewritten: ${why}`,
+      "Edit it in the Animation Editor, or fix the text by hand and retry.",
+    );
+  }
+  const plan = applyGraphEdit(doc, op);
+  const warnings = [...plan.warnings, ...referenceWarnings(a, op, doc, config)];
+  const newBytes = plan.doc.toBytes();
+  const target = `path:${rel}`;
+  const confirm = a.confirm === true;
+  const readback: Record<string, unknown> = {
+    op: op.op,
+    dryRun: !confirm,
+    diff: lineDiff(doc.text, plan.doc.text),
+    bytesBefore: bytes.length,
+    bytesAfter: newBytes.length,
+    inverse: plan.inverse,
+  };
+  const base = { ok: true as const, action: "edit", target, changed: plan.changed, readback };
+  if (!confirm) {
+    return {
+      ...base,
+      next: "Nothing was written. Repeat the call with confirm:true to write exactly this change.",
+      warnings,
+    };
+  }
+  if (newBytes.equals(bytes)) {
+    readback.written = false;
+    return { ...base, next: "The file already had this content: nothing written.", warnings };
+  }
+  if (!readFileSync(abs).equals(bytes)) {
+    throw new Refusal(
+      "INVALID_ARGUMENT",
+      `${rel} changed on disk while the edit was planned: nothing written`,
+      "Read it again and repeat the call.",
+    );
+  }
+  // A numbered backup: an earlier .bak (the first original bytes) is kept (review round 1, W4-AS-1).
+  const backup = backUp(abs, (m) => {
+    throw new Refusal("INVALID_ARGUMENT", m);
+  });
+  writeFileAtomic(abs, newBytes);
+  const verified = readFileSync(abs).equals(newBytes);
+  readback.written = true;
+  readback.verified = verified;
+  readback.backup = backupRel(rel, abs, backup);
+  return {
+    ...base,
+    next:
+      `Written; the old file is beside it as ${readback.backup}. An Animation Editor` +
+      " tab that has this file open keeps its own copy: reopen it there. " +
+      "readback.inverse undoes the edit.",
+    warnings: verified
+      ? warnings
+      : [...warnings, "the file read back differs from what was written"],
+  };
+}
+
+// ── 1.x actions ──────────────────────────────────────────────────────────────
+
+function vehicleConfig(a: AnimationGraphArgs): VehicleConfig {
+  return {
+    vehicleName: a.vehicleName ?? "",
+    vehicleType: a.vehicleType ?? "wheeled",
+    wheelCount: a.wheelCount ?? 4,
+    hasTurret: a.hasTurret ?? false,
+    hasSuspensionIK: a.hasSuspensionIK ?? true,
+    hasShockAbsorbers: a.hasShockAbsorbers ?? false,
+    hasSteeringLinkage: a.hasSteeringLinkage ?? false,
+    seatTypes: a.seatTypes ?? ["driver"],
+    dialList: a.dialList ?? [],
+  };
+}
+
+function doAuthor(a: AnimationGraphArgs, config: Config): ToolText {
+  const basePath = a.projectPath || config.projectPath;
+  if (!basePath) return { text: "No project path configured.", isError: true };
+  if (!a.vehicleName) return { text: "author action requires vehicleName.", isError: true };
+  const cfg = vehicleConfig(a);
+  try {
+    const agrContent = generateAgrAuthor(cfg);
+    const astContent = generateAstAuthor(cfg);
+    const agrPath = validateProjectPath(basePath, `${a.outputPath}/${a.vehicleName}.agr`);
+    const astPath = validateProjectPath(basePath, `${a.outputPath}/${a.vehicleName}.ast`);
+    mkdirSync(dirname(agrPath), { recursive: true });
+    writeFileAtomic(agrPath, agrContent);
+    writeFileAtomic(astPath, astContent);
+    return {
+      text: [
+        `Generated animation graph files for ${a.vehicleName}:`,
+        `  AGR: ${a.outputPath}/${a.vehicleName}.agr`,
+        `  AST: ${a.outputPath}/${a.vehicleName}.ast`,
+        "",
+        "Next steps:",
+        "1. Open Workbench and register both files (right-click -> Add to project)",
+        "2. Open the AGR in Animation Editor to verify variables and IK chains",
+        "3. Create a new .agf file and build the node graph (use action=setup for guided instructions)",
+        "4. Create a .asi file mapping AST animation groups to .anm files",
+        "5. Add VehicleAnimationComponent to your vehicle prefab, set AnimGraph + AnimInstance",
+      ].join("\n"),
+      isError: false,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { text: `Error generating animation graph files: ${msg}`, isError: true };
+  }
+}
+
+function doInspect(a: AnimationGraphArgs, config: Config): ToolText {
+  if (!a.path) return { text: "path is required for inspect action.", isError: true };
+  const ext = extname(a.path).toLowerCase();
+  if (!INSPECT_EXTENSIONS.includes(ext)) {
+    return {
+      text: `Unsupported file type: ${ext}. Supported: ${INSPECT_EXTENSIONS.join(", ")}`,
+      isError: true,
+    };
+  }
+  if (a.inspectAction === "validate") {
+    // 1.x alias of validate: the same rules, the 1.x text report.
+    if (ext !== ".agf" && ext !== ".agr") {
+      return {
+        text: "Validate action requires an .agf (or .agr) file as the primary path.",
+        isError: true,
+      };
+    }
+    let main: Source;
+    try {
+      main = mustRead(a, config, checkRelativePath(stripRef(a.path)));
+    } catch (e) {
+      return { text: e instanceof Error ? e.message : String(e), isError: true };
+    }
+    const v = runValidate(a, config, main, ext);
+    const report = formatValidationReport(v.issues, v.errorCount, v.warningCount);
+    const missing = v.missing.length ? `\n\nNot found, not validated: ${v.missing.join(", ")}` : "";
+    return { text: report + missing, isError: false };
+  }
+  let main: Source;
+  try {
+    main = mustRead(a, config, checkRelativePath(stripRef(a.path)));
+  } catch (e) {
+    return { text: e instanceof Error ? e.message : String(e), isError: true };
+  }
+  if (a.format === "json") {
+    const { summary, items } = inspectItems(ext, main.bytes);
+    const res: ActionResponse = (() => {
+      try {
+        const { page, total, nextCursor: nc } = pageOf(items, a);
+        return {
+          ok: true,
+          action: "inspect",
+          target: `path:${main.rel}`,
+          changed: null,
+          readback: {
+            source: main.where,
+            ...summary,
+            items: page,
+            total,
+            ...(nc ? { nextCursor: nc } : {}),
+          },
+          warnings: [],
+        };
+      } catch (e) {
+        return failure("inspect", `path:${main.rel}`, e);
+      }
+    })();
+    return json(res);
+  }
+  const content = textOfBytes(main.bytes);
+  let summary: string;
+  if (ext === ".agr") summary = formatAgrSummary(parseAgrToStruct(content));
+  else if (ext === ".agf") summary = formatAgfTree(parseAgfToStruct(content));
+  else if (ext === ".ast") summary = formatAstSummary(parseAstToStruct(content));
+  else if (ext === ".asi") summary = formatAsiSummary(parseAsiToStruct(content));
+  else summary = formatAwSummary(parseAwToStruct(content));
+  return { text: summary, isError: false };
+}
+
+function readOptional(raw: string, a: AnimationGraphArgs, config: Config): string | null {
+  try {
+    const s = readSource(raw, a.source ?? "mod", a.projectPath, config);
+    return s ? textOfBytes(s.bytes) : null;
+  } catch {
+    return null;
+  }
+}
+
+function doSetup(a: AnimationGraphArgs, config: Config): ToolText {
+  const sub = a.setupSubAction ?? "setup";
+  if (sub === "guide") return { text: generateGuide(a.preset ?? "custom"), isError: false };
+  if (sub === "suggest") {
+    if (!a.agfPath) return { text: "agfPath is required for suggest sub-action.", isError: true };
+    const agfContent = readOptional(a.agfPath, a, config);
+    if (!agfContent) return { text: `Could not read AGF file: ${a.agfPath}`, isError: true };
+    const agf = parseAgfToStruct(agfContent);
+    let agr;
+    if (a.agrPath) {
+      const agrContent = readOptional(a.agrPath, a, config);
+      if (agrContent) agr = parseAgrToStruct(agrContent);
+    }
+    return { text: formatSuggestions(generateSuggestions(agf, agr)), isError: false };
+  }
+  if (!a.vehicleName) return { text: "vehicleName is required for setup action.", isError: true };
+  const cfg = vehicleConfig(a);
+  const step = a.step ?? "all";
+  const parts: string[] = [];
+  if (step === "all" || step === "agr") {
+    const basePath = a.projectPath || config.projectPath;
+    if (basePath) {
+      try {
+        const agrContent = generateAgrAuthor(cfg);
+        const astContent = generateAstAuthor(cfg);
+        const agrFilePath = validateProjectPath(basePath, `${a.outputPath}/${a.vehicleName}.agr`);
+        const astFilePath = validateProjectPath(basePath, `${a.outputPath}/${a.vehicleName}.ast`);
+        mkdirSync(dirname(agrFilePath), { recursive: true });
+        writeFileAtomic(agrFilePath, agrContent);
+        writeFileAtomic(astFilePath, astContent);
+        parts.push(
+          `## Step 1: AGR + AST Files Generated\n- ${a.outputPath}/${a.vehicleName}.agr\n- ${a.outputPath}/${a.vehicleName}.ast\nRegister both files in Workbench to assign GUIDs.`,
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        parts.push(`## Step 1: AGR + AST — Error\n${msg}`);
+      }
+    } else {
+      parts.push(
+        "## Step 1: AGR + AST — Skipped\nNo project path configured. Set ENFUSION_PROJECT_PATH or provide projectPath.",
+      );
+    }
+  }
+  if (step === "all" || step === "agf_instructions") parts.push(generateAgfInstructions(cfg));
+  if (step === "all" || step === "prefab_setup") parts.push(generatePrefabInstructions(cfg));
+  if (step === "all" || step === "checklist") parts.push(generateChecklist(cfg));
+  return { text: parts.join("\n\n---\n\n"), isError: false };
+}
+
+// ── Entry point ──────────────────────────────────────────────────────────────
+
+/** One call of the tool; never throws. */
+export function runAnimationGraph(a: AnimationGraphArgs, config: Config): ToolText {
+  // Every action below reads or writes under a.projectPath, so it is pinned once here.
+  try {
+    pinnedProjectRoot(a.projectPath, config.projectPath);
+  } catch (e) {
+    if (a.action === "author" || a.action === "inspect" || a.action === "setup")
+      return { text: `Error: ${(e as Error).message}`, isError: true };
+    return json(failure(a.action, `path:${stripRef(a.path ?? "")}`, e));
+  }
+  switch (a.action) {
+    case "author":
+      return doAuthor(a, config);
+    case "inspect":
+      return doInspect(a, config);
+    case "setup":
+      return doSetup(a, config);
+    default:
+      break;
+  }
+  const target =
+    a.action === "nodes" ? `catalog:${NODE_CATALOG_BUILD}` : `path:${stripRef(a.path ?? "")}`;
+  try {
+    if (a.action === "validate") return json(doValidate(a, config));
+    if (a.action === "nodes") return json(doNodes(a));
+    if (a.action === "edit") return json(doEdit(a, config));
+    throw new Refusal("INVALID_ARGUMENT", `unknown action ${String(a.action)}`);
+  } catch (e) {
+    return json(failure(a.action, target, e));
+  }
+}
+
+const SCALAR = z.union([z.string(), z.number(), z.boolean()]);
+const VALUE = z.union([SCALAR, z.array(SCALAR).min(1)]);
 
 export function registerAnimationGraph(server: McpServer, config: Config): void {
   server.registerTool(
     "animation_graph",
     {
-      description:
-        "Unified animation graph tool for Arma Reforger vehicles. " +
-        "action=author: Generate and write .agr and .ast scaffold files for a new vehicle. " +
-        "action=inspect: Read and summarize an animation graph file (.agr, .agf, .ast, .asi, or .aw); use sub-action='validate' for pitfall checks. " +
-        "action=setup: Full guided workflow wizard — generates scaffold, AGF node graph instructions, prefab setup, and verification checklist. " +
-        "Trigger: 'create animation graph for new vehicle', 'generate AGR', 'inspect animation graph', " +
-        "'set up vehicle animation', 'suggest improvements to animation graph', 'guide for animation'.",
+      description: ANIMATION_GRAPH_DESCRIPTION,
       inputSchema: {
-        action: z
-          .enum(["author", "inspect", "setup"])
-          .describe(
-            "Action to perform: author (generate .agr/.ast files), inspect (read/summarize/validate animation files), setup (full guided workflow wizard).",
-          ),
+        action: z.enum(ANIMATION_GRAPH_ACTIONS),
 
-        // ── author params ──
+        // ── author / setup (1.x) ──
         vehicleName: z
           .string()
           .optional()
-          .describe(
-            "(author/setup) Vehicle name (e.g. 'MyTruck'). Used in file names and GlobalTags.",
-          ),
+          .describe("(author/setup) Vehicle name, used in file names and GlobalTags."),
         vehicleType: z
           .enum(["wheeled", "tracked", "helicopter", "boat"])
           .default("wheeled")
@@ -808,421 +1706,159 @@ export function registerAnimationGraph(server: McpServer, config: Config): void 
           .max(8)
           .refine((n) => n % 2 === 0, "Must be even (2/4/6/8)")
           .default(4)
-          .describe("(author/setup) Number of wheels (2/4/6/8). Must be even."),
+          .describe("(author/setup) Wheels (2/4/6/8)."),
         hasTurret: z
           .boolean()
           .default(false)
-          .describe("(author/setup) Add turret variables and bone mask."),
-        hasSuspensionIK: z
-          .boolean()
-          .default(true)
-          .describe("(author/setup) Add suspension IK chains."),
+          .describe("(author/setup) Turret variables and bone mask."),
+        hasSuspensionIK: z.boolean().default(true).describe("(author/setup) Suspension IK chains."),
         hasShockAbsorbers: z
           .boolean()
           .default(false)
-          .describe("(author/setup) Add shock absorber IK chains."),
+          .describe("(author/setup) Shock absorber IK chains."),
         hasSteeringLinkage: z
           .boolean()
           .default(false)
-          .describe("(author/setup) Add steering axis IK chains."),
+          .describe("(author/setup) Steering axis IK chains."),
         seatTypes: z
           .array(z.enum(["driver", "gunner", "commander", "passenger"]))
           .default(["driver"])
-          .describe("(author/setup) Seat types for the vehicle."),
+          .describe("(author/setup) Seat types."),
         dialList: z
           .array(z.string())
           .default([])
-          .describe(
-            "(author/setup) Variable names to use as dials (e.g. ['Engine_RPM', 'SPEED']).",
-          ),
+          .describe("(author/setup) Variables used as dials."),
         outputPath: z
           .string()
           .optional()
-          .describe(
-            "(author/setup) Destination folder within mod project (e.g. 'Assets/Vehicles/MyTruck/workspaces').",
-          ),
-        modName: z
-          .string()
-          .optional()
-          .describe("(author/setup) Addon folder name. Uses default if omitted."),
+          .describe("(author/setup) Destination folder in the project."),
+        modName: z.string().optional().describe("(author/setup) Addon folder name."),
         projectPath: z
           .string()
           .optional()
-          .describe("(author/inspect/setup) Mod project root. Uses default if omitted."),
+          .describe("Project root. Uses the configured project when omitted."),
 
-        // ── inspect params ──
+        // ── inspect / validate ──
         path: z
           .string()
           .optional()
           .describe(
-            "(inspect) File path to .agr, .agf, .ast, .asi, or .aw. Relative to mod project (source=mod) or game data root (source=game). " +
-              "Example: 'Assets/Vehicles/MyTruck/workspaces/MyTruck.agr'",
+            "The file (.agr .agf .ast .asi .aw), project-relative (source mod) or game-relative (source game).",
           ),
         inspectAction: z
           .enum(["inspect", "validate"])
           .default("inspect")
-          .describe(
-            "(inspect) Sub-action: inspect (default) returns structured summary; validate runs pitfall checks (requires .agf)",
-          ),
+          .describe("(inspect) validate = the validate action, 1.x text report."),
         source: z
           .enum(["mod", "game"])
           .default("mod")
-          .describe(
-            "(inspect/setup) Read from the mod project directory (mod) or base game data (game).",
-          ),
+          .describe("Read from the project (mod) or the game data (game)."),
         agrPath: z
           .string()
           .optional()
-          .describe(
-            "(inspect/setup) AGR file path for cross-reference during validate or suggest. Same source/projectPath resolution.",
-          ),
-        asiPath: z
+          .describe("(validate, setup suggest) The .agr for cross-checks."),
+        asiPath: z.string().optional().describe("(validate) The .asi for mapping checks."),
+        format: z
+          .enum(["text", "json"])
+          .optional()
+          .describe("(inspect) json: paged items instead of the text summary."),
+        cursor: z
           .string()
           .optional()
-          .describe("(inspect) ASI file path for cross-reference during validate."),
+          .describe("(inspect json, validate, nodes) <start>:<count> from nextCursor."),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(LIMIT_MAX)
+          .optional()
+          .describe("Page size (default 100)."),
 
-        // ── setup params ──
+        // ── setup (1.x) ──
         step: z
           .enum(["all", "agr", "agf_instructions", "prefab_setup", "checklist"])
           .default("all")
-          .describe(
-            "(setup) Which section to return (setup action only). 'all' returns everything.",
-          ),
-        agfPath: z
-          .string()
-          .optional()
-          .describe(
-            "(setup) AGF file path for suggest sub-action. Relative to mod project or game data.",
-          ),
+          .describe("(setup) Section to return."),
+        agfPath: z.string().optional().describe("(setup suggest) The .agf to analyse."),
         preset: z
           .enum(["character", "weapon", "prop", "custom"])
           .optional()
-          .describe(
-            "(setup) Guide preset (guide sub-action only). Available: character, weapon, prop, custom.",
-          ),
+          .describe("(setup guide) Preset."),
         setupSubAction: z
           .enum(["setup", "suggest", "guide"])
           .default("setup")
+          .describe("(setup) Sub-action."),
+
+        // ── nodes ──
+        query: z.string().optional().describe("(nodes) Substring of the class (or enum key) name."),
+        kind: z
+          .enum(["node", "item", "event", "graph", "file", "legacy", "other", "enum"])
+          .optional()
+          .describe("(nodes) Class kind; enum lists the enum-like keys with their values."),
+        nodeClass: z
+          .string()
+          .optional()
+          .describe("(nodes) One class with its keys. (edit addNode) The class."),
+
+        // ── edit ──
+        op: z.enum(GRAPH_OPS).optional().describe("(edit) The op."),
+        sheet: z.string().optional().describe("(edit .agf) The sheet; optional when unambiguous."),
+        name: z
+          .string()
+          .nullable()
+          .optional()
           .describe(
-            "(setup) Sub-action: setup generates vehicle scaffold; suggest analyzes existing graph; guide provides best-practice guidance.",
+            "(edit) Node, sheet or variable name; setDefaultRunNode: the node (null removes).",
           ),
+        node: z.string().optional().describe("(edit setProp/connect/disconnect) The node."),
+        prop: z
+          .string()
+          .optional()
+          .describe("(edit setProp) Path in the node: Child, BlendWeight, QueueItems[0].Child."),
+        value: VALUE.nullable()
+          .optional()
+          .describe("(edit setProp) The value; a list writes several; null removes."),
+        quoted: z.boolean().optional().describe("(edit setProp/connect) Force quotes on or off."),
+        to: z.string().optional().describe("(edit connect) The child node."),
+        slot: z
+          .string()
+          .optional()
+          .describe("(edit connect/disconnect) Slot path (default Child)."),
+        file: z.string().optional().describe("(edit addFile/removeFile) {GUID}path.agf."),
+        varType: z
+          .enum(VAR_TYPES)
+          .optional()
+          .describe("(edit addVariable) Float (default), Int, Bool, String."),
+        min: z.union([z.number(), z.string()]).optional().describe("(edit addVariable) MinValue."),
+        max: z.union([z.number(), z.string()]).optional().describe("(edit addVariable) MaxValue."),
+        defaultValue: z
+          .union([z.number(), z.string()])
+          .optional()
+          .describe("(edit addVariable) DefaultValue."),
+        props: z
+          .record(z.string(), VALUE)
+          .optional()
+          .describe("(edit addNode) {key: value} of the new node."),
+        editorPos: z
+          .tuple([z.number(), z.number()])
+          .optional()
+          .describe("(edit addNode) EditorPos x y."),
+        raw: z
+          .string()
+          .optional()
+          .describe("(edit) Exact lines to restore, as readback.inverse gives them."),
+        index: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("(edit) Position in the block (default end)."),
+        confirm: z.boolean().optional().describe("(edit) true writes; otherwise a dry run."),
       },
     },
-    async (opts) => {
-      // ── author handler ──────────────────────────────────────────────────────
-      if (opts.action === "author") {
-        const basePath = opts.projectPath || config.projectPath;
-        if (!basePath) {
-          return {
-            content: [{ type: "text", text: "No project path configured." }],
-            isError: true,
-          };
-        }
-
-        if (!opts.vehicleName) {
-          return {
-            content: [{ type: "text", text: "author action requires vehicleName." }],
-            isError: true,
-          };
-        }
-
-        const cfg: VehicleConfig = {
-          vehicleName: opts.vehicleName,
-          vehicleType: opts.vehicleType,
-          wheelCount: opts.wheelCount,
-          hasTurret: opts.hasTurret,
-          hasSuspensionIK: opts.hasSuspensionIK,
-          hasShockAbsorbers: opts.hasShockAbsorbers,
-          hasSteeringLinkage: opts.hasSteeringLinkage,
-          seatTypes: opts.seatTypes,
-          dialList: opts.dialList,
-        };
-
-        try {
-          const agrContent = generateAgrAuthor(cfg);
-          const astContent = generateAstAuthor(cfg);
-
-          const agrPath = validateProjectPath(
-            basePath,
-            `${opts.outputPath}/${opts.vehicleName}.agr`,
-          );
-          const astPath = validateProjectPath(
-            basePath,
-            `${opts.outputPath}/${opts.vehicleName}.ast`,
-          );
-
-          mkdirSync(dirname(agrPath), { recursive: true });
-          writeFileSync(agrPath, agrContent, "utf-8");
-          writeFileSync(astPath, astContent, "utf-8");
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: [
-                  `Generated animation graph files for ${opts.vehicleName}:`,
-                  `  AGR: ${opts.outputPath}/${opts.vehicleName}.agr`,
-                  `  AST: ${opts.outputPath}/${opts.vehicleName}.ast`,
-                  "",
-                  "Next steps:",
-                  "1. Open Workbench and register both files (right-click -> Add to project)",
-                  "2. Open the AGR in Animation Editor to verify variables and IK chains",
-                  "3. Create a new .agf file and build the node graph (use action=setup for guided instructions)",
-                  "4. Create a .asi file mapping AST animation groups to .anm files",
-                  "5. Add VehicleAnimationComponent to your vehicle prefab, set AnimGraph + AnimInstance",
-                ].join("\n"),
-              },
-            ],
-          };
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          return {
-            content: [{ type: "text", text: `Error generating animation graph files: ${msg}` }],
-            isError: true,
-          };
-        }
-      }
-
-      // ── inspect handler ─────────────────────────────────────────────────────
-      if (opts.action === "inspect") {
-        const filePath = opts.path;
-        const subAction = opts.inspectAction;
-        const source = opts.source;
-        const projectPath = opts.projectPath;
-        const agrPath = opts.agrPath;
-        const asiPath = opts.asiPath;
-
-        if (!filePath) {
-          return {
-            content: [{ type: "text", text: "path is required for inspect action." }],
-            isError: true,
-          };
-        }
-
-        const ext = extname(filePath).toLowerCase();
-        if (![".agr", ".agf", ".ast", ".asi", ".aw"].includes(ext)) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Unsupported file type: ${ext}. Supported: .agr, .agf, .ast, .asi, .aw`,
-              },
-            ],
-          };
-        }
-
-        // Read main file
-        let content: string;
-        try {
-          if (source === "mod") {
-            const basePath = projectPath || config.projectPath;
-            if (!basePath) {
-              return {
-                content: [
-                  {
-                    type: "text",
-                    text: "No project path configured. Set ENFUSION_PROJECT_PATH or provide projectPath.",
-                  },
-                ],
-                isError: true,
-              };
-            }
-            const fullPath = validateProjectPath(basePath, filePath);
-            if (!existsSync(fullPath)) {
-              return {
-                content: [{ type: "text", text: `File not found: ${filePath}` }],
-                isError: true,
-              };
-            }
-            content = readFileSync(fullPath, "utf-8");
-          } else {
-            const dataPath = join(config.gamePath, "addons", "data");
-            const loosePath = validateProjectPath(dataPath, filePath);
-            if (existsSync(loosePath)) {
-              content = readFileSync(loosePath, "utf-8");
-            } else {
-              const pakVfs = PakVirtualFS.get(config.gamePath);
-              if (pakVfs && pakVfs.exists(filePath)) {
-                const buf = pakVfs.readFile(filePath);
-                content = buf.toString("utf-8");
-              } else {
-                return {
-                  content: [
-                    {
-                      type: "text",
-                      text: `File not found in game data: ${filePath}`,
-                    },
-                  ],
-                  isError: true,
-                };
-              }
-            }
-          }
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          return {
-            content: [{ type: "text", text: `Error reading file: ${msg}` }],
-            isError: true,
-          };
-        }
-
-        // Handle validate sub-action
-        if (subAction === "validate") {
-          if (ext !== ".agf") {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: "Validate action requires an .agf file as the primary path.",
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          // Dynamic import to avoid circular deps — validator is implemented in Task 7
-          const { validateGraph } = await import("../animation/validator.js");
-          const agf = parseAgfToStruct(content);
-
-          let agr;
-          if (agrPath) {
-            const agrContent = readFileForTool(agrPath, source, projectPath, config);
-            if (agrContent) agr = parseAgrToStruct(agrContent);
-          }
-
-          let asi;
-          if (asiPath) {
-            const asiContent = readFileForTool(asiPath, source, projectPath, config);
-            if (asiContent) asi = parseAsiToStruct(asiContent);
-          }
-
-          const result = validateGraph(agf, agr, asi, filePath);
-          const report = formatValidationReport(
-            result.issues,
-            result.errorCount,
-            result.warningCount,
-          );
-          return { content: [{ type: "text", text: report }] };
-        }
-
-        // Handle inspect sub-action
-        let summary: string;
-        if (ext === ".agr") summary = formatAgrSummary(parseAgrToStruct(content));
-        else if (ext === ".agf") summary = formatAgfTree(parseAgfToStruct(content));
-        else if (ext === ".ast") summary = formatAstSummary(parseAstToStruct(content));
-        else if (ext === ".asi") summary = formatAsiSummary(parseAsiToStruct(content));
-        else summary = formatAwSummary(parseAwToStruct(content));
-
-        return { content: [{ type: "text", text: summary }] };
-      }
-
-      // ── setup handler ───────────────────────────────────────────────────────
-      if (opts.action === "setup") {
-        const setupSubAction = opts.setupSubAction;
-
-        // Handle guide sub-action
-        if (setupSubAction === "guide") {
-          const presetName = opts.preset ?? "custom";
-          return { content: [{ type: "text", text: generateGuide(presetName) }] };
-        }
-
-        // Handle suggest sub-action
-        if (setupSubAction === "suggest") {
-          if (!opts.agfPath) {
-            return {
-              content: [{ type: "text", text: "agfPath is required for suggest sub-action." }],
-              isError: true,
-            };
-          }
-          const agfContent = readFileForTool(opts.agfPath, opts.source, opts.projectPath, config);
-          if (!agfContent) {
-            return {
-              content: [{ type: "text", text: `Could not read AGF file: ${opts.agfPath}` }],
-              isError: true,
-            };
-          }
-          const agf = parseAgfToStruct(agfContent);
-          let agr;
-          if (opts.agrPath) {
-            const agrContent = readFileForTool(opts.agrPath, opts.source, opts.projectPath, config);
-            if (agrContent) agr = parseAgrToStruct(agrContent);
-          }
-          const suggestions = generateSuggestions(agf, agr);
-          return { content: [{ type: "text", text: formatSuggestions(suggestions) }] };
-        }
-
-        // Handle setup sub-action
-        if (!opts.vehicleName) {
-          return {
-            content: [{ type: "text", text: "vehicleName is required for setup action." }],
-            isError: true,
-          };
-        }
-
-        const cfg: VehicleConfig = {
-          vehicleName: opts.vehicleName,
-          vehicleType: opts.vehicleType,
-          wheelCount: opts.wheelCount,
-          hasTurret: opts.hasTurret,
-          hasSuspensionIK: opts.hasSuspensionIK,
-          hasShockAbsorbers: opts.hasShockAbsorbers,
-          hasSteeringLinkage: opts.hasSteeringLinkage,
-          seatTypes: opts.seatTypes,
-          dialList: opts.dialList,
-        };
-
-        const parts: string[] = [];
-
-        if (opts.step === "all" || opts.step === "agr") {
-          const basePath = opts.projectPath || config.projectPath;
-          if (basePath) {
-            try {
-              const agrContent = generateAgrAuthor(cfg);
-              const astContent = generateAstAuthor(cfg);
-              const agrFilePath = validateProjectPath(
-                basePath,
-                `${opts.outputPath}/${opts.vehicleName}.agr`,
-              );
-              const astFilePath = validateProjectPath(
-                basePath,
-                `${opts.outputPath}/${opts.vehicleName}.ast`,
-              );
-              mkdirSync(dirname(agrFilePath), { recursive: true });
-              writeFileSync(agrFilePath, agrContent, "utf-8");
-              writeFileSync(astFilePath, astContent, "utf-8");
-              parts.push(
-                `## Step 1: AGR + AST Files Generated\n- ${opts.outputPath}/${opts.vehicleName}.agr\n- ${opts.outputPath}/${opts.vehicleName}.ast\nRegister both files in Workbench to assign GUIDs.`,
-              );
-            } catch (e) {
-              const msg = e instanceof Error ? e.message : String(e);
-              parts.push(`## Step 1: AGR + AST — Error\n${msg}`);
-            }
-          } else {
-            parts.push(
-              "## Step 1: AGR + AST — Skipped\nNo project path configured. Set ENFUSION_PROJECT_PATH or provide projectPath.",
-            );
-          }
-        }
-
-        if (opts.step === "all" || opts.step === "agf_instructions") {
-          parts.push(generateAgfInstructions(cfg));
-        }
-
-        if (opts.step === "all" || opts.step === "prefab_setup") {
-          parts.push(generatePrefabInstructions(cfg));
-        }
-
-        if (opts.step === "all" || opts.step === "checklist") {
-          parts.push(generateChecklist(cfg));
-        }
-
-        return {
-          content: [{ type: "text", text: parts.join("\n\n---\n\n") }],
-        };
-      }
-
-      // Unreachable — action enum exhausted — but satisfies TypeScript
-      return { content: [{ type: "text", text: "Unknown action." }], isError: true };
+    async (args) => {
+      const r = runAnimationGraph(args as AnimationGraphArgs, config);
+      return { content: [{ type: "text" as const, text: r.text }], isError: r.isError };
     },
   );
 }

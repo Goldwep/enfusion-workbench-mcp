@@ -113,7 +113,8 @@ describe("server_launch — spawn wiring", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const [exe, argv, opts] = spawnMock.mock.calls[0] as [string, string[], Record<string, unknown>];
     expect(exe).toBe(FAKE_EXE);
-    expect(argv.slice(0, 4)).toEqual(["-config", resolve(configPath), "-scenarioId", SCENARIO]);
+    // KD-005: no -scenarioId switch; the scenario comes from server.json game.scenarioId.
+    expect(argv).toEqual(["-config", resolve(configPath)]);
     expect(opts.stdio).toEqual(["ignore", "ignore", "ignore"]);
     expect(opts.shell).toBe(false);
     expect(opts.detached).toBe(true);

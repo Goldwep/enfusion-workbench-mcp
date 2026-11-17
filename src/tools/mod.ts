@@ -1,17 +1,19 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { existsSync, mkdirSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from "node:fs";
 import { resolve, join, extname, relative } from "node:path";
 import { spawn } from "node:child_process";
 import type { Config } from "../config.js";
 import { generateGproj } from "../templates/gproj.js";
 import { generateScript } from "../templates/script.js";
 import type { PatternLibrary } from "../patterns/loader.js";
-import { validateFilename, validateProjectPath } from "../utils/safe-path.js";
+import { validateFilename, validateProjectPath, validateEnforceIdentifier } from "../utils/safe-path.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
 import { readTextFileBounded } from "../utils/safe-read.js";
 import type { SearchEngine } from "../index/search-engine.js";
 import { parse, getProperty } from "../formats/enfusion-text.js";
+import { headlessSpawnBlocker } from "../workbench/cli-runner.js";
+import { SCRIPT_AUTHORIZE_ALL, scriptAuthorizeAllEnabled } from "../workbench/client.js";
 
 // ─── build helpers ────────────────────────────────────────────────────────────
 
@@ -570,6 +572,21 @@ export function registerMod(
           args.push("-filterPath", filterPath);
         }
 
+        if (scriptAuthorizeAllEnabled()) {
+          args.push(SCRIPT_AUTHORIZE_ALL);
+        }
+
+        // Plan 5.1: a headless build is a Workbench launch; refuse while a
+        // Workbench is open (single-instance launcher) or another session
+        // holds the lease.
+        const blocker = headlessSpawnBlocker(undefined, config);
+        if (blocker) {
+          return {
+            content: [{ type: "text" as const, text: `Error building mod: ${blocker}` }],
+            isError: true,
+          };
+        }
+
         try {
           const startTime = Date.now();
           const result = await runBuild(exePath, args, BUILD_TIMEOUT_MS);
@@ -679,13 +696,32 @@ export function registerMod(
                   text: `Unknown pattern: "${patternName}"\nAvailable patterns: ${available}`,
                 },
               ],
-            isError: true,
+              isError: true,
             };
           }
         }
 
         const addonDir = resolve(basePath, name);
         const classPrefix = prefix ?? derivePrefix(name);
+        // The prefix starts every {PREFIX}_X class name a pattern writes (offline-writers-12).
+        if (patternName || prefix !== undefined) {
+          try {
+            validateEnforceIdentifier(classPrefix);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            return {
+              content: [
+                {
+                  type: "text",
+                  text:
+                    `Invalid class prefix "${classPrefix}"${prefix === undefined ? ` (derived from "${name}")` : ""}: ${msg}. ` +
+                    "Pass `prefix` (e.g. 'MCM').",
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
 
         // H7 containment: LLM-supplied projectPath (and the addon dir it
         // yields) must stay inside the configured project root.
@@ -694,7 +730,10 @@ export function registerMod(
           assertInsideRoot(addonDir, config.projectPath, "addon directory");
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          return { content: [{ type: "text", text: `Error creating addon: ${msg}` }], isError: true };
+          return {
+            content: [{ type: "text", text: `Error creating addon: ${msg}` }],
+            isError: true,
+          };
         }
 
         if (existsSync(addonDir)) {
@@ -705,10 +744,19 @@ export function registerMod(
                 text: `Directory already exists: ${addonDir}\nUse a different name or delete the existing directory.`,
               },
             ],
-          isError: true,
+            isError: true,
           };
         }
 
+        // addonDir did not exist (checked above): a refused or failed create removes the
+        // half-built addon so a retry with the same name is not refused (offline-writers-11).
+        const rollback = (): void => {
+          try {
+            rmSync(addonDir, { recursive: true, force: true });
+          } catch {
+            /* best effort */
+          }
+        };
         try {
           const createdFiles: string[] = [];
 
@@ -734,7 +782,8 @@ export function registerMod(
             title: name,
           });
           const gprojFilePath = join(addonDir, `${name}.gproj`);
-          writeFileSync(gprojFilePath, gprojContent, "utf-8");
+          // Every file goes into the new addon folder: flag wx, a new file only (write-safety gap 20).
+          writeFileSync(gprojFilePath, gprojContent, { encoding: "utf-8", flag: "wx" });
           createdFiles.push(`${name}.gproj`);
 
           // Apply pattern if specified (already validated above)
@@ -747,6 +796,7 @@ export function registerMod(
               const className = scriptDef.className.replace(/\{PREFIX\}/g, classPrefix);
               const path = `Scripts/Game/${className}.c`;
               if (scriptPaths.includes(path)) {
+                rollback();
                 return {
                   content: [
                     {
@@ -754,7 +804,7 @@ export function registerMod(
                       text: `Pattern "${patternName}" produces duplicate script file after prefix replacement: ${path}\nUse a different prefix to avoid collisions.`,
                     },
                   ],
-                isError: true,
+                  isError: true,
                 };
               }
               scriptPaths.push(path);
@@ -765,6 +815,7 @@ export function registerMod(
               const configName = configDef.name.replace(/\{PREFIX\}/g, classPrefix);
               const path = `Configs/${configName}.conf`;
               if (configPaths.includes(path)) {
+                rollback();
                 return {
                   content: [
                     {
@@ -772,7 +823,7 @@ export function registerMod(
                       text: `Pattern "${patternName}" produces duplicate config file after prefix replacement: ${path}\nUse a different prefix to avoid collisions.`,
                     },
                   ],
-                isError: true,
+                  isError: true,
                 };
               }
               configPaths.push(path);
@@ -789,7 +840,7 @@ export function registerMod(
                 description: scriptDef.description,
               });
               const scriptPath = join(addonDir, "Scripts", "Game", `${className}.c`);
-              writeFileSync(scriptPath, code, "utf-8");
+              writeFileSync(scriptPath, code, { encoding: "utf-8", flag: "wx" });
               createdFiles.push(`Scripts/Game/${className}.c`);
             }
 
@@ -809,7 +860,7 @@ export function registerMod(
               const configContent = configDef.content.replace(/\{PREFIX\}/g, classPrefix);
               const targetPath = join(addonDir, "Configs", `${configName}.conf`);
               mkdirSync(resolve(targetPath, ".."), { recursive: true });
-              writeFileSync(targetPath, configContent, "utf-8");
+              writeFileSync(targetPath, configContent, { encoding: "utf-8", flag: "wx" });
               createdFiles.push(`Configs/${configName}.conf`);
             }
           }
@@ -867,9 +918,10 @@ export function registerMod(
 
           return { content: [{ type: "text", text: lines.join("\n") }] };
         } catch (e) {
+          rollback();
           const msg = e instanceof Error ? e.message : String(e);
           return {
-            content: [{ type: "text", text: `Error creating addon: ${msg}` }],
+            content: [{ type: "text", text: `Error creating addon: ${msg}. The partial addon folder was removed.` }],
             isError: true,
           };
         }
@@ -890,7 +942,7 @@ export function registerMod(
                 text: `Invalid project path: "${projectPath}". Path must be within the configured project directory (${config.projectPath}).`,
               },
             ],
-          isError: true,
+            isError: true,
           };
         }
       } else {

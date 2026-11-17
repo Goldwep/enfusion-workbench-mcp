@@ -64,7 +64,7 @@ export interface ParsedAgf {
 
 export interface ParsedVariable {
   name: string;
-  type: "Float" | "Int" | "Bool";
+  type: "Float" | "Int" | "Bool" | "String";
   min: string | null;
   max: string | null;
   defaultValue: string | null;
@@ -92,6 +92,8 @@ export interface ParsedAgr {
   ikChains: ParsedIkChain[];
   boneMasks: ParsedBoneMask[];
   globalTags: string[];
+  /** True when the file has a GlobalTags block (empty or not); undefined when unknown. */
+  hasGlobalTags?: boolean;
   defaultRunNode: string | null;
   agfReferences: string[];
   astReference: string | null;
@@ -130,6 +132,11 @@ export interface ValidationIssue {
   id: string;
   severity: "error" | "warning";
   message: string;
+  /**
+   * Set on a rule that fires on shipping vanilla content and was demoted to a
+   * warning (DEC-067 OD-4, corpus gate 3); the text says why.
+   */
+  demoted?: string;
 }
 
 export interface ValidationResult {

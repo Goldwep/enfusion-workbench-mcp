@@ -54,6 +54,14 @@ export interface Config {
    *  Set via ENFUSION_GAME_LOGS_PATH. Auto-derived when projectPath
    *  matches the standard My Games layout. */
   gameLogsPath?: string;
+  /** Machine-wide Workbench lease file (2.0 plan 5.1). Defaults to
+   *  `~/.enfusion-mcp/workbench.lease.json`. Set via ENFUSION_LEASE_PATH; a
+   *  spawned test process points it at a temporary file. */
+  leasePath?: string;
+  /** No-autolaunch marker file (2.0 plan 5.1). While it exists the server
+   *  never auto-launches Workbench. Defaults to `~/.enfusion-mcp/no-autolaunch`.
+   *  Set via ENFUSION_NO_AUTOLAUNCH_PATH. */
+  noAutolaunchPath?: string;
 }
 
 const DEFAULT_WORKBENCH_PATH =
@@ -86,79 +94,117 @@ function loadJsonFile(path: string): Partial<Config> {
   return {};
 }
 
-export function loadConfig(): Config {
+/** Where loadConfig reads from. Every field defaults to the real source; tests inject. */
+export interface ConfigSources {
+  /** Environment to read ENFUSION_* variables from (default process.env). */
+  env?: NodeJS.ProcessEnv;
+  /** Package-local config file (default <package>/enfusion-mcp.config.json). */
+  localConfigPath?: string;
+  /** User config file (default ~/.enfusion-mcp/config.json). */
+  homeConfigPath?: string;
+}
+
+export function loadConfig(sources: ConfigSources = {}): Config {
+  const env = sources.env ?? process.env;
   // 1. Start with defaults
   const config = { ...DEFAULTS };
+  // Keys set by a config file or an env var. Auto-derivation below only
+  // fills keys that are NOT in this set (4-tier merge: top wins).
+  const explicit = new Set<keyof Config>();
+  const applyFile = (path: string): void => {
+    const fromFile = loadJsonFile(path);
+    for (const k of Object.keys(fromFile) as (keyof Config)[]) {
+      if (fromFile[k] !== undefined) explicit.add(k);
+    }
+    Object.assign(config, fromFile);
+  };
 
   // 2. Package-local config file
-  const localConfigPath = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    "..",
-    "enfusion-mcp.config.json",
+  applyFile(
+    sources.localConfigPath ??
+      resolve(dirname(fileURLToPath(import.meta.url)), "..", "enfusion-mcp.config.json"),
   );
-  Object.assign(config, loadJsonFile(localConfigPath));
 
   // 3. User home config
-  const homeConfigPath = resolve(homedir(), ".enfusion-mcp", "config.json");
-  Object.assign(config, loadJsonFile(homeConfigPath));
+  applyFile(sources.homeConfigPath ?? resolve(homedir(), ".enfusion-mcp", "config.json"));
 
   // 4. Environment variables override everything
-  if (process.env.ENFUSION_WORKBENCH_PATH) {
-    config.workbenchPath = process.env.ENFUSION_WORKBENCH_PATH;
+  if (env.ENFUSION_WORKBENCH_PATH) {
+    config.workbenchPath = env.ENFUSION_WORKBENCH_PATH;
   }
-  if (process.env.ENFUSION_PROJECT_PATH) {
-    config.projectPath = process.env.ENFUSION_PROJECT_PATH;
+  if (env.ENFUSION_PROJECT_PATH) {
+    config.projectPath = env.ENFUSION_PROJECT_PATH;
   }
-  if (process.env.ENFUSION_GAME_PATH) {
-    config.gamePath = process.env.ENFUSION_GAME_PATH;
+  if (env.ENFUSION_GAME_PATH) {
+    config.gamePath = env.ENFUSION_GAME_PATH;
   }
-  if (process.env.ENFUSION_EXTRACTED_PATH) {
-    config.extractedPath = process.env.ENFUSION_EXTRACTED_PATH;
+  if (env.ENFUSION_EXTRACTED_PATH) {
+    config.extractedPath = env.ENFUSION_EXTRACTED_PATH;
   }
-  if (process.env.ENFUSION_MCP_DATA_DIR) {
-    config.dataDir = process.env.ENFUSION_MCP_DATA_DIR;
+  if (env.ENFUSION_MCP_DATA_DIR) {
+    config.dataDir = env.ENFUSION_MCP_DATA_DIR;
     // patternsDir is always <dataDir>/patterns unless explicitly set in a config file
-    config.patternsDir = join(process.env.ENFUSION_MCP_DATA_DIR, "patterns");
+    if (!explicit.has("patternsDir")) {
+      config.patternsDir = join(env.ENFUSION_MCP_DATA_DIR, "patterns");
+    }
   }
-  if (process.env.ENFUSION_WORKBENCH_HOST) {
-    config.workbenchHost = process.env.ENFUSION_WORKBENCH_HOST;
+  if (env.ENFUSION_WORKBENCH_HOST) {
+    config.workbenchHost = env.ENFUSION_WORKBENCH_HOST;
   }
-  if (process.env.ENFUSION_WORKBENCH_PORT) {
-    const port = parseInt(process.env.ENFUSION_WORKBENCH_PORT, 10);
+  if (env.ENFUSION_WORKBENCH_PORT) {
+    const port = parseInt(env.ENFUSION_WORKBENCH_PORT, 10);
     if (!isNaN(port) && port > 0 && port < 65536) {
       config.workbenchPort = port;
     }
   }
-  if (process.env.ENFUSION_DEFAULT_MOD) {
-    config.defaultMod = process.env.ENFUSION_DEFAULT_MOD;
+  if (env.ENFUSION_DEFAULT_MOD) {
+    config.defaultMod = env.ENFUSION_DEFAULT_MOD;
   }
-  if (process.env.ENFUSION_PROJECT_INDEX_PATH) {
-    config.projectIndexPath = process.env.ENFUSION_PROJECT_INDEX_PATH;
+  if (env.ENFUSION_PROJECT_INDEX_PATH) {
+    config.projectIndexPath = env.ENFUSION_PROJECT_INDEX_PATH;
   }
-  if (process.env.ENFUSION_WORKSHOP_PATH) {
-    config.workshopPath = process.env.ENFUSION_WORKSHOP_PATH;
+  if (env.ENFUSION_WORKSHOP_PATH) {
+    config.workshopPath = env.ENFUSION_WORKSHOP_PATH;
   }
-  if (process.env.ENFUSION_CORE_PATH) {
-    config.corePath = process.env.ENFUSION_CORE_PATH;
+  if (env.ENFUSION_CORE_PATH) {
+    config.corePath = env.ENFUSION_CORE_PATH;
   }
-  if (process.env.ENFUSION_LOGS_PATH) {
-    config.logsPath = process.env.ENFUSION_LOGS_PATH;
+  if (env.ENFUSION_LOGS_PATH) {
+    config.logsPath = env.ENFUSION_LOGS_PATH;
   }
-  if (process.env.ENFUSION_GAME_LOGS_PATH) {
-    config.gameLogsPath = process.env.ENFUSION_GAME_LOGS_PATH;
+  if (env.ENFUSION_GAME_LOGS_PATH) {
+    config.gameLogsPath = env.ENFUSION_GAME_LOGS_PATH;
+  }
+  if (env.ENFUSION_LEASE_PATH) {
+    config.leasePath = env.ENFUSION_LEASE_PATH;
+  }
+  if (env.ENFUSION_NO_AUTOLAUNCH_PATH) {
+    config.noAutolaunchPath = env.ENFUSION_NO_AUTOLAUNCH_PATH;
+  }
+
+  // Env-set keys count as explicit too.
+  const ENV_KEYS: [string, keyof Config][] = [
+    ["ENFUSION_GAME_PATH", "gamePath"],
+    ["ENFUSION_CORE_PATH", "corePath"],
+    ["ENFUSION_WORKSHOP_PATH", "workshopPath"],
+    ["ENFUSION_LOGS_PATH", "logsPath"],
+    ["ENFUSION_GAME_LOGS_PATH", "gameLogsPath"],
+  ];
+  for (const [name, key] of ENV_KEYS) {
+    if (env[name]) explicit.add(key);
   }
 
   // Auto-derive gamePath from workbenchPath if not explicitly set
-  if (!process.env.ENFUSION_GAME_PATH && config.workbenchPath !== DEFAULT_WORKBENCH_PATH) {
+  if (!explicit.has("gamePath") && config.workbenchPath !== DEFAULT_WORKBENCH_PATH) {
     config.gamePath = resolve(config.workbenchPath, "..", "Arma Reforger");
   }
 
   // Self-heal: on split installs the game lives in a different Steam library
   // than the Tools (e.g. Tools on C:\, game on D:\SteamLibrary), so the
   // sibling derivation above points at a directory that doesn't exist. Scan
-  // Steam's libraryfolders.vdf before giving up — an explicit env var still
-  // wins because this only runs when the derived path is absent.
-  if (!process.env.ENFUSION_GAME_PATH && !existsSync(join(config.gamePath, "addons"))) {
+  // Steam's libraryfolders.vdf before giving up — an explicit gamePath (env
+  // var or config file) still wins because this only runs for a derived one.
+  if (!explicit.has("gamePath") && !existsSync(join(config.gamePath, "addons"))) {
     const scanned = findGameAcrossSteamLibraries("Arma Reforger", [
       steamRootOf(config.workbenchPath),
     ]);
@@ -166,7 +212,7 @@ export function loadConfig(): Config {
   }
 
   // Auto-derive corePath from workbenchPath if not explicitly set
-  if (!process.env.ENFUSION_CORE_PATH && config.workbenchPath !== DEFAULT_WORKBENCH_PATH) {
+  if (!explicit.has("corePath") && config.workbenchPath !== DEFAULT_WORKBENCH_PATH) {
     config.corePath = join(config.workbenchPath, "Workbench", "addons");
   }
 
@@ -174,7 +220,7 @@ export function loadConfig(): Config {
   // projectPath = `<X>/My Games/ArmaReforgerWorkbench/addons` →
   // workshopPath = `<X>/My Games/ArmaReforger/addons`. If projectPath doesn't
   // match this convention, leave workshopPath undefined.
-  if (!process.env.ENFUSION_WORKSHOP_PATH && config.workshopPath === undefined) {
+  if (!explicit.has("workshopPath") && config.workshopPath === undefined) {
     const derived = resolve(config.projectPath, "..", "..", "ArmaReforger", "addons");
     if (existsSync(derived)) {
       config.workshopPath = derived;
@@ -183,7 +229,7 @@ export function loadConfig(): Config {
 
   // Auto-derive logsPath from projectPath. Default points at the Workbench
   // logs (most useful for mod authoring). Game-side logs are a separate knob.
-  if (!process.env.ENFUSION_LOGS_PATH) {
+  if (!explicit.has("logsPath")) {
     const derived = resolve(config.projectPath, "..", "logs");
     if (existsSync(derived)) {
       config.logsPath = derived;
@@ -191,7 +237,7 @@ export function loadConfig(): Config {
   }
 
   // Auto-derive gameLogsPath from projectPath's My Games sibling.
-  if (!process.env.ENFUSION_GAME_LOGS_PATH && config.gameLogsPath === undefined) {
+  if (!explicit.has("gameLogsPath") && config.gameLogsPath === undefined) {
     const derived = resolve(config.projectPath, "..", "..", "ArmaReforger", "logs");
     if (existsSync(derived)) {
       config.gameLogsPath = derived;

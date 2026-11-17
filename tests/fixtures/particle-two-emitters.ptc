@@ -1,0 +1,31 @@
+EffectDef {
+ Version 2
+ LightRadius 5
+ Emitters {
+  EmitterDef spark_core {
+   ShapeType Point
+   MaxNum 20
+   BirthRate 100
+   LodMin 0
+   LodMax 2
+   Material "{AAAA000000000001}Particles/_Materials/Spark.emat"
+   Lifetime 0.6
+   EmittingTime 2
+   Color {
+    0 1 0.5 0.2 1 0.1 0.1 0.1
+   }
+   Alpha {
+    0 0 0.1 1 1 0
+   }
+  }
+  EmitterDef debris {
+   ParticleType Prefab
+   BirthRate 4
+   Material "{AAAA000000000002}Particles/_Materials/Smoke.emat"
+   Prefab "{BBBB000000000001}Prefabs/Particles/Debris.et"
+   Size {
+    0 1 1 2
+   }
+  }
+ }
+}

@@ -1,0 +1,173 @@
+{
+ "source": "P3-3 gate 2 step p33-g2-03 (sliced)",
+ "plugins": {
+  "SCR_SnapAndOrientToTerrainPlugin": {
+   "describe": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "WorldEditor",
+     "className": "SCR_SnapAndOrientToTerrainPlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_SnapAndOrientToTerrainPlugin",
+     "message": "GetPlugin returned an instance"
+    },
+    "warnings": [
+     "GetPlugin may bring the module window to the front (DEC-042 U10: 1 of 3 plugins)"
+    ]
+   },
+   "getSettings": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "WorldEditor",
+     "className": "SCR_SnapAndOrientToTerrainPlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_SnapAndOrientToTerrainPlugin",
+     "message": "plugin variables read",
+     "variableCount": 0,
+     "attributeCount": 0,
+     "settings": [],
+     "nextCursor": null
+    }
+   }
+  },
+  "SCR_CopyClassAndMethodPlugin": {
+   "describe": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "ScriptEditor",
+     "className": "SCR_CopyClassAndMethodPlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_CopyClassAndMethodPlugin",
+     "message": "GetPlugin returned an instance"
+    },
+    "warnings": [
+     "GetPlugin may bring the module window to the front (DEC-042 U10: 1 of 3 plugins)"
+    ]
+   },
+   "getSettings": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "ScriptEditor",
+     "className": "SCR_CopyClassAndMethodPlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_CopyClassAndMethodPlugin",
+     "message": "plugin variables read",
+     "variableCount": 0,
+     "attributeCount": 0,
+     "settings": [],
+     "nextCursor": null
+    }
+   }
+  },
+  "SCR_DebugLinePlugin": {
+   "describe": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "ScriptEditor",
+     "className": "SCR_DebugLinePlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_DebugLinePlugin",
+     "message": "GetPlugin returned an instance"
+    },
+    "warnings": [
+     "GetPlugin may bring the module window to the front (DEC-042 U10: 1 of 3 plugins)"
+    ]
+   },
+   "getSettings": {
+    "ok": true,
+    "code": null,
+    "readback": {
+     "module": "ScriptEditor",
+     "className": "SCR_DebugLinePlugin",
+     "present": 1,
+     "instance": 1,
+     "instanceClass": "SCR_DebugLinePlugin",
+     "message": "plugin variables read",
+     "variableCount": 3,
+     "attributeCount": 3,
+     "settings": [
+      "",
+      {
+       "name": "m_sFormat",
+       "type": "string",
+       "attribute": "true",
+       "value": "[%1.%2] debug line (%4 L%5)"
+      },
+      "",
+      {
+       "name": "m_eLogLevel",
+       "type": "int",
+       "attribute": "true",
+       "value": "16"
+      },
+      "",
+      {
+       "name": "m_bIncludeParams",
+       "type": "bool",
+       "attribute": "true",
+       "value": "false"
+      }
+     ],
+     "nextCursor": null
+    }
+   }
+  }
+ },
+ "e03": [
+  {
+   "kind": "plugin",
+   "module": "ResourceManager",
+   "class_name": "SCR_AutotestConfigValidationPlugin",
+   "key": {
+    "class": "SCR_AutotestConfigValidationPlugin"
+   },
+   "signature": "WorkbenchPluginAttribute(name: \"Validate autotest configs\", category: \"QA\", description: \"Tries to load all existing autotest group configs for validation.\\nResults must be checked in console.log.\", wbModules: { \"ResourceManager\" }, awesomeFontCode: 0xF188)"
+  },
+  {
+   "kind": "plugin",
+   "module": "Shared",
+   "class_name": "SCR_AutotestPlugin",
+   "key": {
+    "class": "SCR_AutotestPlugin"
+   },
+   "signature": "WorkbenchPluginAttribute(name: \"Autotest\", description: \"Runs the test suite or test case the cursor currently is in.\\nSupports only SCR_Autotest* suites.\", shortcut: \"F4\", wbModules: { \"ScriptEditor\", \"WorldEditor\" }, awesomeFontCode: 0xF188)"
+  },
+  {
+   "kind": "plugin",
+   "module": "ScriptEditor",
+   "class_name": "SCR_CopyClassAndMethodPlugin",
+   "key": {
+    "class": "SCR_CopyClassAndMethodPlugin"
+   },
+   "signature": "WorkbenchPluginAttribute(name: \"Copy Class and Method Name\", description: \"Copy class and method name based on the current line.\\nWhen it is inside of a method, the format is 'MyClass.MyMethod()', otherwise the result is just 'MyClass'\", shortcut: \"Ctrl+Shift+C\", wbModules: { \"ScriptEditor\" }, awesomeFontCode: 0xF0C5)"
+  },
+  {
+   "kind": "plugin",
+   "module": "ScriptEditor",
+   "class_name": "SCR_DebugLinePlugin",
+   "key": {
+    "class": "SCR_DebugLinePlugin"
+   },
+   "signature": "WorkbenchPluginAttribute(name: \"Debug Line Shortcut\", description: \"Insert a debug line, as formatted in its options\", shortcut: \"Ctrl+Shift+D\", wbModules: { \"ScriptEditor\" }, awesomeFontCode: 0xF1CD)"
+  },
+  {
+   "kind": "plugin",
+   "module": "WorldEditor",
+   "class_name": "SCR_SnapAndOrientToTerrainPlugin",
+   "key": {
+    "class": "SCR_SnapAndOrientToTerrainPlugin"
+   },
+   "signature": "WorkbenchPluginAttribute(name: \"Snap and Orient Entities to Terrain\", shortcut: \"Ctrl+PageDown\", wbModules: { \"WorldEditor\" }, category: SCR_PluginCategory.WORLDEDITOR_MASS_PROCESSING, awesomeFontCode: 0xF2D1)"
+  }
+ ]
+}

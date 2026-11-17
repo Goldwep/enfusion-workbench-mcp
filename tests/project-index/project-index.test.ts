@@ -117,9 +117,33 @@ describe("ProjectIndex", () => {
       const guids = result.rows.map((r) => r.guid).sort();
       expect(guids).toContain("CCCC000000000001"); // explicit orphan
       expect(guids).toContain("BBBB000000000002"); // child (no inbound)
-      expect(guids).toContain("1111111111111111"); // gproj (no inbound)
+      // A .gproj is named only by dependents' Dependencies: never a removal
+      // candidate (audit refactor-index-02).
+      expect(guids).not.toContain("1111111111111111");
       expect(guids).not.toContain("BBBB000000000001"); // referenced by child
       expect(result.total).toBe(result.rows.length);
+    });
+
+    it("never lists binary resources the index cannot read refs for", () => {
+      db.prepare(
+        "INSERT INTO resources (guid, file_path, root_type, source, project_id, last_indexed) VALUES (?,?,?,?,?,?)",
+      ).run("EEEE000000000001", "Assets/mesh.xob", ".xob", "user", "TestMod", Date.now());
+      const guids = index.findUnusedResources({ limit: 100, offset: 0 }).rows.map((r) => r.guid);
+      expect(guids).not.toContain("EEEE000000000001");
+    });
+
+    it("resolveGuid prefers the user row when a GUID is claimed twice", () => {
+      db.prepare(
+        "INSERT INTO projects (id, guid, title, root_path, source, last_scan) VALUES (?,?,?,?,?,?)",
+      ).run("Core", "9999000000000001", "Core", "/core", "core", Date.now());
+      db.prepare(
+        "INSERT INTO resources (guid, file_path, root_type, source, project_id, last_indexed) VALUES (?,?,?,?,?,?)",
+      ).run("BBBB000000000001", "aaa/first.et", "GenericEntity", "core", "Core", Date.now());
+      expect(index.resolveGuid("BBBB000000000001")!.file_path).toBe("prefabs/base.et");
+      expect(index.resolveGuidAll("BBBB000000000001").map((r) => r.file_path)).toEqual([
+        "prefabs/base.et",
+        "aaa/first.et",
+      ]);
     });
 
     it("filters by source", () => {

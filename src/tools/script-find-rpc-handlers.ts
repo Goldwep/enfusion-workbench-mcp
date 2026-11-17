@@ -37,6 +37,9 @@ export function findRpcHandlers(
   parseIssues?: ParseIssue[],
 ): RpcHit[] {
   const attrFilter = filter.attributeName ?? "RPC";
+  // Enforce's RPC attribute is `RplRpc`; `RPC` is the older spelling. The
+  // default matches both (phase-7 audit, same cause as read-knowledge-03).
+  const names = attrFilter === "RPC" ? ["RPC", "RplRpc"] : [attrFilter];
   const hits: RpcHit[] = [];
   const files = findCFiles(projectRoot);
   for (const abs of files) {
@@ -47,7 +50,7 @@ export function findRpcHandlers(
       continue;
     }
     // Quick reject — `[RPC` substring check before parsing.
-    if (!source.includes(`[${attrFilter}`)) continue;
+    if (!names.some((n) => source.includes(`[${n}`))) continue;
     let ast;
     try {
       ast = parseScript(source, abs);
@@ -58,7 +61,7 @@ export function findRpcHandlers(
     if (issue && parseIssues) parseIssues.push(issue);
     for (const cls of ast.classes) {
       for (const m of cls.methods) {
-        const matched = m.attributes.filter((a) => a.name === attrFilter);
+        const matched = m.attributes.filter((a) => names.includes(a.name));
         if (matched.length === 0) continue;
         hits.push({
           className: cls.name,
@@ -137,7 +140,7 @@ export function registerScriptFindRpcHandlers(server: McpServer): void {
           .optional()
           .default("RPC")
           .describe(
-            "Which attribute to match. Defaults to 'RPC'. Use 'RplProp' to find replicated fields, 'Attribute' for editor attributes, etc.",
+            "Which attribute to match. Defaults to 'RPC', which also matches 'RplRpc'. Use 'RplProp' to find replicated fields, 'Attribute' for editor attributes, etc.",
           ),
       },
     },

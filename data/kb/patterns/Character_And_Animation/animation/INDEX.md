@@ -24,6 +24,7 @@ Read this first. Find your task below and read only the listed file(s).
 | Understanding a specific AGF node type in depth                                 | `node-reference.md`                                                        |
 | Reading or modifying an existing vehicle AGF/AGR                                | `core-concepts.md` + `node-cheatsheet.md` + `vehicle-animation.md`         |
 | Driving animation variables from EnforceScript                                  | `script-integration.md`                                                    |
+| Pruning unused .anm clips; checking a character .agr for its weapon tags | `anim-lint-tools.md`                                                        |
 | Working with a legacy PAP/SIGA vehicle                                          | `procedural-pap-siga.md`                                                   |
 | Full animation system overview                                                  | All files                                                                  |
 
@@ -38,3 +39,4 @@ Read this first. Find your task below and read only the listed file(s).
 | `vehicle-animation.md`   | Vehicle variables, IK chains, bone masks, node patterns, step-by-step setup, S105 + LAV25 examples                                                                                                     |
 | `procedural-pap-siga.md` | Legacy PAP/SIGA system — all node types, data flow, pitfalls                                                                                                                                           |
 | `script-integration.md`  | AnimationControllerComponent API, driving graph vars from script, replication rules                                                                                                                    |
+| `anim-lint-tools.md`     | Scope, output and limits of `animation_find_unused_clips` and `weapon_pose_lint` (moved from their tool descriptions, DEC-067 OD-7) |

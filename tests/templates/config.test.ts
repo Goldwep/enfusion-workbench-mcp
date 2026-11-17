@@ -97,8 +97,11 @@ describe("generateConfig", () => {
         expect(result).toContain("m_sName");
         expect(result).toContain("My Scenario");
         expect(result).toContain("m_sDescription");
-        expect(result).toContain("m_sWorldFile");
-        expect(result).toContain("m_bIsModded");
+        // Native MissionHeader attribute `World`, as vanilla Missions/Scenario01_Intro.conf;
+        // SCR_MissionHeader has no m_sWorldFile / m_bIsModded member.
+        expect(result).toContain(' World "{AABB}Worlds/Test.ent"');
+        expect(result).not.toContain("m_sWorldFile");
+        expect(result).not.toContain("m_bIsModded");
         expect(result).not.toContain("SCR_MissionHeaderCampaign");
       });
     });
@@ -124,12 +127,26 @@ describe("generateConfig", () => {
         factionColor: "0,200,100,255",
         flagPath: "{AABB}UI/Textures/Flags/alpha.edds",
       });
-      expect(result).toContain("m_sKey");
-      expect(result).toContain("alpha");
-      expect(result).toContain("m_sName");
-      expect(result).toContain("Alpha Force");
-      expect(result).toContain("m_Color");
-      expect(result).toContain("m_sFlagPath");
+      // Vanilla Configs/Factions/CIV.conf names: FactionKey, FactionColor (0-1 floats),
+      // UIInfo SCR_FactionUIInfo { Name }, m_sFactionFlag.
+      const node = parse(result);
+      expect(node.properties.find((p) => p.key === "FactionKey")?.value).toBe("alpha");
+      expect(node.properties.find((p) => p.key === "FactionColor")?.value).toBe("0 0.784 0.392 1");
+      expect(node.properties.find((p) => p.key === "m_sFactionFlag")?.value).toBe(
+        "{AABB}UI/Textures/Flags/alpha.edds",
+      );
+      const ui = node.children.find((c) => c.type === "UIInfo");
+      expect(ui?.className).toBe("SCR_FactionUIInfo");
+      expect(ui?.properties.find((p) => p.key === "Name")?.value).toBe("Alpha Force");
+      for (const bad of ["m_sKey", "m_sName", "m_Color", "m_sFlagPath"]) {
+        expect(result).not.toContain(bad);
+      }
+    });
+
+    it("rejects a malformed color string", () => {
+      expect(() =>
+        generateConfig({ configType: "faction", name: "X", factionColor: "red" }),
+      ).toThrow(/factionColor/);
     });
 
     it("auto-derives faction key from name", () => {
@@ -160,9 +177,21 @@ describe("generateConfig", () => {
         categoryName: "Vehicles",
         prefabRefs: ["{AABB}Prefabs/Vehicles/Tank.et", "{CCDD}Prefabs/Vehicles/Truck.et"],
       });
-      expect(result).toContain("SCR_EntityCatalogEntry");
-      expect(result).toContain("Tank.et");
-      expect(result).toContain("Truck.et");
+      // Vanilla Configs/EntityCatalog/US/WeaponTripod_EntityCatalog_US.conf:
+      // m_aEntityEntryList { SCR_EntityCatalogEntry "{GUID}" { m_sEntityPrefab "..." } }
+      const node = parse(result);
+      const list = node.children.find((c) => c.type === "m_aEntityEntryList");
+      expect(list?.children.map((c) => c.type)).toEqual([
+        "SCR_EntityCatalogEntry",
+        "SCR_EntityCatalogEntry",
+      ]);
+      expect(list!.children[0].id).toMatch(/^\{[0-9A-F]{16}\}$/);
+      expect(list!.children[1].properties).toEqual([
+        { key: "m_sEntityPrefab", value: "{CCDD}Prefabs/Vehicles/Truck.et" },
+      ]);
+      for (const bad of ["m_aEntries", "m_sPrefab ", "m_sCategoryName"]) {
+        expect(result).not.toContain(bad);
+      }
     });
 
     it("handles empty prefab refs", () => {
@@ -195,8 +224,14 @@ describe("generateConfig", () => {
         name: "Test",
         prefabRefs: ["{AABB}Prefabs/Props/Crate.et"],
       });
-      expect(result).toContain("SCR_PlaceableEntity");
-      expect(result).toContain("Crate.et");
+      // Vanilla Configs/Editor/PlaceableEntities/Compositions/Compositions.conf:
+      // m_Prefabs { "<resource>" ... } (bare strings, no entry objects)
+      const node = parse(result);
+      const prefabs = node.children.find((c) => c.type === "m_Prefabs");
+      expect(prefabs?.values).toEqual(["{AABB}Prefabs/Props/Crate.et"]);
+      for (const bad of ["SCR_PlaceableEntity ", "m_aEntries", "m_sCategoryName"]) {
+        expect(result).not.toContain(bad);
+      }
     });
   });
 });

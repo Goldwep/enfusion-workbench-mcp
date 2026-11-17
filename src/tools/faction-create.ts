@@ -2,10 +2,10 @@
  * `faction_create` — scaffold a new `Configs/Factions/<Key>.conf` file from
  * a template (L8).
  *
- * Emits a root `SCR_Faction` node with `m_sFactionKey`, `m_sFactionName`,
- * and a nested `m_FactionColor` block carrying R/G/B/A. Uses the shared
- * `serializeEnfusionText` helper so the output is byte-identical with the
- * upstream Enfusion text format.
+ * Emits a root `SCR_Faction` with the engine's attribute names as vanilla
+ * Configs/Factions/*.conf write them: `FactionKey`, `FactionColor` (four 0-1
+ * floats) and `UIInfo SCR_FactionUIInfo { Name }`. W11 run 6 found the old
+ * `m_sFactionKey`/`m_sFactionName`/`m_FactionColor` names loaded but ignored.
  *
  * Write-mode behaviors:
  *   - Refuses if the target already exists, unless `force: true`.
@@ -22,19 +22,17 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 import { resolve, dirname, join } from "node:path";
 import type { Config } from "../config.js";
-import {
-  createNode,
-  setProperty,
-  type EnfusionNode,
-} from "../formats/enfusion-text.js";
+import type { EnfusionNode } from "../formats/enfusion-text.js";
+import { buildFactionNode, renderFactionText } from "../templates/faction.js";
 import { isGitClean } from "../refactor/byte-edit.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-/** RGB color triple. Alpha is fixed at 1.0 (engine convention for faction colors). */
+/** RGB color triple, 0-255 per channel; written as 0-1 floats with alpha 1. */
 export interface ColorRgb {
   r: number;
   g: number;
@@ -46,6 +44,8 @@ export interface FactionConfOptions {
   factionKey: string;
   displayName: string;
   color: ColorRgb;
+  /** UIInfo instance GUID without braces; generated when omitted. */
+  uiInfoGuid?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -60,77 +60,17 @@ const DEFAULT_COLOR: ColorRgb = { r: 128, g: 128, b: 128 };
 
 /**
  * Build the EnfusionNode tree for a faction.conf. Exported so unit tests
- * can exercise the rendering without touching the filesystem.
- *
- * Schema (per user spec — diverges from the legacy `m_sKey`/`m_sName`/`m_Color`
- * shape in `src/templates/config.ts`'s `buildFaction`; that older shape is
- * what `config_create` emits and remains untouched):
- *
- *     SCR_Faction "SCR_Faction" {
- *       m_sFactionKey "<key>"
- *       m_sFactionName "<display_name>"
- *       m_FactionColor {
- *         R <r>
- *         G <g>
- *         B <b>
- *         A 1
- *       }
- *     }
+ * can exercise the rendering without touching the filesystem. The shape and
+ * property names follow vanilla Configs/Factions/*.conf; see
+ * `src/templates/faction.ts`.
  */
 export function buildFactionConf(opts: FactionConfOptions): EnfusionNode {
-  // The spec calls for `SCR_Faction "SCR_Faction" { ... }` — type = SCR_Faction,
-  // id = "SCR_Faction" (a bare quoted string). The serializer quotes the id
-  // because "SCR_Faction" contains both letters and an underscore but is not
-  // bare-eligible (lowercase letters present).
-  const root = createNode("SCR_Faction", { id: "SCR_Faction" });
-  setProperty(root, "m_sFactionKey", opts.factionKey);
-  setProperty(root, "m_sFactionName", opts.displayName);
-
-  const color = createNode("m_FactionColor");
-  setProperty(color, "R", String(opts.color.r));
-  setProperty(color, "G", String(opts.color.g));
-  setProperty(color, "B", String(opts.color.b));
-  setProperty(color, "A", "1");
-  root.children.push(color);
-
-  return root;
+  return buildFactionNode(opts);
 }
 
-/** Escape a string for safe inclusion inside double quotes. */
-function escapeQuoted(s: string): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\t/g, "\\t")
-    .replace(/\r/g, "\\r");
-}
-
-/**
- * Render the faction.conf text.
- *
- * We do NOT route through `serialize(EnfusionNode)` because the shared
- * serializer's bare-emission heuristic would emit ALL-UPPERCASE faction
- * keys unquoted (e.g. `m_sFactionKey US`). The vanilla .conf format and
- * the user-facing spec both quote the key (`m_sFactionKey "US"`), so we
- * emit the file manually with always-quoted string properties. The
- * structure is small and fixed, so a tiny hand-rolled emitter is easier
- * to reason about than threading a per-property quoting flag through the
- * shared serializer.
- */
+/** Render the faction.conf text (vanilla shape, string values quoted). */
 export function renderFactionConf(opts: FactionConfOptions): string {
-  const lines: string[] = [];
-  lines.push(`SCR_Faction "SCR_Faction" {`);
-  lines.push(` m_sFactionKey "${escapeQuoted(opts.factionKey)}"`);
-  lines.push(` m_sFactionName "${escapeQuoted(opts.displayName)}"`);
-  lines.push(` m_FactionColor {`);
-  lines.push(`  R ${opts.color.r}`);
-  lines.push(`  G ${opts.color.g}`);
-  lines.push(`  B ${opts.color.b}`);
-  lines.push(`  A 1`);
-  lines.push(` }`);
-  lines.push(`}`);
-  return lines.join("\n");
+  return renderFactionText(opts);
 }
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -162,10 +102,10 @@ export function registerFactionCreate(server: McpServer, config: Config): void {
     {
       description:
         "Scaffold a new Configs/Factions/<Key>.conf file for an Arma Reforger mod. " +
-        "Emits SCR_Faction with m_sFactionKey, m_sFactionName, and a nested m_FactionColor (R/G/B/A) block. " +
+        "Emits SCR_Faction with FactionKey, FactionColor (0-1 floats) and UIInfo.Name, the names vanilla faction configs use. " +
         "Refuses to overwrite an existing file or to write when the target has uncommitted git changes — pass force=true to override. " +
         "Use dry_run=true to preview without writing. " +
-        "For the legacy m_sKey/m_sName/m_Color-string shape, use config_create with configType='faction' instead.",
+        "config_create with configType='faction' writes the same shape from an RGBA string.",
       inputSchema: {
         faction_key: z
           .string()
@@ -191,7 +131,7 @@ export function registerFactionCreate(server: McpServer, config: Config): void {
           .optional()
           .describe(
             "Override target path. Default: <projectPath>/Configs/Factions/<faction_key>.conf. " +
-              "Must not start with '-' (flag-smuggle guard).",
+              "Must end in .conf and must not start with '-' (flag-smuggle guard).",
           ),
         dry_run: z
           .boolean()
@@ -259,6 +199,19 @@ export function registerFactionCreate(server: McpServer, config: Config): void {
         }
         let targetPath: string;
         if (out_path !== undefined) {
+          // A faction config is a .conf: out_path may not name any other project file, which
+          // force:true would replace wholesale (offline-writers-05).
+          if (!out_path.toLowerCase().endsWith(".conf")) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Invalid out_path: must end in .conf (got: ${out_path})`,
+                },
+              ],
+              isError: true,
+            };
+          }
           targetPath = resolve(config.projectPath, out_path);
           // Containment check: out_path must resolve inside projectPath.
           // Catches `../../escape.conf`, absolute-path overrides, etc.
@@ -351,7 +304,10 @@ export function registerFactionCreate(server: McpServer, config: Config): void {
 
         // ── Write ───────────────────────────────────────────────────────────
         mkdirSync(dirname(targetPath), { recursive: true });
-        writeFileSync(targetPath, content, "utf-8");
+        // force replaces through write-then-rename; otherwise a new file only, flag wx
+        // (write-safety gap 20).
+        if (force) writeFileAtomic(targetPath, content);
+        else writeFileSync(targetPath, content, { encoding: "utf-8", flag: "wx" });
 
         return {
           content: [
@@ -364,7 +320,7 @@ export function registerFactionCreate(server: McpServer, config: Config): void {
                 "\n```\n\n" +
                 "Next steps:\n" +
                 "1. Add this faction to your in-game editor faction list (see kb/Modding_And_Extensions/faction-creation.md).\n" +
-                "2. Set `m_sFlagPath`, `m_FactionIdentity`, and `m_aEntityCatalogs` on the new file as needed.\n" +
+                "2. Set `m_sFactionFlag`, `\"Identity of soldiers\"`, and `m_aEntityCatalogs` on the new file as needed.\n" +
                 "3. Reference this faction key on entities via `SCR_FactionAffiliationComponent.\"faction affiliation\"`.",
             },
           ],

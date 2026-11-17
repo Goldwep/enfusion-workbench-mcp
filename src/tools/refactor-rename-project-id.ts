@@ -20,44 +20,52 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { resolve, basename } from "node:path";
 import { z } from "zod";
-import { atomicCommit, findAllSpans, applyMultipleSplices } from "../refactor/byte-edit.js";
+import { atomicCommit } from "../refactor/byte-edit.js";
+import { parseCst, tokenValue, type CstEntry, type Token } from "../formats/enfusion-cst.js";
 import { loadConfig, type Config } from "../config.js";
 import { assertInsideAnyRoot } from "../utils/path-guard.js";
 import { readTextFileBounded } from "../utils/safe-read.js";
 
-const ID_LINE_RE = /\bID\s+"([^"]+)"/g;
 const VALID_ID_RE = /^[A-Za-z0-9_\-.]+$/;
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
-export function findIdSpans(content: string, oldId: string): { spans: { start: number; end: number; text: string }[] } {
-  const spans: { start: number; end: number; text: string }[] = [];
-  const all = findAllSpans(content, ID_LINE_RE);
-  for (const span of all) {
-    if (span.text === undefined) continue;
-    const m = ID_LINE_RE.exec(span.text);
-    ID_LINE_RE.lastIndex = 0;
-    if (m && m[1] === oldId) {
-      spans.push({ start: span.start, end: span.end, text: span.text });
+/**
+ * The value token of every `ID <oldId>` property, at any depth, found through the lossless CST
+ * (src/formats/enfusion-cst.ts), so an `ID "..."` inside a comment or a string is never touched.
+ */
+function idTokens(content: string, oldId: string): Token[] {
+  const out: Token[] = [];
+  const walk = (entries: readonly CstEntry[]): void => {
+    for (const e of entries) {
+      if (e.kind === "object") walk(e.children);
+      else if (e.kind === "scalar" && e.key === "ID" && e.values.length === 1) {
+        if (tokenValue(e.values[0]!) === oldId) out.push(e.values[0]!);
+      }
     }
-  }
-  return { spans };
+  };
+  walk(parseCst(content).root.children);
+  return out;
 }
 
+export function findIdSpans(content: string, oldId: string): { spans: { start: number; end: number; text: string }[] } {
+  return {
+    spans: idTokens(content, oldId).map((t) => ({ start: t.start, end: t.end, text: t.text })),
+  };
+}
+
+/**
+ * Splices the new ID over each `ID <oldId>` value token the CST finds (the quoting kept); every
+ * other byte of the file is kept as it was (write-safety audit, lossless parser).
+ */
 export function buildRenamedContent(content: string, oldId: string, newId: string): { newContent: string; replaced: number } {
-  // Replace ALL occurrences of `ID "<oldId>"` — there's only one at the .gproj
-  // root in canonical form, but tolerate (e.g.) sub-configs that nest the
-  // same property. We use the regex on the FULL string rather than the per-
-  // span text to keep the replacement deterministic.
-  let replaced = 0;
-  const newContent = content.replace(ID_LINE_RE, (match, captured) => {
-    if (captured === oldId) {
-      replaced += 1;
-      return `ID "${newId}"`;
-    }
-    return match;
-  });
-  return { newContent, replaced };
+  const tokens = idTokens(content, oldId);
+  let newContent = content;
+  for (const t of [...tokens].reverse()) {
+    const text = t.kind === "string" ? `"${newId}"` : newId;
+    newContent = newContent.slice(0, t.start) + text + newContent.slice(t.end);
+  }
+  return { newContent, replaced: tokens.length };
 }
 
 // ── Formatter ────────────────────────────────────────────────────────────────
@@ -167,11 +175,14 @@ export function registerRefactorRenameProjectId(server: McpServer, config?: Conf
         const content = readTextFileBounded(fullPath);
         const { newContent, replaced } = buildRenamedContent(content, old_id, new_id);
         if (replaced === 0 || !commit) {
+          // A commit that matches no ID is refused as an error, not a quiet dry run.
+          const refused = commit && replaced === 0;
           return {
+            ...(refused ? { isError: true } : {}),
             content: [
               {
                 type: "text" as const,
-                text: formatPlan({
+                text: (refused ? "REFUSED: no ID matched old_id, nothing was written.\n\n" : "") + formatPlan({
                   gprojPath: fullPath,
                   oldId: old_id,
                   newId: new_id,

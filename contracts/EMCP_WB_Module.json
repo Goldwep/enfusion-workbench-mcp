@@ -1,0 +1,544 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Module",
+  "tool": "wb_module",
+  "purpose": "Workbench modules (the present ones).",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Module.c",
+  "request": ["action", "moduleName", "path", "menuPath", "keepFocus", "confirm"],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "nextStep",
+    "moduleName",
+    "modules",
+    "openModules",
+    "unreadModules",
+    "isOpen",
+    "mayHaveOpened",
+    "containerCount",
+    "containerClasses",
+    "called",
+    "result",
+    "path",
+    "openedIn",
+    "executedPath",
+    "allowListCount",
+    "worldPath",
+    "worldPathForm",
+    "dryRun",
+    "docPath"
+  ],
+  "actions": [
+    {
+      "name": "list",
+      "summary": "Module names (no open check)",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "modules",
+          "type": "array<string>",
+          "note": "modules read"
+        },
+        {
+          "key": "openModules",
+          "type": "array<string>",
+          "note": "opened by this handler; not read live"
+        },
+        {
+          "key": "unreadModules",
+          "type": "array<string>",
+          "note": "never read: ParticleEditor"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "info",
+      "summary": "Containers; opens module if closed",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "one of the present modules"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "isOpen",
+          "type": "bool"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "always true: GetModule opens it"
+        },
+        {
+          "key": "containerCount",
+          "type": "int"
+        },
+        {
+          "key": "containerClasses",
+          "type": "array<string>",
+          "note": "at most 64"
+        },
+        {
+          "key": "docPath",
+          "type": "string",
+          "note": "container 0 resource, if any"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "open",
+      "summary": "Open a module",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "one of the present modules"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "isOpen",
+          "type": "bool",
+          "note": "read back (Particle: OpenModule answer)"
+        },
+        {
+          "key": "called",
+          "type": "bool",
+          "note": "false when already open"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "OpenModule return"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed module"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "front",
+      "summary": "Bring a module window to front",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "BringModuleWindowToFront is a NET native: the TS tool calls it; the handler refuses front.",
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "one of the present modules"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "close",
+      "summary": "Refused: the owner closes by hand",
+      "mutating": true,
+      "projectOnly": false,
+      "refuses": "No proven call tells whether the document is dirty (DEC-045); the handler refuses close.",
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "one of the present modules"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setResource",
+      "summary": "Open a path:<rel> resource in its editor",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "owner of the type (WE: .ent, .et only)"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "clean relative path, any addon"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "path",
+          "type": "string"
+        },
+        {
+          "key": "called",
+          "type": "bool"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "SetOpenedResource return"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed module"
+        },
+        {
+          "key": "openedIn",
+          "type": "string",
+          "note": "the module that took it"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Save the open world: dry run, or confirm (anim editors: NO_DOCUMENT)",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "NO_DOCUMENT in AnimEditor, BehaviorEditor and ProcAnimEditor: on 1.9.0.37 they expose no container for the open file (P-W4-10 killed); nothing is sent",
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "WorldEditor or one of the 3 anim editors"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true saves; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "called",
+          "type": "bool"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "WorldEditor.Save return"
+        },
+        {
+          "key": "worldPath",
+          "type": "string",
+          "note": "shown only in project form"
+        },
+        {
+          "key": "worldPathForm",
+          "type": "string",
+          "note": "project, withheld or none"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed module"
+        },
+        {
+          "key": "docPath",
+          "type": "string",
+          "note": "anim editors: container 0 path"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "action",
+      "summary": "Run an allow-listed menuPath",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "one of the present modules"
+        },
+        {
+          "key": "menuPath",
+          "type": "array<string>",
+          "required": true,
+          "note": "one segment per entry"
+        },
+        {
+          "key": "keepFocus",
+          "type": "bool",
+          "required": false,
+          "note": "default true"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "refusal code"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string",
+          "note": "what to do after a refusal"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "executedPath",
+          "type": "string",
+          "note": "segments joined by \" > \""
+        },
+        {
+          "key": "allowListCount",
+          "type": "int"
+        },
+        {
+          "key": "called",
+          "type": "bool"
+        },
+        {
+          "key": "result",
+          "type": "bool",
+          "note": "ExecuteAction return"
+        },
+        {
+          "key": "mayHaveOpened",
+          "type": "bool",
+          "note": "GetModule opens a closed module"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

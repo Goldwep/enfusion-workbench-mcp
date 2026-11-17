@@ -1,0 +1,52 @@
+{
+  "$comment": "SYNTHETIC menus document in the emcp-uia-menus/1 shape of menus-sf-13.json with items already descended (the L02 menus.py fix); the real launcher items are unread. [unverified]",
+  "schema": "emcp-uia-menus/1",
+  "provider": "uia",
+  "depth": 1,
+  "result": "ok",
+  "leftOpen": [],
+  "menus": [
+    {
+      "title": "File",
+      "opened": true,
+      "collapsed": true,
+      "items": [
+        {
+          "controlType": "MenuItem",
+          "name": "Exit",
+          "enabled": true,
+          "acceleratorKey": "Alt+F4",
+          "submenu": false
+        },
+        {
+          "controlType": "MenuItem",
+          "name": "",
+          "enabled": true,
+          "acceleratorKey": null,
+          "submenu": false
+        }
+      ]
+    },
+    {
+      "title": "Help",
+      "opened": true,
+      "collapsed": true,
+      "items": [
+        {
+          "controlType": "MenuItem",
+          "name": "About",
+          "enabled": true,
+          "acceleratorKey": null,
+          "submenu": false
+        },
+        {
+          "controlType": "MenuItem",
+          "name": "Documentation",
+          "enabled": true,
+          "acceleratorKey": null,
+          "submenu": true
+        }
+      ]
+    }
+  ]
+}

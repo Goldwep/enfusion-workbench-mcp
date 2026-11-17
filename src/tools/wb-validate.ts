@@ -1,328 +1,484 @@
 /**
- * `wb_validate` — invoke Workbench's built-in material / texture validators.
+ * `wb_validate`: Bohemia's material and texture validators, run as data, through EMCP_WB_Validate
+ * (wave W2, phase5-w2-spec.md section 2.3, ruling OD-7; closes KD-011).
  *
- * Pre-check added 2026-05-22 (post-v1.0.0 audit): the BI
- * `MaterialValidator.Get` and `TextureValidator.TextureImportSettings`
- * scripts throw VM exceptions ("Index out of bounds" / "NULL pointer to
- * instance. Variable 'meta'") when called with paths that don't resolve to
- * a real on-disk resource. We probe the path against the configured
- * project/workshop/core roots first and refuse the call if nothing
- * matches — this prevents the VM exception and the silent false-positive
- * "Valid" response that follows.
+ *   material     read: MaterialValidatorUtils' five checks on an .emat (project or game file)
+ *   texture      read: the TextureTypes checks per configuration with the Ignore op
+ *   fixTexture   write: the same checks with ReportAndFix, then the meta is saved; a dry run
+ *                until `confirm: true`; `rebuild` rebuilds the resource after the save
  *
- * See `docs/TEST-RESULTS.md` HIGH wb_validate finding.
+ * The 1.x route (the BI MaterialValidator and TextureValidator NET handlers) is gone: material had
+ * no verdict (KD-011) and texture only printed. The 1.x inputs still work: `action` material or
+ * texture with `path` as a project-relative path, a `{GUID}path` resource name, or an absolute path
+ * under the configured project, workshop or core root (turned into a root-relative path here
+ * before anything is sent; any other absolute path is refused).
+ *
+ * The request is checked against the contract's per-action schema before anything is sent.
+ * Nothing here names a sandbox or a project. Registered by src/server.ts.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { existsSync, statSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
 import type { Config } from "../config.js";
 import type { WorkbenchClient } from "../workbench/client.js";
-import { formatConnectionStatus } from "../workbench/status.js";
+import { loadContract, type Contract } from "../manifest/contract.js";
+import { buildRequestSchema, checkedDescription } from "../manifest/generate.js";
+import {
+  ERROR_CODES,
+  VocabularyError,
+  checkRelativePath,
+  type ActionError,
+  type ActionOk,
+  type Change,
+  type ErrorCode,
+} from "../manifest/vocabulary.js";
 import { isPathInsideRoot } from "../utils/path-guard.js";
+import { codeOfClientError } from "./wb-module.js";
 
-/** Heuristic: strip a leading `{16-hex}` resource-GUID prefix to get the
- *  on-disk path portion. */
-function stripGuidPrefix(p: string): string {
-  const m = /^\{[A-Fa-f0-9]{16}\}(.*)$/.exec(p);
-  return m ? m[1] : p;
+export const HANDLER = "EMCP_WB_Validate";
+
+/** contracts/ sits two levels above both src/tools and dist/tools. */
+export const CONTRACT_FILE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "contracts",
+  `${HANDLER}.json`,
+);
+
+export const VALIDATE_CONTRACT: Contract = loadContract(CONTRACT_FILE);
+export const VALIDATE_REQUEST_SCHEMA = buildRequestSchema(VALIDATE_CONTRACT);
+
+/** The description generated from the contract (at most 400 chars; throws when over). */
+export function wbValidateDescription(): string {
+  return checkedDescription(VALIDATE_CONTRACT);
 }
 
-/** Resolve a resource path (absolute or root-relative) against the
- *  configured project / workshop / core roots. Returns the first
- *  on-disk path that exists, or `null` if nothing matches.
- *  Always returns a normalised absolute path on hit. */
-export function resolveResourcePath(
-  rawInput: string,
-  config: Config,
-): { resolved: string; root: "absolute" | "project" | "workshop" | "core" } | null {
-  const stripped = stripGuidPrefix(rawInput);
-  if (stripped === "") return null;
+/** The handler's actions, as the contract names them. */
+export const HANDLER_ACTIONS: readonly string[] = VALIDATE_CONTRACT.actions.map((a) => a.name);
 
-  // Known resource roots in priority order: user project, workshop, core.
-  const roots: Array<{ key: "project" | "workshop" | "core"; path: string | undefined }> = [
-    { key: "project", path: config.projectPath },
-    { key: "workshop", path: config.workshopPath },
-    { key: "core", path: config.corePath },
-  ];
+const MUTATING = new Set(VALIDATE_CONTRACT.actions.filter((a) => a.mutating).map((a) => a.name));
 
-  // Absolute path — CWE-22 guard: only accept it if it lands inside one of
-  // the configured roots. An absolute path pointing anywhere else on disk
-  // is refused so we never hand an out-of-tree path to the BI validator.
-  if (isAbsolute(stripped)) {
-    const abs = resolve(stripped);
-    const insideKnownRoot = roots.some((r) => r.path && isPathInsideRoot(abs, r.path));
-    if (insideKnownRoot && existsSync(abs) && statSync(abs).isFile()) {
-      return { resolved: abs, root: "absolute" };
-    }
-    return null;
-  }
+const READ_TIMEOUT_MS = 30_000;
+/** fixTexture can rebuild the resource and wait for it. */
+const WRITE_TIMEOUT_MS = 60_000;
 
-  // Root-relative path — CWE-22 guard: a `..`-laden input can escape a root
-  // via `join`, so after building each candidate we assert it stays
-  // contained within that root before trusting it. An escaping candidate is
-  // skipped (not returned) — the resolved out-of-tree path must never reach
-  // the validator.
-  //
-  // Project layouts can put resources either at `<root>/<path>` or
-  // `<root>/<modName>/<path>`. Try the modName form first when
-  // defaultMod is set — that matches what the Workbench API expects.
-  for (const r of roots) {
-    if (!r.path) continue;
-    if (config.defaultMod) {
-      const candidate = resolve(join(r.path, config.defaultMod, stripped));
-      if (
-        isPathInsideRoot(candidate, r.path) &&
-        existsSync(candidate) &&
-        statSync(candidate).isFile()
-      ) {
-        return { resolved: candidate, root: r.key };
-      }
-    }
-    const direct = resolve(join(r.path, stripped));
-    if (isPathInsideRoot(direct, r.path) && existsSync(direct) && statSync(direct).isFile()) {
-      return { resolved: direct, root: r.key };
-    }
-  }
+/**
+ * Under the Ignore op CheckUnnecessarySettingInPc and CheckWrongPropertyValues always answer
+ * NothingChanged (phase5-w2-spec.md section 0): only Configurations, Ancestors and SuspiciousNonPc
+ * give a verdict in a texture read.
+ */
+export const IGNORE_NOTE =
+  "texture runs the checks with the Ignore op: CheckUnnecessarySettingInPc and CheckWrongPropertyValues always answer NothingChanged, so only CheckConfigurations, CheckAncestors and CheckSuspiciousNonPcSetting give a verdict";
 
-  return null;
+type Raw = Record<string, unknown>;
+
+export type ValidateError = ActionError & { readback?: unknown };
+export type ValidateResponse = ActionOk | ValidateError;
+
+/** The client surface this tool needs (a fake in tests). */
+export type ValidateClient = Pick<WorkbenchClient, "call">;
+
+/** The roots an absolute 1.x path may sit under, from the server config. */
+export type RootConfig = Pick<Config, "projectPath" | "workshopPath" | "corePath" | "defaultMod">;
+
+const KNOWN_CODES: ReadonlySet<string> = new Set(Object.keys(ERROR_CODES));
+
+function fail(
+  action: string,
+  target: string,
+  code: ErrorCode,
+  message: string,
+  next?: string,
+): ValidateError {
+  return {
+    ok: false,
+    action,
+    target,
+    code,
+    message,
+    next: next || ERROR_CODES[code],
+    warnings: [],
+  };
 }
 
-/** Outcome of the pre-check: either a refusal (with a ready-to-emit message)
- *  or a resolved hit that the handler can pass to the BI validator. */
-export type PrecheckResult =
-  | { ok: true; hit: { resolved: string; root: "absolute" | "project" | "workshop" | "core" } }
-  | { ok: false; text: string };
-
-/**
- * Pre-check a `wb_validate` request before any handler call:
- *   1. Flag-smuggle guard — reject CLI-flag-shaped paths.
- *   2. Path-traversal / existence guard — resolve against known roots with
- *      containment enforced; refuse anything that escapes or doesn't exist.
- *
- * Pure (modulo fs existence checks) so it can be unit-tested directly. The
- * returned `text` is the body only — the caller appends connection status.
- */
-export function precheckValidatePath(
-  action: "material" | "texture",
-  path: string,
-  config: Config,
-): PrecheckResult {
-  // Flag-smuggle guard — reject CLI-flag-shaped paths BEFORE any path
-  // resolution, matching the rest of the wb_* surface.
-  if (path.startsWith("-")) {
-    return { ok: false, text: "Invalid path: must not start with '-' (flag-smuggle guard)." };
-  }
-
-  // Pre-check: resolve against known resource roots with containment
-  // enforced. Refuse if nothing matches (non-existent OR traversal-escaping)
-  // — this is the v1.0.0 audit-fix plus the SEC-NEW-01 CWE-22 guard. Without
-  // it, the BI MaterialValidator script throws an Index-out-of-bounds VM
-  // exception (false-positive "Valid"), or an out-of-tree path reaches the
-  // validator.
-  const hit = resolveResourcePath(path, config);
-  if (!hit) {
-    const tried: string[] = [];
-    if (config.projectPath) tried.push(`project: ${config.projectPath}`);
-    if (config.workshopPath) tried.push(`workshop: ${config.workshopPath}`);
-    if (config.corePath) tried.push(`core: ${config.corePath}`);
-    return {
-      ok: false,
-      text:
-        `**${action === "material" ? "Material" : "Texture"} Validation: Resource Not Found**\n\n` +
-        `- **Path:** ${path}\n` +
-        `- **Status:** Not found — refused before calling validator\n\n` +
-        `Searched roots:\n${tried.map((t) => `  - ${t}`).join("\n")}\n\n` +
-        `Pass an absolute path or a root-relative path that resolves to an existing file ` +
-        `inside a known root (traversal-escaping paths are refused).`,
-    };
-  }
-
-  return { ok: true, hit };
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
 }
 
+/** True for 1, "1", true and "true": Enforce JSON writes booleans as 1/0 (P3-3 gate 2). */
+function truthy(v: unknown): boolean {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
+
+function strs(v: unknown): string[] {
+  return Array.isArray(v) ? v.map((x) => String(x)) : [];
+}
+
+// ── Path ──────────────────────────────────────────────────────────────────────
+
+const GUID_PREFIX = /^(\{[0-9A-Fa-f]{16}\})(.*)$/;
+const ABSOLUTE = /^([A-Za-z]:[\\/]|[\\/])/;
+
 /**
- * Format the BI validator's response into a user-facing message + isError.
- *
- * Pure — no fs / network. Encodes the response-side defense:
- *   - empty / fieldless response  → "Inconclusive" + isError (the VM-exception
- *     false-positive fix);
- *   - `valid:false`               → "Failed";
- *   - `valid:true` / `success:true` with no errors → "Passed".
- *
- * The returned `text` is the body only — the caller appends connection status.
+ * The path to send. A relative path or a `{GUID}path` name passes the project-relative check
+ * (no drive, no `..`). An absolute path (a 1.x input) must sit under a configured root and is
+ * sent relative to it; `projectOnly` allows the project root alone (a write). Throws
+ * VocabularyError.
  */
-/**
- * Coerce a JSON-ish truth flag. Booleans pass through; "true"/"false"
- * (any case), "1"/"0" and numbers map explicitly; anything else — absent,
- * null, or an unrecognised string — is `undefined` so the caller falls
- * through to the next field.
- */
-export function coerceFlag(v: unknown): boolean | undefined {
-  if (typeof v === "boolean") return v;
-  if (typeof v === "number") return v !== 0;
-  if (typeof v === "string") {
-    const t = v.trim().toLowerCase();
-    if (t === "true" || t === "1") return true;
-    if (t === "false" || t === "0") return false;
+export function toResourcePath(raw: string, config?: RootConfig, projectOnly = false): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("-")) {
+    throw new VocabularyError(
+      "INVALID_ARGUMENT",
+      "Invalid path: must not start with '-' (flag-smuggle guard)",
+    );
+  }
+  const m = GUID_PREFIX.exec(trimmed);
+  if (m) return `${m[1]}${checkRelativePath(m[2])}`;
+  if (!ABSOLUTE.test(trimmed) && !isAbsolute(trimmed)) return checkRelativePath(trimmed);
+
+  const roots: string[] = [];
+  const project = config?.projectPath;
+  if (project) {
+    if (config?.defaultMod) roots.push(join(project, config.defaultMod));
+    roots.push(project);
+  }
+  if (!projectOnly) {
+    if (config?.workshopPath) roots.push(config.workshopPath);
+    if (config?.corePath) roots.push(config.corePath);
+  }
+  const abs = resolve(trimmed);
+  for (const root of roots) {
+    if (!isPathInsideRoot(abs, root)) continue;
+    const rel = relative(resolve(root), abs).replace(/\\/g, "/");
+    if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) continue;
+    return checkRelativePath(rel);
+  }
+  throw new VocabularyError(
+    "ABSOLUTE_PATH",
+    projectOnly
+      ? `absolute path refused: ${raw} is not under the configured project root`
+      : `absolute path refused: ${raw} is not under the configured project, workshop or core root`,
+  );
+}
+
+// ── Request checks ────────────────────────────────────────────────────────────
+
+function targetOf(p: Raw): string {
+  const path = str(p.path);
+  return path ? `path:${path}` : "path:";
+}
+
+/** The one-sentence refusal text for an input that fails a check, or undefined. */
+function checkValues(action: string, p: Raw): string | undefined {
+  if (typeof p.typeName === "string" && p.typeName.trim() === "") {
+    return "typeName is empty (omit it to detect the type from the file name; or co, nohq, fnt, unspecified)";
+  }
+  if (action === "material" && !str(p.path).toLowerCase().endsWith(".emat")) {
+    return `material validates an .emat, got ${str(p.path)}`;
   }
   return undefined;
 }
 
-export function formatValidationResult(
-  action: "material" | "texture",
-  path: string,
-  hit: { resolved: string; root: "absolute" | "project" | "workshop" | "core" },
-  result: Record<string, unknown>,
-): { text: string; isError: boolean } {
-  // Tightened response parsing — the previous default-to-true logic masked
-  // VM exceptions as "Valid". Now: if the response carries no recognisable
-  // fields, treat that as "validator returned nothing usable".
-  const hasValid = Object.prototype.hasOwnProperty.call(result, "valid");
-  const hasSuccess = Object.prototype.hasOwnProperty.call(result, "success");
-  const errors = Array.isArray(result.errors) ? result.errors : [];
-  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
-  const hasInfo = Object.prototype.hasOwnProperty.call(result, "info");
-  const anyMeaningfulField =
-    hasValid || hasSuccess || errors.length > 0 || warnings.length > 0 || hasInfo;
+/** A checked request: what is sent to the handler, or the refusal raised before sending. */
+export type Prepared =
+  | { ok: true; action: string; target: string; mutating: boolean; params: Raw }
+  | { ok: false; error: ValidateError };
 
-  const label = action === "material" ? "Material" : "Texture";
-  const lines: string[] = [];
-
-  if (!anyMeaningfulField) {
-    lines.push(`**${label} Validation: Inconclusive**\n`);
-    lines.push(`- **Path:** ${path}`);
-    lines.push(`- **Resolved:** ${hit.resolved} (root=${hit.root})`);
-    lines.push("- **Status:** Validator returned no usable response.");
-    lines.push(
-      "  This is often a sign the BI script threw a Virtual Machine Exception " +
-        "internally — check Workbench's script.log for `MaterialValidator.Get` / " +
-        "`TextureValidator.TextureImportSettings` errors.",
-    );
-    return { text: lines.join("\n"), isError: true };
+/** Validates a request. Nothing is sent when this refuses. */
+export function prepareRequest(input: unknown, config?: RootConfig): Prepared {
+  const raw = (input ?? {}) as Raw;
+  const action = str(raw.action);
+  const target = targetOf(raw);
+  if (!HANDLER_ACTIONS.includes(action)) {
+    return {
+      ok: false,
+      error: fail(
+        action,
+        target,
+        "INVALID_ARGUMENT",
+        `unknown action '${action}'; one of ${HANDLER_ACTIONS.join(", ")}`,
+      ),
+    };
   }
-
-  // cs17-6 (June review): the handler's JSON may carry `valid` as a
-  // string ("false") or number (0) — a bare `as boolean` cast left the
-  // string "false" truthy and reported "Passed". Coerce explicitly.
-  const valid = coerceFlag(result.valid) ?? coerceFlag(result.success) ?? errors.length === 0;
-
-  if (valid && errors.length === 0) {
-    lines.push(`**${label} Validation Passed**\n`);
-    lines.push(`- **Path:** ${path}`);
-    lines.push(`- **Resolved:** ${hit.resolved} (root=${hit.root})`);
-    lines.push("- **Status:** Valid");
-  } else {
-    lines.push(`**${label} Validation Failed**\n`);
-    lines.push(`- **Path:** ${path}`);
-    lines.push(`- **Resolved:** ${hit.resolved} (root=${hit.root})`);
-    lines.push("- **Status:** Invalid");
+  const parsed = VALIDATE_REQUEST_SCHEMA.safeParse(input);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`);
+    return { ok: false, error: fail(action, target, "INVALID_ARGUMENT", issues.join("; ")) };
   }
-
-  if (errors.length > 0) {
-    lines.push(`\n### Errors (${errors.length})`);
-    for (const err of errors) {
-      if (typeof err === "string") {
-        lines.push(`- ${err}`);
-      } else {
-        const e = err as Record<string, unknown>;
-        lines.push(`- ${e.message || JSON.stringify(e)}`);
-      }
+  const req = parsed.data as Raw;
+  const mutating = MUTATING.has(action);
+  let path: string;
+  try {
+    path = toResourcePath(str(req.path), config, mutating);
+  } catch (e) {
+    if (e instanceof VocabularyError) {
+      return { ok: false, error: fail(action, target, e.code, e.message) };
     }
+    throw e;
   }
-
-  if (warnings.length > 0) {
-    lines.push(`\n### Warnings (${warnings.length})`);
-    for (const warn of warnings) {
-      if (typeof warn === "string") {
-        lines.push(`- ${warn}`);
-      } else {
-        const w = warn as Record<string, unknown>;
-        lines.push(`- ${w.message || JSON.stringify(w)}`);
-      }
-    }
-  }
-
-  if (hasInfo && result.info) {
-    lines.push("\n### Info");
-    lines.push(
-      typeof result.info === "string" ? result.info : JSON.stringify(result.info, null, 2),
-    );
-  }
-
-  return { text: lines.join("\n"), isError: !valid || errors.length > 0 };
+  const why = checkValues(action, { ...req, path });
+  if (why) return { ok: false, error: fail(action, target, "INVALID_ARGUMENT", why) };
+  const params: Raw = { ...req, path };
+  // A write is a dry run unless confirm is true: send the flag explicitly.
+  if (mutating) params.confirm = req.confirm === true;
+  return { ok: true, action, target: `path:${path}`, mutating, params };
 }
 
+// ── Handler answer ────────────────────────────────────────────────────────────
+
+/** A handler refusal or error as a ValidateError, else null. */
+function handlerFailure(action: string, target: string, r: Raw): ValidateError | null {
+  const status = str(r.status);
+  if (status === "ok") return null;
+  if (status === "refused" || status === "error") {
+    const raw = str(r.code);
+    const fallback: ErrorCode = status === "error" ? "HANDLER_ERROR" : "INVALID_ARGUMENT";
+    const code = (KNOWN_CODES.has(raw) ? raw : fallback) as ErrorCode;
+    const e = fail(
+      action,
+      target,
+      code,
+      str(r.message) || `the handler answered ${status}`,
+      str(r.next) || undefined,
+    );
+    if (raw !== "" && !KNOWN_CODES.has(raw)) {
+      e.warnings.push(`the handler answered an unknown code '${raw}'`);
+    }
+    return e;
+  }
+  return fail(action, target, "UNREACHABLE", `the handler answered status '${status}'`);
+}
+
+async function send(
+  client: ValidateClient,
+  params: Raw,
+  mutating: boolean,
+  action: string,
+  target: string,
+): Promise<{ r: Raw } | { error: ValidateError }> {
+  try {
+    const r = await client.call<Raw>(HANDLER, params, {
+      access: mutating ? "mutate" : "read",
+      timeout: mutating ? WRITE_TIMEOUT_MS : READ_TIMEOUT_MS,
+    });
+    const f = handlerFailure(action, target, r);
+    return f ? { error: f } : { r };
+  } catch (e) {
+    const c = codeOfClientError(e);
+    const f = fail(action, target, c.code, c.message);
+    if (c.code === "LOST" && mutating) {
+      f.next =
+        "The call was lost and is never retried; read back with wb_validate texture and wb_meta get first.";
+    }
+    return { error: f };
+  }
+}
+
+// ── Parsing ───────────────────────────────────────────────────────────────────
+
+export interface MaterialReport {
+  /** The BI severity as the handler wrote it; null for a skipped note. */
+  severity: number | null;
+  text: string;
+  skipped: boolean;
+}
+
+/** material reports "<severity>: <text>", or "skipped: <why>" when CheckTextures could not run. */
+export function parseReports(lines: string[]): MaterialReport[] {
+  return lines.map((line) => {
+    const colon = line.indexOf(":");
+    const head = colon < 0 ? "" : line.slice(0, colon);
+    const text = colon < 0 ? line : line.slice(colon + 1).trim();
+    if (head === "skipped") return { severity: null, text, skipped: true };
+    const n = Number(head);
+    return {
+      severity: head !== "" && Number.isInteger(n) ? n : null,
+      text,
+      skipped: false,
+    };
+  });
+}
+
+export interface CheckRow {
+  check: string;
+  result: string;
+}
+
+/** texture checks "Check=Result" (Result is a TextureCheckResult name, or skipped). */
+export function parseChecks(lines: string[]): CheckRow[] {
+  return lines.map((line) => {
+    const eq = line.indexOf("=");
+    return eq < 0
+      ? { check: line, result: "" }
+      : { check: line.slice(0, eq), result: line.slice(eq + 1) };
+  });
+}
+
+/** One Change per "config.var=value" key whose value differs; a key on one side only is null on the other. */
+export function diffLines(before: string[], after: string[]): Change[] {
+  const split = (lines: string[]): Map<string, string> =>
+    new Map(
+      lines.map((l) => {
+        const eq = l.indexOf("=");
+        return (eq < 0 ? [l, ""] : [l.slice(0, eq), l.slice(eq + 1)]) as [string, string];
+      }),
+    );
+  const b = split(before);
+  const a = split(after);
+  const out: Change[] = [];
+  for (const k of new Set([...b.keys(), ...a.keys()])) {
+    const bv = b.has(k) ? b.get(k)! : null;
+    const av = a.has(k) ? a.get(k)! : null;
+    if (bv !== av) out.push({ path: k, before: bv, after: av });
+  }
+  return out;
+}
+
+// ── Shaping ───────────────────────────────────────────────────────────────────
+
+function shapeOk(action: string, target: string, params: Raw, r: Raw): ActionOk {
+  const warnings: string[] = [];
+  let changed: Change[] | null = null;
+  let readback: Raw;
+  let next: string | undefined;
+  switch (action) {
+    case "material": {
+      const reports = parseReports(strs(r.reports));
+      readback = {
+        severity: typeof r.severity === "number" ? r.severity : 0,
+        reports,
+        textures: strs(r.textures),
+      };
+      for (const rep of reports) {
+        if (rep.skipped) warnings.push(rep.text);
+      }
+      if (reports.length === 0) next = "No findings: every one of the five checks passed.";
+      break;
+    }
+    case "texture": {
+      readback = {
+        textureType: str(r.textureType),
+        checks: parseChecks(strs(r.checks)),
+        fatal: truthy(r.fatal),
+      };
+      warnings.push(IGNORE_NOTE);
+      next = "wb_validate fixTexture applies Bohemia's fixes (a dry run until confirm: true)";
+      break;
+    }
+    default: {
+      // fixTexture
+      const dry = truthy(r.dryRun);
+      const checks = parseChecks(strs(r.checks));
+      const before = strs(r.before);
+      const after = strs(r.after);
+      const saved = truthy(r.saved);
+      const base = { textureType: str(r.textureType), checks, fatal: truthy(r.fatal) };
+      if (dry) {
+        readback = { ...base, dryRun: true, saved: false, current: before };
+        warnings.push(IGNORE_NOTE);
+        next = "Resend with confirm: true to run the checks with ReportAndFix and save the meta.";
+      } else {
+        const rebuilt = truthy(r.rebuilt);
+        readback = {
+          ...base,
+          dryRun: false,
+          saved,
+          rebuilt,
+          before,
+          after,
+          message: str(r.message),
+        };
+        if (saved) {
+          changed = diffLines(before, after);
+          next = "The inverse is wb_meta set (or setAncestor) with each 'before' value.";
+          if (params.rebuild === true && !rebuilt) {
+            warnings.push("the rebuild was asked for but WaitForFile did not report it finished");
+          }
+        } else {
+          next = "Nothing needed fixing; the meta was not written.";
+          if (params.rebuild === true) {
+            warnings.push("rebuild was asked for but nothing was saved, so nothing was rebuilt");
+          }
+        }
+      }
+    }
+  }
+  const ok: ActionOk = { ok: true, action, target, changed, readback, warnings };
+  if (next) ok.next = next;
+  return ok;
+}
+
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+/** Runs one wb_validate request end to end; never throws for a Workbench-side failure. */
+export async function runValidate(
+  client: ValidateClient,
+  input: unknown,
+  config?: RootConfig,
+): Promise<ValidateResponse> {
+  const prepared = prepareRequest(input, config);
+  if (!prepared.ok) return prepared.error;
+  const { action, target, mutating, params } = prepared;
+  const s = await send(client, params, mutating, action, target);
+  if ("error" in s) return s.error;
+  return shapeOk(action, target, params, s.r);
+}
+
+export function toToolResult(r: ValidateResponse) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(r, null, 2) }],
+    ...(r.ok ? {} : { isError: true as const }),
+  };
+}
+
+// ── Registration ──────────────────────────────────────────────────────────────
+
+/** A flat input shape for registerTool (the per-action union is checked in prepareRequest). */
+export function flatInputShape(c: Contract = VALIDATE_CONTRACT): z.ZodRawShape {
+  const names = c.actions.map((a) => a.name) as [string, ...string[]];
+  const shape: z.ZodRawShape = { action: z.enum(names) };
+  for (const a of c.actions) {
+    for (const p of a.params) {
+      if (shape[p.key]) continue;
+      let s: z.ZodTypeAny;
+      if (p.type === "bool") s = z.boolean();
+      else if (p.type === "int") s = z.number().int();
+      else if (p.type === "float") s = z.number();
+      else s = z.string();
+      shape[p.key] = (p.note ? s.describe(p.note) : s).optional();
+    }
+  }
+  return shape;
+}
+
+/** `config` is optional: with it, 1.x absolute paths under its roots are turned into relative ones. */
 export function registerWbValidate(
   server: McpServer,
   client: WorkbenchClient,
-  config: Config,
+  config?: Config,
 ): void {
   server.registerTool(
     "wb_validate",
     {
-      description:
-        "Validate a material or texture resource using the Workbench's built-in validators. " +
-        "Pre-checks that the file exists under your project, workshop, or core roots before " +
-        "calling the handler — non-existent paths return a structured 'resource not found' " +
-        "error instead of silently triggering a script VM exception in `MaterialValidator.Get`. " +
-        "Accepts absolute paths, root-relative paths (e.g. 'Materials/MyMat.emat'), or " +
-        "`{GUID}path` resource refs (GUID prefix is stripped for the disk check).",
-      inputSchema: {
-        action: z.enum(["material", "texture"]).describe("Validator to run: material or texture"),
-        path: z
-          .string()
-          .min(1)
-          .describe(
-            "Resource path to validate. Examples: 'Materials/MyMat.emat', " +
-              "'{ABCDEF1234567890}Textures/MyTex.edds', or an absolute path. " +
-              "Must not start with '-' (flag-smuggle guard).",
-          ),
+      description: wbValidateDescription(),
+      inputSchema: flatInputShape(),
+      annotations: {
+        title: "Validate material or texture",
+        readOnlyHint: false,
+        // fixTexture rewrites a texture's .meta (a dry run until confirm); material and texture read.
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
-    async ({ action, path }) => {
-      // Pre-check: flag-smuggle guard + traversal/existence resolution.
-      // Refuses CLI-flag-shaped, non-existent, and traversal-escaping paths
-      // BEFORE any handler call.
-      const pre = precheckValidatePath(action, path, config);
-      if (!pre.ok) {
-        return {
-          content: [
-            { type: "text" as const, text: pre.text + formatConnectionStatus(client) },
-          ],
-          isError: true,
-        };
-      }
-      const hit = pre.hit;
-
-      try {
-        const handlerName = action === "material" ? "MaterialValidator" : "TextureValidator";
-        // Pass the resolved absolute path — the BI validator script
-        // accepts both forms but absolute is unambiguous.
-        const result = await client.call<Record<string, unknown>>(handlerName, {
-          path: hit.resolved,
-        });
-
-        const { text, isError } = formatValidationResult(action, path, hit, result);
-        return {
-          content: [
-            { type: "text" as const, text: text + formatConnectionStatus(client) },
-          ],
-          isError,
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error validating ${action} "${path}": ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+    async (args: Raw) => {
+      // Drop keys the caller left undefined so the strict per-action schema sees only real ones.
+      const input = Object.fromEntries(Object.entries(args).filter(([, v]) => v !== undefined));
+      return toToolResult(await runValidate(client, input, config));
     },
   );
 }

@@ -1,0 +1,1615 @@
+{
+  "$comment": "L03 fixture: a redacted slice of the P3-3 gate 2 World Editor walk p33-g2-04-walk.json (emcp-uia-walk/1, 358 nodes): top-level children 0,1,2,3,4,5,6,7,9,10,12,13,16 of the original kept in order (tree paths here are the slice's), the Create dock's sampled createTree cut to its first 3 rows; rect, patterns and timing fields dropped. No account, machine or path strings.",
+  "schema": "emcp-uia-walk/1",
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - Unnamed empty world",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "gridRowCount": 0,
+    "childCount": 13,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "gridRowCount": 0,
+        "childCount": 4,
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Minimize",
+            "automationId": "Minimize-Restore",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Maximize",
+            "automationId": "Maximize-Restore",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Tab",
+        "name": "Object Properties",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+        "className": "QMainWindowTabBar",
+        "gridRowCount": 0,
+        "childCount": 2,
+        "children": [
+          {
+            "controlType": "TabItem",
+            "name": "Object Properties",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "TabItem",
+            "name": "Move",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Tab",
+        "name": "Hierarchy",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+        "className": "QMainWindowTabBar",
+        "gridRowCount": 0,
+        "childCount": 2,
+        "children": [
+          {
+            "controlType": "TabItem",
+            "name": "Hierarchy",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "TabItem",
+            "name": "Create",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Tab",
+        "name": "Resource Browser",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+        "className": "QMainWindowTabBar",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "TabItem",
+            "name": "Resource Browser",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "TabItem",
+            "name": "Prefab Library",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "TabItem",
+            "name": "Log Console",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMainWindowTabBar",
+            "className": "",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Create",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock",
+        "className": "QDockWidget",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents",
+            "className": "QWidget",
+            "gridRowCount": 0,
+            "childCount": 2,
+            "children": [
+              {
+                "controlType": "Tree",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createTree",
+                "className": "EntityTypeTreeWidget",
+                "gridRowCount": 388,
+                "childCount": 48,
+                "children": [
+                  {
+                    "controlType": "TreeItem",
+                    "name": "AILib",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "Agents",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "AIAgent",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createDockFilter",
+                "className": "QLineEdit",
+                "gridRowCount": 0,
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.createDockContents.createDockFilter.QLineEditIconButton",
+                    "className": "QLineEditIconButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.createDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Move",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock",
+        "className": "QDockWidget",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents",
+            "className": "QWidget",
+            "gridRowCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel",
+                "className": "QWidget",
+                "gridRowCount": 0,
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel",
+                    "className": "EntityMoveToolPanel",
+                    "gridRowCount": 0,
+                    "childCount": 4,
+                    "children": [
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Snap to grid",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox",
+                        "className": "QGroupBox",
+                        "gridRowCount": 0,
+                        "childCount": 9,
+                        "children": [
+                          {
+                            "controlType": "Text",
+                            "name": "X",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridXLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Snap to grid",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridXEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "..",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridXButton",
+                            "className": "QPushButton",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Y",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridYLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Snap to grid",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridYEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "..",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridYButton",
+                            "className": "QPushButton",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Z",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridZLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Snap to grid",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridZEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "..",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.snapToGridGroupBox.snapToGridZButton",
+                            "className": "QPushButton",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Group",
+                        "name": "Move by offset",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup",
+                        "className": "QGroupBox",
+                        "gridRowCount": 0,
+                        "childCount": 8,
+                        "children": [
+                          {
+                            "controlType": "Text",
+                            "name": "X",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveXLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Move by offset",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveXEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Y",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveYLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Move by offset",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveYEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Z",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveZLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Move by offset",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveZEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "+",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMovePlusButton",
+                            "className": "QPushButton",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "-",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.moveByOffsetGroup.mumMoveMinusButton",
+                            "className": "QPushButton",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "CheckBox",
+                        "name": "Transform children",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.transformChildrenCheck",
+                        "className": "QCheckBox",
+                        "gridRowCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Group",
+                        "name": "Point to Point snapping",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping",
+                        "className": "PointToPointSnappingPanel",
+                        "gridRowCount": 0,
+                        "childCount": 14,
+                        "children": [
+                          {
+                            "controlType": "Text",
+                            "name": "Press and hold B key. Use LMB to drag point",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.PointSnappingText",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Additional rotation",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.DropElementLabel_2",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "What to drag",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.DragElementLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "ComboBox",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.DragElementCombo",
+                            "className": "QComboBox",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Where to drop",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.DropElementLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "ComboBox",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.DropElementCombo",
+                            "className": "QComboBox",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Rotation snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.RotSnapModelabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "ComboBox",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.RotSnapModeCombo",
+                            "className": "QComboBox",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotXEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "X",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotXLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotYEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Y",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotYLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "Point to Point snapping",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotZEdit",
+                            "className": "QLineEdit",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "Z",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.currentToolDockContents.currentToolPanel.EntityMoveToolPanel.pointToPointSnapping.ExtraRotZLabel",
+                            "className": "QLabel",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.currentToolDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "StatusBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar",
+        "className": "QStatusBar",
+        "gridRowCount": 0,
+        "childCount": 7,
+        "children": [
+          {
+            "controlType": "Thumb",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QSizeGrip",
+            "className": "QSizeGrip",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Text",
+            "name": "Version 1.8.0.13 (production)",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.statusBar.QLabel",
+            "className": "QLabel",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "ToolBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar",
+        "className": "QToolBar",
+        "gridRowCount": 0,
+        "childCount": 18,
+        "children": [
+          {
+            "controlType": "Button",
+            "name": "New World",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Load World",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Save World",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Go to World File",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Undo",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Redo",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Copy",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Paste on Same Position",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Cut",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Play Game Button",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.play",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Toggle Gizmo Space",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Select Parent Entities",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolBar.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Log Console",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock",
+        "className": "QDockWidget",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents",
+            "className": "QWidget",
+            "gridRowCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget",
+                "className": "LogWidget",
+                "gridRowCount": 0,
+                "childCount": 8,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView",
+                    "className": "LogView",
+                    "gridRowCount": 0,
+                    "childCount": 3,
+                    "children": [
+                      {
+                        "controlType": "Group",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView.QWidget",
+                        "className": "QWidget",
+                        "gridRowCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Group",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView.qt_scrollarea_hcontainer",
+                        "className": "QWidget",
+                        "gridRowCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "ScrollBar",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView.qt_scrollarea_hcontainer.QScrollBar",
+                            "className": "QScrollBar",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Group",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView.qt_scrollarea_vcontainer",
+                        "className": "QWidget",
+                        "gridRowCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "ScrollBar",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.LogView.qt_scrollarea_vcontainer.QScrollBar",
+                            "className": "QScrollBar",
+                            "gridRowCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Edit",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.WBEditBox",
+                    "className": "WBEditBox",
+                    "gridRowCount": 0,
+                    "childCount": 1,
+                    "children": [
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.WBEditBox.QLineEditIconButton",
+                        "className": "QLineEditIconButton",
+                        "gridRowCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "CheckBox",
+                    "name": "0",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QToolButton",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "CheckBox",
+                    "name": "25",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QToolButton",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "CheckBox",
+                    "name": "167",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QToolButton",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Button",
+                    "name": "Clear Console",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QToolButton",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QPushButton",
+                    "className": "QPushButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.logDockContents.logWidget.QPushButton",
+                    "className": "QPushButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.logConsoleDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "ToolBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools",
+        "className": "QToolBar",
+        "gridRowCount": 0,
+        "childCount": 14,
+        "children": [
+          {
+            "controlType": "CheckBox",
+            "name": "Ground Manipulation Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Move",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Rotate",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Scale",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Vector Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Bounding Volume Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Terrain Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "RoadNetwork Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "CheckBox",
+            "name": "Navmesh Tool",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolBarSeparator",
+            "className": "QToolBarSeparator",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.toolbarBasicTools.QToolButton",
+            "className": "QToolButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Terrain Minimap",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock",
+        "className": "QDockWidget",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap",
+            "className": "TerrainMinimap",
+            "gridRowCount": 0,
+            "childCount": 7,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.TerrainMinimapViewport",
+                "className": "TerrainMinimapViewport",
+                "gridRowCount": 0,
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "100%",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.TerrainMinimapViewport.QPushButton",
+                    "className": "QPushButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons",
+                "className": "QWidget",
+                "gridRowCount": 0,
+                "childCount": 2,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons.toolButtonLeft",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.navigationButtons.toolButtonRight",
+                    "className": "QToolButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QToolButton",
+                "className": "QToolButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QToolButton",
+                "className": "QToolButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QPushButton",
+                "className": "QPushButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QPushButton",
+                "className": "QPushButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Text",
+                "name": "Don't hesitate to create a terrain!",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.TerrainMinimap.QLabel",
+                "className": "QLabel",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.minimapDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Hierarchy",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock",
+        "className": "QDockWidget",
+        "gridRowCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents",
+            "className": "QWidget",
+            "gridRowCount": 0,
+            "childCount": 5,
+            "children": [
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterEdit",
+                "className": "QLineEdit",
+                "gridRowCount": 0,
+                "childCount": 1,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterEdit.QLineEditIconButton",
+                    "className": "QLineEditIconButton",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "controlType": "Text",
+                "name": "Selected: 0",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityCountLabel",
+                "className": "QLabel",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterButton",
+                "className": "QPushButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Button",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityOptionsButton",
+                "className": "QPushButton",
+                "gridRowCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Tree",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                "className": "EntityTreeWidget",
+                "gridRowCount": 2,
+                "childCount": 12,
+                "children": [
+                  {
+                    "controlType": "Header",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "name",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "prefab",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "class",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "unnamed",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "default",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "className": "",
+                    "gridRowCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "MenuBar",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar",
+        "className": "QMenuBar",
+        "gridRowCount": 0,
+        "childCount": 9,
+        "children": [
+          {
+            "controlType": "MenuItem",
+            "name": "File",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Edit",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "View",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Game",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Tools",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Window",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Plugins",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Entities",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "MenuItem",
+            "name": "Help",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.QMenuBar.QAction",
+            "className": "QAction",
+            "gridRowCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

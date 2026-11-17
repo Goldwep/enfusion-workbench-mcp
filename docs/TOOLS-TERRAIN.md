@@ -138,4 +138,4 @@ The terrain cluster could have been one omnibus `terrain` tool with an `action` 
 2. **Future schema divergence** is cheap — `terrain_road_export_graph` already has a `format: "json" | "mermaid"` field that wouldn't fit cleanly on a shared schema.
 3. **Per-tool error UX** stays consistent — each tool reports its own "not yet implemented" message linking back to the exact L7-PLAN section.
 
-The Enforce-side dispatcher pattern is documented in `docs/L7-PLAN.md` §L7-1 (one handler per domain, `action` field as discriminator, hard cap ≤15 handler files at v1.0.0).
+The Enforce-side dispatcher pattern is documented in `docs/L7-PLAN.md` §L7-1 (one handler per domain, `action` field as discriminator, the old ≤15 handler-file cap is gone: 37 files declare a `NetApiHandler` today, per `npx tsx scripts/count-inventory.ts`).

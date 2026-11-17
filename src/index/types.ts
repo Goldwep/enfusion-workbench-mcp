@@ -5,8 +5,24 @@ export interface ParamInfo {
   defaultValue: string;
 }
 
+/**
+ * Provenance of an entry the source backfill added (`src/scraper/backfill.ts`):
+ * real API the game's script source declares that is missing from the scraped
+ * index. All absent on a Doxygen entry.
+ */
+export interface SourceProvenance {
+  origin?: "pak";
+  /** Virtual pak path of the declaration. */
+  pakFile?: string;
+  /** 1-based line of the declared name. */
+  pakLine?: number;
+  /** Enclosing preprocessor guards, outermost first (`ENABLE_DIAG`, `!WORKBENCH`, `if <expr>`). */
+  guards?: string[];
+}
+
 /** A single method/function on a class */
-export interface MethodInfo {
+export interface MethodInfo extends SourceProvenance {
+  /** The identifier the signature declares (`SetVariableValue`, `~Foo` for a destructor). */
   name: string;
   returnType: string;
   signature: string;
@@ -37,7 +53,7 @@ export interface PropertyInfo {
 }
 
 /** A single Enfusion script API class/interface */
-export interface ClassInfo {
+export interface ClassInfo extends SourceProvenance {
   /** Class name exactly as in the API (e.g., "IEntity", "SCR_BaseGameMode") */
   name: string;
   /** Source: "enfusion" (engine) or "arma" (game-level) */

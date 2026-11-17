@@ -19,6 +19,19 @@
  * rename the file back to its original path — so the two halves never
  * disagree.
  *
+ * Sidecar: every registered resource has a `<file>.<ext>.meta` next to it
+ * holding its GUID and import settings. It moves WITH the resource in the
+ * same operation (dry-run lists both files), and its top-level
+ * `Name "{GUID}<path>"` line is rewritten to the new path. A destination
+ * `.meta` that already exists is refused like any other collision. If the
+ * sidecar rename, the Name rewrite or the ref commit fails, the renames and
+ * the Name rewrite are undone in reverse order so no half-moved pair is left.
+ *
+ * GUID and references: the GUID is read from the sidecar's Name line (the
+ * index row is the fallback). References are the indexed ones plus every
+ * other text file under the editable roots that names `{GUID}<oldPath>`
+ * (the index does not parse .physmat, .imageset, .asy, ...).
+ *
  * Containment (H7): `project_root` must sit inside a configured root
  * (projectPath / workshopPath) and both `old_path` / `new_path` must stay
  * inside `project_root`.
@@ -27,15 +40,19 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type Database from "better-sqlite3";
 import { readFileSync, existsSync, renameSync, mkdirSync } from "node:fs";
-import { resolve, dirname, basename } from "node:path";
+import { resolve, dirname, basename, relative, sep } from "node:path";
 import { z } from "zod";
 import { ProjectIndex } from "../project-index/project-index.js";
+import { extractMetaGuid, readMetaGuid } from "../project-index/meta-guid.js";
 import {
   atomicCommit,
+  decodeUtf8Strict,
   type PendingEdit,
 } from "../refactor/byte-edit.js";
+import { readTextFile, walkTextCandidates } from "../refactor/text-walk.js";
 import { loadConfig, type Config } from "../config.js";
 import { assertInsideAnyRoot, assertInsideRoot } from "../utils/path-guard.js";
+import { writeFileAtomic } from "../utils/atomic-write.js";
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -51,11 +68,31 @@ export function buildRefPattern(guid: string, oldPath: string): RegExp {
   return new RegExp(`\\{${guid}\\}${escaped}`, "gi");
 }
 
+/**
+ * Rewrite the sidecar's top-level `Name "{GUID}<oldPath>"` line to the new
+ * path, keeping whatever GUID the meta already carries. Returns null when the
+ * meta has no Name line for `oldPath` (the caller then moves it unchanged and
+ * says so). Format as Workbench writes it next to addon resources (the game
+ * paks ship no `.meta` files; the GUID and path here are illustrative):
+ *   MetaFileClass {
+ *    Name "{5A2220DD0C16958B}Prefabs/MP/Spawning/SpawnPoint_US.et"
+ *    Configurations { ... }
+ *   }
+ */
+export function rewriteMetaName(content: string, oldPath: string, newPath: string): string | null {
+  const escaped = oldPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(^[ \\t]*Name[ \\t]+"\\{[0-9A-Fa-f]{16}\\})${escaped}(")`, "m");
+  if (!pattern.test(content)) return null;
+  return content.replace(pattern, (_m, head: string, tail: string) => `${head}${newPath}${tail}`);
+}
+
 interface PerFilePlan {
   absPath: string;
   relPath: string;
   matches: number;
   newContent: string;
+  /** Found by the disk walk: a text file the index does not parse. */
+  unindexed?: boolean;
 }
 
 interface MovePlan {
@@ -69,6 +106,14 @@ interface MovePlan {
   fileExists: boolean;
   newPathOccupied: boolean;
   resourceFoundInIndex: boolean;
+  /** Sidecar `<file>.meta`; it moves with the resource when it exists. */
+  oldMetaAbsPath: string;
+  newMetaAbsPath: string;
+  metaExists: boolean;
+  newMetaOccupied: boolean;
+  /** Sidecar content before / after the Name rewrite (undefined: no rewrite). */
+  oldMetaContent?: string;
+  newMetaContent?: string;
 }
 
 // ── Plan builder ─────────────────────────────────────────────────────────────
@@ -84,19 +129,39 @@ export function buildPlan(
   const newAbsPath = resolve(projectRoot, newPath);
   const fileExists = existsSync(oldAbsPath);
   const newPathOccupied = existsSync(newAbsPath);
+  const oldMetaAbsPath = `${oldAbsPath}.meta`;
+  const newMetaAbsPath = `${newAbsPath}.meta`;
+  const metaExists = existsSync(oldMetaAbsPath);
+  const newMetaOccupied = existsSync(newMetaAbsPath);
 
-  // Find the owning resource — its GUID is the key to the ref edits.
-  // Schema v3: resources are scoped by project_id, so resolve the owning
-  // project from the absolute path first (same-named files in other addons
-  // must not match).
+  // The resource GUID is the key to the ref edits. Its authority is the
+  // sidecar's Name line (audit refactor-index-01: an .et root `ID` is an
+  // entity id, not the GUID references use); the index row is the fallback
+  // for a resource without a sidecar (a .gproj). Schema v3: resources are
+  // scoped by project_id, so resolve the owning project from the absolute
+  // path first (same-named files in other addons must not match).
+  let metaContent: string | undefined;
+  let metaGuid: string | null = null;
+  if (metaExists) {
+    try {
+      // Strict decode: a sidecar that is not valid UTF-8 can't be rewritten
+      // from a decoded string without corrupting it.
+      metaContent = decodeUtf8Strict(readFileSync(oldMetaAbsPath), oldMetaAbsPath);
+      metaGuid = extractMetaGuid(metaContent);
+    } catch {
+      // Unreadable or non-UTF-8 sidecar: it still moves, byte for byte, with
+      // no Name rewrite; its GUID is still read leniently.
+      metaGuid = readMetaGuid(oldMetaAbsPath);
+    }
+  }
   const owner = index.resolveOwningProject(oldAbsPath);
   const ownerRow = owner
     ? (db
         .prepare("SELECT guid FROM resources WHERE project_id = ? AND file_path = ?")
         .get(owner.id, oldPath) as { guid: string } | undefined)
     : undefined;
-  const resourceFoundInIndex = ownerRow !== undefined;
-  const guid = ownerRow?.guid ?? "";
+  const guid = metaGuid ?? ownerRow?.guid ?? "";
+  const resourceFoundInIndex = guid !== "";
 
   const plan: MovePlan = {
     guid,
@@ -109,8 +174,20 @@ export function buildPlan(
     fileExists,
     newPathOccupied,
     resourceFoundInIndex,
+    oldMetaAbsPath,
+    newMetaAbsPath,
+    metaExists,
+    newMetaOccupied,
   };
-  if (!resourceFoundInIndex || !fileExists || newPathOccupied) return plan;
+  if (!resourceFoundInIndex || !fileExists || newPathOccupied || newMetaOccupied) return plan;
+
+  if (metaContent !== undefined) {
+    const renamed = rewriteMetaName(metaContent, oldPath, newPath);
+    if (renamed !== null) {
+      plan.oldMetaContent = metaContent;
+      plan.newMetaContent = renamed;
+    }
+  }
 
   // Find every file referencing this GUID — those are candidates for
   // text-level path replacement. Each ref resolves against ITS OWN
@@ -118,8 +195,25 @@ export function buildPlan(
   // workshop content in place unless that workshop project is the one
   // being refactored.
   const refRows = index.referencingFiles(guid);
+  const planned = new Set<string>([
+    oldAbsPath.toLowerCase(),
+    oldMetaAbsPath.toLowerCase(),
+  ]);
+  const addEdit = (absPath: string, relPath: string, content: string, unindexed: boolean): void => {
+    const key = absPath.toLowerCase();
+    if (planned.has(key)) return;
+    planned.add(key);
+    let matches = 0;
+    const newContent = content.replace(buildRefPattern(guid, oldPath), () => {
+      matches += 1;
+      return `{${guid}}${newPath}`;
+    });
+    if (matches > 0) {
+      plan.refEdits.push({ absPath, relPath, matches, newContent, ...(unindexed ? { unindexed } : {}) });
+      plan.totalRefMatches += matches;
+    }
+  };
 
-  const pattern = buildRefPattern(guid, oldPath);
   for (const r of refRows) {
     if (r.source === "core") continue;
     if (r.source === "workshop" && resolve(r.root_path) !== projectRoot) continue;
@@ -130,18 +224,46 @@ export function buildPlan(
     } catch {
       continue;
     }
-    let matches = 0;
-    pattern.lastIndex = 0;
-    const newContent = content.replace(pattern, () => {
-      matches += 1;
-      return `{${guid}}${newPath}`;
-    });
-    if (matches > 0) {
-      plan.refEdits.push({ absPath, relPath: r.source_file, matches, newContent });
-      plan.totalRefMatches += matches;
+    addEdit(absPath, r.source_file, content, false);
+  }
+
+  // Audit refactor-index-07: the index parses only some text formats, so
+  // walk the editable roots for every other text file (.physmat, .imageset,
+  // .asy, other .meta, ...) naming `{GUID}<oldPath>`. Same edit policy as
+  // the indexed refs: user projects, plus the workshop project being moved
+  // in; core never. Binaries and .bak/.tmp sidecars are skipped.
+  // Cheap pre-filter, as case-insensitive as buildRefPattern.
+  const needle = `{${guid}}${oldPath}`.toLowerCase();
+  for (const walkRoot of editableRoots(db, projectRoot)) {
+    for (const abs of walkTextCandidates(walkRoot)) {
+      if (planned.has(resolve(abs).toLowerCase())) continue;
+      const text = readTextFile(abs);
+      if (text === null) continue;
+      if (!text.toLowerCase().includes(needle)) continue;
+      addEdit(resolve(abs), relative(walkRoot, abs).split(sep).join("/"), text, true);
     }
   }
   return plan;
+}
+
+/**
+ * Roots the ref rewrite may edit: every indexed `user` project, plus the
+ * project being refactored (a workshop project only when it is that one).
+ * Deduplicated; nested projects are handled by the caller's path set.
+ */
+function editableRoots(db: Database.Database, projectRoot: string): string[] {
+  const rows = db.prepare("SELECT root_path, source FROM projects").all() as {
+    root_path: string;
+    source: string;
+  }[];
+  const out = new Map<string, string>();
+  out.set(projectRoot.toLowerCase(), projectRoot);
+  for (const r of rows) {
+    if (r.source !== "user") continue;
+    const abs = resolve(r.root_path);
+    out.set(abs.toLowerCase(), abs);
+  }
+  return [...out.values()];
 }
 
 // ── Formatter ────────────────────────────────────────────────────────────────
@@ -156,7 +278,9 @@ export function formatPlan(plan: MovePlan, mode: "dry-run" | "committed"): strin
   lines.push("");
 
   if (!plan.resourceFoundInIndex) {
-    lines.push(`❌ No resource indexed at ${plan.oldRelPath}. Crawl your project first.`);
+    lines.push(
+      `❌ No resource GUID for ${plan.oldRelPath}: no \`.meta\` Name line beside it and no resource indexed there. Crawl your project first.`,
+    );
     return lines.join("\n");
   }
   if (!plan.fileExists) {
@@ -168,21 +292,43 @@ export function formatPlan(plan: MovePlan, mode: "dry-run" | "committed"): strin
     lines.push("Refusing to overwrite.");
     return lines.join("\n");
   }
+  if (plan.newMetaOccupied) {
+    lines.push(`❌ Destination sidecar already exists: ${plan.newMetaAbsPath}`);
+    lines.push("Refusing to overwrite.");
+    return lines.join("\n");
+  }
 
   const verb = mode === "dry-run" ? "Would update" : "Updated";
   lines.push(`${verb} ${plan.totalRefMatches} ref${plan.totalRefMatches !== 1 ? "s" : ""} across ${plan.refEdits.length} file${plan.refEdits.length !== 1 ? "s" : ""}:`);
   lines.push("");
   for (const f of plan.refEdits) {
-    lines.push(`  - ${f.relPath} (${f.matches} match${f.matches !== 1 ? "es" : ""})`);
+    lines.push(
+      `  - ${f.relPath} (${f.matches} match${f.matches !== 1 ? "es" : ""})${f.unindexed ? " (unindexed file, found on disk)" : ""}`,
+    );
+  }
+  lines.push("");
+  lines.push(`${mode === "dry-run" ? "Would move" : "Moved"} files:`);
+  lines.push(`  - ${plan.oldRelPath} -> ${plan.newRelPath}`);
+  if (plan.metaExists) {
+    lines.push(`  - ${plan.oldRelPath}.meta -> ${plan.newRelPath}.meta (sidecar)`);
+    lines.push(
+      plan.newMetaContent !== undefined
+        ? `    Sidecar Name line ${mode === "dry-run" ? "would be" : "was"} rewritten to {GUID}${plan.newRelPath} (not verified live: how Workbench treats an offline move on next open).`
+        : '    Sidecar has no `Name "{GUID}<old path>"` line to rewrite; it moves unchanged (not verified live).',
+    );
+  } else {
+    lines.push("  (no .meta sidecar next to the source; nothing to carry)");
   }
   lines.push("");
   if (mode === "dry-run") {
-    lines.push("DRY-RUN. Pass `commit: true` to write ref updates + rename the file.");
+    lines.push("DRY-RUN. Pass `commit: true` to write ref updates + rename the file and its .meta sidecar.");
     lines.push(
-      "Order on commit: (1) file rename first — if it fails nothing is touched; (2) atomic ref edits with .bak sidecars — if they fail the ref files are rolled back and the file is renamed back.",
+      "Order on commit: (1) file rename first, then the sidecar rename + Name rewrite — if one fails the earlier steps are undone; (2) atomic ref edits with .bak sidecars — if they fail the ref files are rolled back and the file, its sidecar and the Name line are put back.",
     );
   } else {
-    lines.push("✅ Committed. File renamed; .bak sidecars left next to each updated ref-file.");
+    lines.push(
+      `✅ Committed. File${plan.metaExists ? " and .meta sidecar" : ""} renamed; .bak sidecars left next to each updated ref-file.`,
+    );
   }
   return lines.join("\n");
 }
@@ -208,8 +354,10 @@ export function registerRefactorMoveResourcePath(
       description:
         "Rename/move a resource file on disk and update every `{GUID}<oldPath>` reference across the project to point at the new path. " +
         "GUID stays; path bytes change. DRY-RUN by default — pass `commit: true` to write. " +
-        "Order on commit: file rename first (a failed rename touches nothing), THEN atomic ref updates — a failed ref commit rolls the refs back and renames the file back. " +
-        "Refuses on collision, missing source, or out-of-index resource. " +
+        "The `<file>.meta` sidecar (GUID + import settings) moves with the file and its `Name \"{GUID}path\"` line is rewritten to the new path; the dry-run lists both files. " +
+        "Order on commit: file rename first (a failed rename touches nothing), then the sidecar, THEN atomic ref updates — a failure rolls the refs back and undoes the sidecar and file renames. " +
+        "Refuses on collision (destination file or destination `.meta`), missing source, or no GUID (.meta or index). " +
+        "Not verified live: how Workbench treats an offline move on its next open. " +
         "Paths are project-relative (forward slashes), resolved against the supplied project_root.",
       inputSchema: {
         project_root: z.string().describe("Absolute path to the owning project (the .gproj directory)"),
@@ -255,12 +403,24 @@ export function registerRefactorMoveResourcePath(
         assertInsideRoot(resolve(projectRoot, newNorm), projectRoot, "new_path");
         const plan = buildPlan(db, index, oldNorm, newNorm, projectRoot);
 
-        if (
+        const blocked =
           !plan.resourceFoundInIndex ||
           !plan.fileExists ||
           plan.newPathOccupied ||
-          !commit
-        ) {
+          plan.newMetaOccupied;
+        if (blocked && commit) {
+          // A commit that cannot run is an error, not a quiet dry run (W11 run 2).
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `REFUSED: nothing was moved or rewritten.\n\n${formatPlan(plan, "dry-run")}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        if (blocked || !commit) {
           return { content: [{ type: "text" as const, text: formatPlan(plan, "dry-run") }] };
         }
 
@@ -268,28 +428,50 @@ export function registerRefactorMoveResourcePath(
         // file, cross-device) nothing else has been touched.
         mkdirSync(dirname(plan.newAbsPath), { recursive: true });
         renameSync(plan.oldAbsPath, plan.newAbsPath);
-        // Phase 2: atomic-commit the ref edits. atomicCommit rolls the ref
-        // files back on failure; we then undo the rename so disk state
-        // matches the (unchanged) refs.
-        const edits: PendingEdit[] = plan.refEdits.map((f) => ({
-          filePath: f.absPath,
-          newContent: f.newContent,
-        }));
-        if (edits.length > 0) {
-          try {
-            atomicCommit(edits, { force, keepBackup: true });
-          } catch (commitErr) {
-            try {
-              renameSync(plan.newAbsPath, plan.oldAbsPath);
-            } catch (undoErr) {
-              const undoMsg = undoErr instanceof Error ? undoErr.message : String(undoErr);
-              throw new Error(
-                `${commitErr instanceof Error ? commitErr.message : String(commitErr)} ` +
-                  `(and the file rename could NOT be undone — file is now at ${plan.newAbsPath}: ${undoMsg})`,
-              );
+        // Everything after the first rename is undone, newest step first, if
+        // a later step throws — the file, its sidecar and the refs never end
+        // up half-moved.
+        const undo: (() => void)[] = [() => renameSync(plan.newAbsPath, plan.oldAbsPath)];
+        let metaMoved = false;
+        try {
+          // Phase 2: the sidecar follows the file, then its Name line.
+          if (plan.metaExists) {
+            renameSync(plan.oldMetaAbsPath, plan.newMetaAbsPath);
+            metaMoved = true;
+            undo.push(() => renameSync(plan.newMetaAbsPath, plan.oldMetaAbsPath));
+            if (plan.newMetaContent !== undefined && plan.oldMetaContent !== undefined) {
+              const originalMeta = plan.oldMetaContent;
+              // Both writes replace the moved sidecar, so each goes through write-then-rename
+              // (write-safety audit gap 19): a failed write leaves the moved bytes whole.
+              undo.push(() => writeFileAtomic(plan.newMetaAbsPath, originalMeta));
+              writeFileAtomic(plan.newMetaAbsPath, plan.newMetaContent);
             }
-            throw commitErr;
           }
+          // Phase 3: atomic-commit the ref edits. atomicCommit rolls the ref
+          // files back on failure; the catch then undoes the renames so disk
+          // state matches the (unchanged) refs.
+          const edits: PendingEdit[] = plan.refEdits.map((f) => ({
+            filePath: f.absPath,
+            newContent: f.newContent,
+          }));
+          if (edits.length > 0) atomicCommit(edits, { force, keepBackup: true });
+        } catch (commitErr) {
+          const undoFailures: string[] = [];
+          for (const step of undo.reverse()) {
+            try {
+              step();
+            } catch (undoErr) {
+              undoFailures.push(undoErr instanceof Error ? undoErr.message : String(undoErr));
+            }
+          }
+          if (undoFailures.length > 0) {
+            throw new Error(
+              `${commitErr instanceof Error ? commitErr.message : String(commitErr)} ` +
+                `(and the move could NOT be fully undone — the file may now be at ${plan.newAbsPath}` +
+                `${metaMoved ? `, its sidecar at ${plan.newMetaAbsPath}` : ""}: ${undoFailures.join("; ")})`,
+            );
+          }
+          throw commitErr;
         }
         return {
           content: [{ type: "text" as const, text: formatPlan(plan, "committed") }],

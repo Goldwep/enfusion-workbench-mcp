@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import {
   DEFAULT_TIMEOUT_MS,
+  REFUSED_SWITCHES,
+  assertNoRefusedSwitches,
   buildTaskkillArgv,
   finishRun,
   killProcessTree,
@@ -268,5 +270,38 @@ describe("headless spawn guard (running Workbench instance)", () => {
     expect(msg).toContain("already running");
     expect(msg).toContain("16992");
     expect(msg).toContain("Close Workbench");
+  });
+});
+
+describe("refused switches (DEC-047 L7, plan 5.7)", () => {
+  it("names exactly the phantom project switch and -clearSettings (-scriptAuthorizeAll is the 2.0 release standard, owner ruling 2026-11-06)", () => {
+    expect([...REFUSED_SWITCHES]).toEqual(["wbprojectpath", "clearsettings"]);
+  });
+
+  it("refuses them in any letter case, with or without a value, and passes everything else", () => {
+    for (const bad of [
+      "-wbProjectPath",
+      "-WBPROJECTPATH=x",
+      "-clearSettings",
+      "-CLEARSETTINGS=1",
+    ]) {
+      expect(() => assertNoRefusedSwitches(["-gproj", "p.gproj", bad]), bad).toThrow(/refused/);
+    }
+    for (const ok of ["-scriptAuthorizeAll", "--scriptauthorizeall"]) {
+      expect(() => assertNoRefusedSwitches(["-gproj", "p.gproj", ok]), ok).not.toThrow();
+    }
+    expect(() =>
+      assertNoRefusedSwitches(["-gproj", "clearSettings.gproj", "-validate=PC", "-exitAfterInit"]),
+    ).not.toThrow();
+  });
+
+  it("runWorkbench rejects before spawning anything", async () => {
+    await expect(
+      runWorkbench({
+        workbenchPath: tmpdir(),
+        exePath: process.execPath,
+        args: ["-clearSettings"],
+      }),
+    ).rejects.toThrow(/refused/);
   });
 });

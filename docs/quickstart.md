@@ -1,6 +1,6 @@
-# Quickstart — v1.0.0
+# Quickstart
 
-This guide gets the Enfusion-Workbench-MCP-Goldwep MCP server running locally and registered with Claude Code. v1.0.0 ships **112 tools** (counted via `grep -r "server.registerTool(" src/tools`) spanning offline read tools, live Workbench control, project-wide refactor, scenario authoring, log inspection, and dedicated-server lifecycle.
+This guide gets the Enfusion-Workbench-MCP-Goldwep MCP server running locally and registered with Claude Code. The server registers **150 tools** under `ENFUSION_TOOLSET=all` (26 in the default core set, 137 with `extended`; the generated list is `docs/tools/reference/index.md`), spanning offline read tools, live Workbench control, project-wide refactor, scenario authoring, log inspection, and dedicated-server lifecycle.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ npm run build
 npm test
 ```
 
-You should see ~1036 tests passing (1 intentionally skipped — see `docs/CONVENTIONS.md`). If a build fails on `better-sqlite3`, the prebuild didn't match your Node version — use Node 20-22 or Node 24+ (12.x has Node 24 prebuilds).
+On a clone of the public repository you should see about 7,400 tests pass and about 60 skip. Tests that need a Workbench or game install, or the maintainer's local census artifacts, skip on a machine without them, and the live-battery harness tests (`tests/live-harness`) are not collected because their runbooks and queues are not published. If a build fails on `better-sqlite3`, the prebuild didn't match your Node version — use Node 20-22 or Node 24+ (12.x has Node 24 prebuilds).
 
 ## 2. Seed the project-index DB
 
@@ -43,6 +43,7 @@ Resources upserted:    3
 ```
 
 Override paths via env vars if your setup differs:
+
 - `ENFUSION_PROJECT_PATH` — where your addons live.
 - `ENFUSION_PROJECT_INDEX_PATH` — where to write the DB.
 
@@ -60,18 +61,19 @@ Add this entry to your `~/.claude/settings.json` under the `mcpServers` key:
       ],
       "env": {
         "ENFUSION_PROJECT_PATH": "C:\\Users\\<you>\\Documents\\My Games\\ArmaReforgerWorkbench\\addons",
-        "ENFUSION_WORKBENCH_PATH": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Arma Reforger Tools"
+        "ENFUSION_WORKBENCH_PATH": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Arma Reforger Tools",
+        "ENFUSION_TOOLSET": "all"
       }
     }
   }
 }
 ```
 
-Restart Claude Code and verify with `/mcp` — `enfusion-workbench-mcp-goldwep` should be listed.
+Restart Claude Code and verify with `/mcp` — `enfusion-workbench-mcp-goldwep` should be listed. `ENFUSION_TOOLSET=all` lists all 150 tools; leave it out for the 26 core tools, or set `extended` for 137.
 
 > This fork is not yet published to npm. Reference the built `dist/index.js` directly rather than going through `npx`.
 
-## 4. Tool clusters at v1.0.0
+## 4. Tool clusters (as of 1.0.0; 2.0 adds the per-module `wb_*` tools, see `docs/RELEASE-NOTES-2.0.md`)
 
 Per-cluster documentation lives alongside this file:
 
@@ -100,6 +102,8 @@ Tools that talk to Workbench over the NET API (`wb_*` and the L7 `terrain_*` clu
 
 Once `wb_launch` returns "Workbench Ready", every `wb_*` and `terrain_*` tool routes through the deployed handlers.
 
+After an upgrade of this server, close Workbench and start it again through `wb_launch` so the new handlers replace the old ones. `wb_launch` does not reinstall into a Workbench that is already running; the server warns in its log when the loaded handlers differ from its bundle.
+
 **Always call `wb_cleanup` before publishing** the mod to remove the dev-handler scripts:
 
 ```jsonc
@@ -121,14 +125,14 @@ Full doctrine + per-tool guidance: `docs/TOOLS-REFACTOR.md`.
 
 ## 7. L5 refactor workflow — which tool for which task
 
-| Goal                                                              | Tool                                |
-|-------------------------------------------------------------------|-------------------------------------|
-| Issue a fresh GUID for a resource and update every ref            | `refactor_replace_guid`             |
-| Move a resource into a subdirectory                               | `refactor_move_resource_path`       |
-| Rename a `.gproj`'s `ID` field                                    | `refactor_rename_project_id`        |
-| Clean up a `.gproj`'s Dependencies block (sort, dedupe, validate) | `refactor_normalize_dependencies`   |
+| Goal                                                              | Tool                                                            |
+| ----------------------------------------------------------------- | --------------------------------------------------------------- |
+| Issue a fresh GUID for a resource and update every ref            | `refactor_replace_guid`                                         |
+| Move a resource into a subdirectory                               | `refactor_move_resource_path`                                   |
+| Rename a `.gproj`'s `ID` field                                    | `refactor_rename_project_id`                                    |
+| Clean up a `.gproj`'s Dependencies block (sort, dedupe, validate) | `refactor_normalize_dependencies`                               |
 | Generate a delete-script for orphan files                         | `refactor_remove_unused` (compose with `find_unused_resources`) |
-| Diagnose duplicate-GUID collisions after a Workshop fork          | `refactor_merge_duplicate_guids`    |
+| Diagnose duplicate-GUID collisions after a Workshop fork          | `refactor_merge_duplicate_guids`                                |
 
 Typical "fork a mod, rename it, clean up" sequence: `refactor_merge_duplicate_guids` → `refactor_replace_guid` per collision → `refactor_rename_project_id` → `refactor_normalize_dependencies` → `find_unused_resources` → `refactor_remove_unused`.
 
@@ -136,13 +140,13 @@ Typical "fork a mod, rename it, clean up" sequence: `refactor_merge_duplicate_gu
 
 Five tools manage the dedicated server lifecycle. **Requires Arma Reforger (the game, Steam app `1874900`)** — the dedicated server binary ships with the game install, separate from the tools install used by `wb_*`.
 
-| Tool                       | What it does                                                                                                       |
-|----------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `server_launch`            | Spawn `ArmaReforgerServer.exe` with a server.json + scenarioId. **Always defaults `dry_run: true`** — prints the argv + a redacted config view but does not spawn unless explicitly `dry_run: false`. Passwords never echoed. |
-| `server_stop`              | Terminate a server previously launched by `server_launch` (same server.json). Reads the PID file, SIGTERM with timeout, falls back to force-kill. |
-| `server_health_probe`      | UDP Valve A2S info query against `host:query_port`. Reports player count, map, name, version. Anonymous, read-only. |
-| `server_mod_list`          | List the mods a server.json references and resolve them against the project-index.                                 |
-| `server_scenario_picker`   | List scenarios available to a server.json from the indexed projects.                                               |
+| Tool                     | What it does                                                                                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server_launch`          | Spawn `ArmaReforgerServer.exe` with a server.json + scenarioId. **Always defaults `dry_run: true`** — prints the argv + a redacted config view but does not spawn unless explicitly `dry_run: false`. Passwords never echoed. |
+| `server_stop`            | Terminate a server previously launched by `server_launch` (same server.json). Reads the PID file, SIGTERM with timeout, falls back to force-kill.                                                                             |
+| `server_health_probe`    | UDP Valve A2S info query against `host:query_port`. Reports player count, map, name, version. Anonymous, read-only.                                                                                                           |
+| `server_mod_list`        | List the mods a server.json references and resolve them against the project-index.                                                                                                                                            |
+| `server_scenario_picker` | List scenarios available to a server.json from the indexed projects.                                                                                                                                                          |
 
 Plus `server_validate_config` (L3) and `server_config` (upstream — generates a fresh `server.json` skeleton).
 
@@ -150,18 +154,19 @@ A typical local-server smoke run: `server_validate_config` → `server_launch` (
 
 ## 9. Configuration reference
 
-| Env var                       | Description                                              | Default                                                              |
-|-------------------------------|----------------------------------------------------------|----------------------------------------------------------------------|
-| `ENFUSION_WORKBENCH_PATH`     | Path to Arma Reforger Tools install                      | `C:\Program Files (x86)\Steam\steamapps\common\Arma Reforger Tools`  |
-| `ENFUSION_PROJECT_PATH`       | Default addons folder                                    | `~/Documents/My Games/ArmaReforgerWorkbench/addons`                  |
-| `ENFUSION_GAME_PATH`          | Path to the Arma Reforger game install                   | Auto-derived from sibling of `ENFUSION_WORKBENCH_PATH`               |
-| `ENFUSION_WORKBENCH_HOST`     | NET API host                                             | `127.0.0.1`                                                          |
-| `ENFUSION_WORKBENCH_PORT`     | NET API port                                             | `5775`                                                               |
-| `ENFUSION_PROJECT_INDEX_PATH` | Project-index DB file                                    | `~/.enfusion-mcp/project-index.db`                                   |
-| `ENFUSION_DEFAULT_MOD`        | Default mod folder name                                  | (unset; runtime-derived from `wb_launch`)                            |
-| `ENFUSION_MCP_DEBUG`          | Enable `logger.debug` output                             | (unset)                                                              |
+| Env var                       | Description                            | Default                                                             |
+| ----------------------------- | -------------------------------------- | ------------------------------------------------------------------- |
+| `ENFUSION_WORKBENCH_PATH`     | Path to Arma Reforger Tools install    | `C:\Program Files (x86)\Steam\steamapps\common\Arma Reforger Tools` |
+| `ENFUSION_PROJECT_PATH`       | Default addons folder                  | `~/Documents/My Games/ArmaReforgerWorkbench/addons`                 |
+| `ENFUSION_GAME_PATH`          | Path to the Arma Reforger game install | Auto-derived from sibling of `ENFUSION_WORKBENCH_PATH`              |
+| `ENFUSION_WORKBENCH_HOST`     | NET API host                           | `127.0.0.1`                                                         |
+| `ENFUSION_WORKBENCH_PORT`     | NET API port                           | `5775`                                                              |
+| `ENFUSION_PROJECT_INDEX_PATH` | Project-index DB file                  | `~/.enfusion-mcp/project-index.db`                                  |
+| `ENFUSION_DEFAULT_MOD`        | Default mod folder name                | (unset; runtime-derived from `wb_launch`)                           |
+| `ENFUSION_MCP_DEBUG`          | Enable `logger.debug` output           | (unset)                                                             |
 
 JSON-file config (alternative to env vars):
+
 - Repo-local: `<repo>/enfusion-mcp.config.json`
 - User: `~/.enfusion-mcp/config.json`
 
@@ -179,13 +184,13 @@ Once registered, ask Claude:
 
 ## 11. Troubleshooting
 
-| Symptom                                          | Likely cause                                            | Fix                                                              |
-|--------------------------------------------------|---------------------------------------------------------|------------------------------------------------------------------|
-| `project_index_status` shows zero projects       | Smoke not run, or `ENFUSION_PROJECT_PATH` is wrong      | Run `npx tsx scripts/smoke.ts`                                   |
-| `find_references` returns "no references found"  | Target GUID's referrer is in an unindexed project       | Add the addon root to the crawl source set (env / config)        |
-| Build fails on `better-sqlite3`                  | Node version mismatch with the prebuild                 | Use Node 20-22 or Node 24+ (12.x has Node 24 prebuilds)          |
-| MCP server doesn't appear in `/mcp`              | `dist/index.js` doesn't exist                           | Run `npm run build`                                              |
-| `wb_*` tools fail with `CONNECTION_REFUSED`      | Workbench not running or NET API disabled               | Open Workbench, File → Options → General → enable Net API        |
-| `terrain_*` tools return "EMCP handler not deployed" | Handler `.c` wasn't copied to the mod's Scripts/    | Call `wb_launch` with the mod's `gprojPath` to install it        |
-| `terrain_navmesh_status` returns "not yet implemented" | L7 placeholder — handler dispatcher wired, action body not | Track `docs/L7-PLAN.md` §L7-1                              |
-| `server_launch` says "Steam app 1874900 required" | The dedicated server binary isn't installed             | Install Arma Reforger (the game, separate from the tools)        |
+| Symptom                                                | Likely cause                                               | Fix                                                       |
+| ------------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------------------------- |
+| `project_index_status` shows zero projects             | Smoke not run, or `ENFUSION_PROJECT_PATH` is wrong         | Run `npx tsx scripts/smoke.ts`                            |
+| `find_references` returns "no references found"        | Target GUID's referrer is in an unindexed project          | Add the addon root to the crawl source set (env / config) |
+| Build fails on `better-sqlite3`                        | Node version mismatch with the prebuild                    | Use Node 20-22 or Node 24+ (12.x has Node 24 prebuilds)   |
+| MCP server doesn't appear in `/mcp`                    | `dist/index.js` doesn't exist                              | Run `npm run build`                                       |
+| `wb_*` tools fail with `CONNECTION_REFUSED`            | Workbench not running or NET API disabled                  | Open Workbench, File → Options → General → enable Net API |
+| `terrain_*` tools return "EMCP handler not deployed"   | Handler `.c` wasn't copied to the mod's Scripts/           | Call `wb_launch` with the mod's `gprojPath` to install it |
+| `terrain_navmesh_status` returns "not yet implemented" | L7 placeholder — handler dispatcher wired, action body not | Track `docs/L7-PLAN.md` §L7-1                             |
+| `server_launch` says "Steam app 1874900 required"      | The dedicated server binary isn't installed                | Install Arma Reforger (the game, separate from the tools) |

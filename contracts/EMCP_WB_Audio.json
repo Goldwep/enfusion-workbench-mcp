@@ -1,0 +1,1018 @@
+{
+  "handler": "EMCP_WB_Audio",
+  "tool": "wb_audio",
+  "purpose": "Sound audition in the open world.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Audio.c",
+  "request": [
+    "action",
+    "resource",
+    "eventName",
+    "position",
+    "signals",
+    "handle",
+    "fadeTime",
+    "name",
+    "value",
+    "master",
+    "masters",
+    "resume",
+    "entity",
+    "path",
+    "confirm"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "handle",
+    "playing",
+    "position",
+    "playingBefore",
+    "audibility",
+    "distance",
+    "id",
+    "value",
+    "before",
+    "after",
+    "reset",
+    "outputVolume",
+    "masters",
+    "master",
+    "paused",
+    "count",
+    "index",
+    "signalIndex",
+    "entity",
+    "component",
+    "events",
+    "signals",
+    "values",
+    "path",
+    "module",
+    "opened",
+    "dryRun"
+  ],
+  "actions": [
+    {
+      "name": "play",
+      "summary": ".acp event",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": true,
+          "note": ".acp by rel path or {GUID}path"
+        },
+        {
+          "key": "eventName",
+          "type": "string",
+          "required": true,
+          "note": "event (Sound node) name"
+        },
+        {
+          "key": "position",
+          "type": "string",
+          "required": false,
+          "note": "x y z as text; default camera"
+        },
+        {
+          "key": "signals",
+          "type": "array<string>",
+          "required": false,
+          "note": "name=value, value as text"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "handle",
+          "type": "int",
+          "note": "AudioHandle"
+        },
+        {
+          "key": "playing",
+          "type": "bool",
+          "note": "!IsSoundPlayed (true = finished)"
+        },
+        {
+          "key": "position",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; RESOURCE_NOT_FOUND; INVALID_ARGUMENT; PLAY_FAILED (PlayEventInitialize false or invalid handle)"
+    },
+    {
+      "name": "playSound",
+      "summary": "Sample",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": true,
+          "note": ".wav/.snd rel path or {GUID}path"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "handle",
+          "type": "int",
+          "note": "AudioHandle"
+        },
+        {
+          "key": "playing",
+          "type": "bool",
+          "note": "!IsSoundPlayed (true = finished)"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; RESOURCE_NOT_FOUND; INVALID_ARGUMENT for a non-sample; PLAY_FAILED"
+    },
+    {
+      "name": "isPlaying",
+      "summary": "State",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "handle",
+          "type": "int",
+          "required": true,
+          "note": "from play, playSound or entityPlay"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "handle",
+          "type": "int",
+          "note": "AudioHandle"
+        },
+        {
+          "key": "playing",
+          "type": "bool",
+          "note": "!IsSoundPlayed (true = finished)"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT when handle is missing or negative"
+    },
+    {
+      "name": "stop",
+      "summary": "Handle",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "handle",
+          "type": "int",
+          "required": true,
+          "note": "from play, playSound or entityPlay"
+        },
+        {
+          "key": "fadeTime",
+          "type": "string",
+          "required": false,
+          "note": "seconds as text; empty: cut"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "handle",
+          "type": "int",
+          "note": "AudioHandle"
+        },
+        {
+          "key": "playingBefore",
+          "type": "bool",
+          "note": "!IsSoundPlayed (true = finished)"
+        },
+        {
+          "key": "playing",
+          "type": "bool",
+          "note": "!IsSoundPlayed (true = finished)"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT: handle missing, fadeTime not 0 to 60"
+    },
+    {
+      "name": "audible",
+      "summary": "Audibility",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": true,
+          "note": ".acp by rel path or {GUID}path"
+        },
+        {
+          "key": "eventName",
+          "type": "string",
+          "required": true,
+          "note": "event (Sound node) name"
+        },
+        {
+          "key": "position",
+          "type": "string",
+          "required": false,
+          "note": "x y z as text; default camera"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "audibility",
+          "type": "string",
+          "note": "float as text"
+        },
+        {
+          "key": "distance",
+          "type": "string",
+          "note": "to listener, float as text"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; RESOURCE_NOT_FOUND; INVALID_ARGUMENT"
+    },
+    {
+      "name": "variable",
+      "summary": "Value",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": true,
+          "note": "AudioVariablesClass .conf"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "int",
+          "note": "GetVariableIDByName; -1 unknown"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "note": "float as text"
+        }
+      ],
+      "paging": false,
+      "refuses": "VARIABLE_NOT_FOUND when the id is below 0; RESOURCE_NOT_FOUND"
+    },
+    {
+      "name": "setVariable",
+      "summary": "Set variable",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": true,
+          "note": "AudioVariablesClass .conf"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "float as text"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "int"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "VARIABLE_NOT_FOUND; INVALID_ARGUMENT when value is not a float; ENGINE_FALSE"
+    },
+    {
+      "name": "resetVariables",
+      "summary": "Reset all",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "reset",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "masters",
+      "summary": "Volumes",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "outputVolume",
+          "type": "string",
+          "note": "float as text"
+        },
+        {
+          "key": "masters",
+          "type": "array<string>",
+          "note": "SFX=v, Music=v, VoiceChat, Dialog, UI"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "setMaster",
+      "summary": "One volume",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "master",
+          "type": "string",
+          "required": true,
+          "note": "SFX Music VoiceChat Dialog UI"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "float as text, 0 to max(1, now)"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "master",
+          "type": "string"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT: unknown master, value not 0 to max(1, current); ENGINE_FALSE"
+    },
+    {
+      "name": "pause",
+      "summary": "Or resume",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "masters",
+          "type": "array<string>",
+          "required": true,
+          "note": "names; mask built in handler"
+        },
+        {
+          "key": "resume",
+          "type": "bool",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "masters",
+          "type": "array<string>"
+        },
+        {
+          "key": "paused",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "INVALID_ARGUMENT for an empty list or an unknown master name"
+    },
+    {
+      "name": "outputStates",
+      "summary": "Mixer",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "resource",
+          "type": "string",
+          "required": false,
+          "note": ".afm; empty: count only"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": false,
+          "note": "signal name, for signalIndex"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "count",
+          "type": "int"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "note": "-1 when not instanced"
+        },
+        {
+          "key": "signalIndex",
+          "type": "int",
+          "note": "-1 without name or instance"
+        }
+      ],
+      "paging": false,
+      "refuses": "RESOURCE_NOT_FOUND; INVALID_ARGUMENT for a non-.afm, or name without resource"
+    },
+    {
+      "name": "entityEvents",
+      "summary": "Sound events",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "component",
+          "type": "string"
+        },
+        {
+          "key": "events",
+          "type": "array<string>"
+        },
+        {
+          "key": "signals",
+          "type": "array<string>"
+        },
+        {
+          "key": "count",
+          "type": "int"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NO_SOUND_COMPONENT"
+    },
+    {
+      "name": "entityPlay",
+      "summary": "Entity event",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "eventName",
+          "type": "string",
+          "required": true,
+          "note": "event (Sound node) name"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "handle",
+          "type": "int",
+          "note": "AudioHandle"
+        },
+        {
+          "key": "playing",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NO_SOUND_COMPONENT; EVENT_NOT_FOUND; PLAY_FAILED"
+    },
+    {
+      "name": "setSignal",
+      "summary": "Entity signal",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:/name:/index: ref"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "float as text"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "entity",
+          "type": "string"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "note": "-1: no such signal, nothing set"
+        },
+        {
+          "key": "before",
+          "type": "string"
+        },
+        {
+          "key": "after",
+          "type": "string"
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; ENTITY_NOT_FOUND; NO_SIGNALS_MANAGER; an unknown name: index -1"
+    },
+    {
+      "name": "soundMap",
+      "summary": "Map values",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "position",
+          "type": "string",
+          "required": false,
+          "note": "x y z as text; default camera"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "position",
+          "type": "string"
+        },
+        {
+          "key": "values",
+          "type": "array<string>",
+          "note": "sea forest city meadow river ..."
+        }
+      ],
+      "paging": false,
+      "refuses": "NO_WORLD; WRONG_MODE; NO_SOUND_WORLD when the world has no ChimeraWorld SoundWorld"
+    },
+    {
+      "name": "open",
+      "summary": "Audio Editor",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative .acp or .sig"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "path",
+          "type": "string"
+        },
+        {
+          "key": "module",
+          "type": "string"
+        },
+        {
+          "key": "opened",
+          "type": "bool"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false,
+      "refuses": "NOT_IN_PROJECT; WRONG_MODULE unless OwnerOf names AudioEditor; GATED with confirm until P-W5-12"
+    }
+  ]
+}

@@ -1,10 +1,12 @@
 // src/utils/prefab-ancestry.ts
-import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import type { Config } from "../config.js";
 import { PakVirtualFS } from "../pak/vfs.js";
 import { resolveGameDataPath, findLooseFile } from "./game-paths.js";
 import { logger } from "./logger.js";
+import { isPathInsideRoot } from "./path-guard.js";
+import { readTextFileBounded } from "./safe-read.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -88,30 +90,47 @@ export function parseComponents(content: string): Map<string, ParsedComponent> {
   return result;
 }
 
+/**
+ * True for a resource path this module may read: a relative `.et` path with no `..` segment, no
+ * drive and no leading separator. Anything else (`../../.ssh/config`, `C:/Windows/win.ini`) would
+ * be joined onto a root and read from outside it (total audit offline-writers-02).
+ */
+export function isPrefabResourcePath(bare: string): boolean {
+  if (!/\.et$/i.test(bare)) return false;
+  if (isAbsolute(bare) || /^[A-Za-z]:/.test(bare) || /^[\\/]/.test(bare)) return false;
+  return !bare.split(/[\\/]/).includes("..");
+}
+
+/** Reads a file found under base, only when it really sits inside base (a junction cannot lead out). */
+function readInside(file: string, base: string): string | null {
+  if (!isPathInsideRoot(file, base)) return null;
+  try {
+    return readTextFileBounded(file);
+  } catch (e) {
+    logger.debug(`Failed to read ${file}: ${e}`);
+    return null;
+  }
+}
+
 export function readEtFile(path: string, config: Config, projectPath?: string): string | null {
   const bare = stripGuid(path);
+  if (!isPrefabResourcePath(bare)) return null;
 
   // 1. Mod project — check direct path and all addon subdirs
   const base = projectPath || config.projectPath;
   if (base) {
     const direct = join(base, bare);
     if (existsSync(direct)) {
-      try {
-        return readFileSync(direct, "utf-8");
-      } catch (e) {
-        logger.debug(`Failed to read ${direct}: ${e}`);
-      }
+      const text = readInside(direct, base);
+      if (text !== null) return text;
     }
     try {
       for (const entry of readdirSync(base, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
         const candidate = join(base, entry.name, bare);
         if (existsSync(candidate)) {
-          try {
-            return readFileSync(candidate, "utf-8");
-          } catch (e) {
-            logger.debug(`Failed to read ${candidate}: ${e}`);
-          }
+          const text = readInside(candidate, base);
+          if (text !== null) return text;
         }
       }
     } catch (e) {
@@ -123,11 +142,8 @@ export function readEtFile(path: string, config: Config, projectPath?: string): 
   if (config.extractedPath) {
     const found = findLooseFile(config.extractedPath, bare);
     if (found) {
-      try {
-        return readFileSync(found, "utf-8");
-      } catch (e) {
-        logger.debug(`Failed to read extracted ${found}: ${e}`);
-      }
+      const text = readInside(found, config.extractedPath);
+      if (text !== null) return text;
     }
   }
 
@@ -136,11 +152,8 @@ export function readEtFile(path: string, config: Config, projectPath?: string): 
   if (gameDataPath) {
     const found = findLooseFile(gameDataPath, bare);
     if (found) {
-      try {
-        return readFileSync(found, "utf-8");
-      } catch (e) {
-        logger.debug(`Failed to read loose ${found}: ${e}`);
-      }
+      const text = readInside(found, gameDataPath);
+      if (text !== null) return text;
     }
   }
 
@@ -183,6 +196,10 @@ export function walkChain(
     }
     visited.add(key);
 
+    if (!isPrefabResourcePath(bare)) {
+      warnings.push(`Refused: ${bare} is not a relative .et path inside the project or game data`);
+      return;
+    }
     const content = readEtFile(bare, config, projectPath);
     if (!content) {
       warnings.push(`Could not read: ${bare}`);

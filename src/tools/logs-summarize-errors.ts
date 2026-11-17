@@ -9,6 +9,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { resolveSession, parseLogFile, type LogLine } from "../logs/parser.js";
 import type { Config } from "../config.js";
 
@@ -144,7 +145,10 @@ export function registerLogsSummarizeErrors(server: McpServer, config: Config): 
       try {
         const rootPath = which === "game" ? config.gameLogsPath : config.logsPath;
         if (!rootPath) {
-          return { content: [{ type: "text" as const, text: `No ${which} logs path configured.` }] };
+          return {
+            content: [{ type: "text" as const, text: `No ${which} logs path configured.` }],
+            isError: true,
+          };
         }
         const resolved = resolveSession(rootPath, session);
         if (!resolved) {
@@ -155,9 +159,22 @@ export function registerLogsSummarizeErrors(server: McpServer, config: Config): 
                 text: `Session '${session}' not found. Try \`logs_list\`.`,
               },
             ],
+            isError: true,
           };
         }
         const channelPath = join(resolved.absPath, `${channel}.log`);
+        // A missing channel file is no evidence of a clean session (read-knowledge-08).
+        if (!existsSync(channelPath)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No ${channel}.log in session '${resolved.name}' (${resolved.absPath}): nothing was scanned. Try \`logs_list\`.`,
+              },
+            ],
+            isError: true,
+          };
+        }
         const all = parseLogFile(channelPath);
         const groups = summarizeErrors(all);
         const totalWarnings = all.reduce((n, l) => n + (l.level === "warn" ? 1 : 0), 0);

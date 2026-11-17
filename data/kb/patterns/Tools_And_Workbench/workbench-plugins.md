@@ -176,7 +176,7 @@ api.DeleteEntity(api.SourceToEntity(s)); // compile error — types are unrelate
 
 ```c
 [WorkbenchPluginAttribute(name: "...", wbModules: { "ScriptEditor" })]
-class TAG_MyScriptPlugin : ScriptEditorPlugin
+class TAG_MyScriptPlugin : WorkbenchPlugin
 {
     override void Run() { }
     override void Configure() { }
@@ -188,6 +188,7 @@ class TAG_MyScriptPlugin : ScriptEditorPlugin
 }
 ```
 
+- There is **no `ScriptEditorPlugin` class**. A Script Editor plugin derives from `WorkbenchPlugin` and targets the editor through `wbModules: { "ScriptEditor" }` (e.g. the shipped `SCR_MoveLineUpPlugin : WorkbenchPlugin`; `ScriptEditorPlugin` appears in the game scripts only as a label in the Fill From Template class-type list, not as a class).
 - Script goes in `WorkbenchGame/ScriptEditor/`, class name must end with `Plugin`.
 - For localization editor plugins: inherit `LocalizationEditorPlugin`, use `wbModules: { "LocalizationEditor" }`.
 
@@ -249,3 +250,12 @@ Format: `[Size] [Colour] [Base Descriptor] - [Hyphenated Adjectives]`
 - Colour list: Red, Orange, Yellow, Green, Cyan, Blue, Magenta, Purple, White, Black, Gray, Silver, Pink, Maroon, Brown, Beige, Tan, Peach, Lime, Olive, Turquoise, Teal, Navy blue, Indigo, Violet.
 - Base descriptor: noun-first, avoid prepositions. Adjectives of state appended as `- Adjective`.
 - All names in Title Case.
+
+---
+
+## Command-Line Plugins (RunCommandline)
+
+A plugin started with `-wbModule=<Module> -plugin=<ClassName>` has `RunCommandline()` called instead of `Run()` (`event void RunCommandline();` on `WorkbenchPlugin`).
+
+- **`RunCommandline` bodies end in `Workbench.Exit`.** 12 of the 14 shipped `override void RunCommandline()` bodies call `Workbench.Exit(exitCode)` (`static proto void Exit(int exitCode)` on `Workbench`), which ends the Workbench process. A headless plugin ends the same way (the wiki's Workbench Plugin Tutorial gates the call on an `-autoclose=1` parameter). Do not call `RunCommandline` of such a plugin from a live session (for example through `WBModuleDef.GetPlugin`): it is expected to close the user's Workbench with unsaved work. Not verified live.
+- **`-wbProjectPath` is not a Workbench parameter.** The string is absent from the 1.8.0.13 Workbench executable (byte scan) and from the scraped wiki; do not pass it. The project is chosen with `-gproj <path to .gproj>` ("defines the addon project to be loaded - it can be used to skip the Workbench's addon selection screen", wiki Startup Parameters); shipped scripts build their child command lines with `-gproj` (e.g. `PeerTool.c`, `WorldRunTool.c`).

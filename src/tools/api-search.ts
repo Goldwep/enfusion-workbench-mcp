@@ -6,7 +6,35 @@ import type {
   EnumSearchResult,
   PropertySearchResult,
 } from "../index/search-engine.js";
-import type { ClassInfo } from "../index/types.js";
+import type { ClassInfo, SourceProvenance } from "../index/types.js";
+import { normalizeClassName } from "../scraper/signature.js";
+
+/** A guard as the source writes it: `ENABLE_DIAG` → `#ifdef ENABLE_DIAG`, `!WORKBENCH` → `#ifndef WORKBENCH`, `if <expr>` → `#if <expr>`. */
+function guardDirective(guard: string): string {
+  if (guard.startsWith("if ")) return `#${guard}`;
+  if (guard.startsWith("!")) return `#ifndef ${guard.slice(1)}`;
+  return `#ifdef ${guard}`;
+}
+
+/**
+ * Note appended to the printed line of a method or class the source backfill
+ * added (`origin: "pak"`): the game's script source declares it and the
+ * scraped API index lacked it, and, when it is guarded, the condition it
+ * exists under. It does not say Bohemia's documentation lacks it: many such
+ * entries are on Bohemia's pages (protected static methods, the pages of
+ * `string`, `int` and the other lowercase-named classes) and the scraper
+ * missed them. Empty for a Doxygen entry, so its line prints as before.
+ *
+ * The one provenance note of the tools: component_search prints it too.
+ */
+export function provenanceNote(entry: SourceProvenance): string {
+  if (entry.origin !== "pak") return "";
+  const guards =
+    entry.guards && entry.guards.length > 0
+      ? `; only under ${entry.guards.map(guardDirective).join(" and ")}`
+      : "";
+  return ` [added from the game's script source; missing from the scraped API index${guards}]`;
+}
 
 interface InheritedContext {
   methods: MethodSearchResult[];
@@ -21,15 +49,18 @@ function formatClassResult(
   verbose = true,
   inherited?: InheritedContext,
   siblingClassNames?: string[],
+  childNames: string[] = cls.children,
 ): string {
   const lines: string[] = [];
   lines.push(`## ${cls.name}`);
-  lines.push(`Source: ${cls.source === "enfusion" ? "Enfusion Engine" : "Arma Reforger"} API`);
+  lines.push(
+    `Source: ${cls.source === "enfusion" ? "Enfusion Engine" : "Arma Reforger"} API${provenanceNote(cls)}`,
+  );
   if (cls.group) lines.push(`Group: ${cls.group}`);
   if (cls.parents.length > 0) lines.push(`Inherits from: ${cls.parents.join(", ")}`);
-  if (cls.children.length > 0) {
-    const shown = cls.children.slice(0, 10);
-    const suffix = cls.children.length > 10 ? ` ... and ${cls.children.length - 10} more` : "";
+  if (childNames.length > 0) {
+    const shown = childNames.slice(0, 10);
+    const suffix = childNames.length > 10 ? ` ... and ${childNames.length - 10} more` : "";
     lines.push(`Direct subclasses: ${shown.join(", ")}${suffix}`);
   }
 
@@ -73,7 +104,7 @@ function formatClassResult(
     lines.push(`### Static Methods (${staticMethods.length})`);
     for (const m of shown) {
       const desc = m.description ? ` -- ${m.description}` : "";
-      lines.push(`- ${m.signature}${desc}`);
+      lines.push(`- ${m.signature}${provenanceNote(m)}${desc}`);
     }
     if (!verbose && staticMethods.length > 10) {
       lines.push(`  ... and ${staticMethods.length - 10} more`);
@@ -87,7 +118,7 @@ function formatClassResult(
     lines.push(`### Public Methods (${cls.methods.length})`);
     for (const m of shown) {
       const desc = m.description ? ` -- ${m.description}` : "";
-      lines.push(`- ${m.signature}${desc}`);
+      lines.push(`- ${m.signature}${provenanceNote(m)}${desc}`);
     }
     if (!verbose && cls.methods.length > 10) {
       lines.push(`  ... and ${cls.methods.length - 10} more`);
@@ -99,7 +130,7 @@ function formatClassResult(
     lines.push(`### Protected Methods (${cls.protectedMethods.length})`);
     for (const m of cls.protectedMethods) {
       const desc = m.description ? ` -- ${m.description}` : "";
-      lines.push(`- ${m.signature}${desc}`);
+      lines.push(`- ${m.signature}${provenanceNote(m)}${desc}`);
     }
   }
 
@@ -162,7 +193,7 @@ function formatClassResult(
       lines.push("");
       lines.push(`#### ${parentName}`);
       for (const m of parentMethods) {
-        lines.push(`- ${m.method.signature}`);
+        lines.push(`- ${m.method.signature}${provenanceNote(m.method)}`);
       }
     }
 
@@ -219,7 +250,7 @@ function formatMethodResult(results: MethodSearchResult[]): string {
 
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
-    lines.push(`${i + 1}. ${r.className}.${r.method.signature}`);
+    lines.push(`${i + 1}. ${r.className}.${r.method.signature}${provenanceNote(r.method)}`);
     if (r.method.description) {
       lines.push(`   ${r.method.description}`);
     }
@@ -285,7 +316,9 @@ export function formatTreeNode(
     brief = cls.brief.length > 60 ? ` — ${cls.brief.slice(0, 57)}...` : ` — ${cls.brief}`;
   }
   const marker = isTarget ? "  ◀ TARGET" : "";
-  return `${cls.name} (${counts})${brief}${marker}`;
+  // A class stored under its raw page title prints under the normalised name
+  // the children lists use (`Tuple2`, not `Tuple2< Class T1, Class T2 > Interface Template Reference`).
+  return `${normalizeClassName(cls.name)} (${counts})${brief}${marker}`;
 }
 
 export function formatClassTree(targetClass: ClassInfo, searchEngine: SearchEngine): string {
@@ -310,8 +343,9 @@ export function formatClassTree(targetClass: ClassInfo, searchEngine: SearchEngi
     }
   }
 
-  // Render immediate children below the target
-  const children = targetClass.children || [];
+  // Render immediate children below the target (stored children plus the
+  // classes that name the target as a parent)
+  const children = searchEngine.getChildren(targetClass.name);
   if (children.length > 0) {
     const depth = chain.length - 1; // indent level for children
     const indent = "    ".repeat(depth);
@@ -338,7 +372,7 @@ export function formatClassTree(targetClass: ClassInfo, searchEngine: SearchEngi
   // Footer
   lines.push("");
   const sourceLabel = targetClass.source === "enfusion" ? "Enfusion Engine" : "Arma Reforger";
-  lines.push(`Source: ${sourceLabel} API`);
+  lines.push(`Source: ${sourceLabel} API${provenanceNote(targetClass)}`);
   if (targetClass.docsUrl) {
     lines.push(`Docs: ${targetClass.docsUrl}`);
   }
@@ -425,9 +459,25 @@ export function registerApiSearch(server: McpServer, searchEngine: SearchEngine)
               siblings = group.classes.filter((name) => name !== cls.name);
             }
           }
-          text = formatClassResult(cls, true, inheritedCtx, siblings);
+          text = formatClassResult(
+            cls,
+            true,
+            inheritedCtx,
+            siblings,
+            searchEngine.getChildren(cls.name),
+          );
         } else {
-          text = results.map((cls) => formatClassResult(cls, false)).join("\n\n---\n\n");
+          text = results
+            .map((cls) =>
+              formatClassResult(
+                cls,
+                false,
+                undefined,
+                undefined,
+                searchEngine.getChildren(cls.name),
+              ),
+            )
+            .join("\n\n---\n\n");
         }
       } else if (type === "method") {
         const results = searchEngine.searchMethods(query, source, limit);
@@ -462,7 +512,7 @@ export function registerApiSearch(server: McpServer, searchEngine: SearchEngine)
               .map((r) => {
                 if (r.type === "class" && r.classInfo) return `- ${r.classInfo.name} (class)`;
                 if (r.type === "method" && r.methodResult)
-                  return `- ${r.methodResult.className}.${r.methodResult.method.name} (method)`;
+                  return `- ${r.methodResult.className}.${r.methodResult.method.name} (method)${provenanceNote(r.methodResult.method)}`;
                 if (r.type === "enum" && r.enumResult)
                   return `- ${r.enumResult.enumInfo.name} (enum)`;
                 if (r.type === "property" && r.propertyResult)
@@ -496,12 +546,20 @@ export function registerApiSearch(server: McpServer, searchEngine: SearchEngine)
                   siblings = group.classes.filter((name) => name !== r.classInfo!.name);
                 }
               }
-              parts.push(formatClassResult(r.classInfo, verbose, inheritedCtx, siblings));
+              parts.push(
+                formatClassResult(
+                  r.classInfo,
+                  verbose,
+                  inheritedCtx,
+                  siblings,
+                  searchEngine.getChildren(r.classInfo.name),
+                ),
+              );
             } else if (r.type === "method" && r.methodResult) {
               const mr = r.methodResult;
               const sourceLabel = mr.classSource === "enfusion" ? "Enfusion" : "Arma Reforger";
               parts.push(
-                `**Method:** ${mr.className}.${mr.method.signature}\n${mr.method.description || ""}\n(${sourceLabel}${mr.classGroup ? ` > ${mr.classGroup}` : ""})`,
+                `**Method:** ${mr.className}.${mr.method.signature}${provenanceNote(mr.method)}\n${mr.method.description || ""}\n(${sourceLabel}${mr.classGroup ? ` > ${mr.classGroup}` : ""})`,
               );
             } else if (r.type === "enum" && r.enumResult) {
               const er = r.enumResult;

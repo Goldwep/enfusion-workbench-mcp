@@ -37,6 +37,22 @@ const PREFAB_CONTENT_V2 = `GenericEntity : "{A9806AF617972E97}Prefabs/Base.et" {
 }
 `;
 
+/**
+ * Schema v4 takes a resource's GUID from its .meta sidecar, not from the .et
+ * root ID (that is the entity ID). Write the sidecar beside each prefab.
+ */
+function metaFor(guid: string, resPath: string): string {
+  return `MetaFileClass {
+ Name "{${guid}}${resPath}"
+}
+`;
+}
+
+function writePrefab(etPath: string, content: string, guid = "AAAA1111BBBB2222"): void {
+  writeFileSync(`${etPath}.meta`, metaFor(guid, "prefabs/test.et"), "utf-8");
+  writeFileSync(etPath, content, "utf-8");
+}
+
 const GPROJ_CONTENT = `GameProject {
  ID "WatcherTest"
  GUID "9999AAAA8888BBBB"
@@ -97,7 +113,7 @@ describe("ProjectWatcher", () => {
     await wait(200);
 
     mkdirSync(join(tmpRoot, "prefabs"));
-    writeFileSync(join(tmpRoot, "prefabs", "test.et"), PREFAB_CONTENT, "utf-8");
+    writePrefab(join(tmpRoot, "prefabs", "test.et"), PREFAB_CONTENT);
 
     // Wait past the debounce + chokidar fs settling.
     await wait(800);
@@ -147,7 +163,7 @@ describe("ProjectWatcher", () => {
     writeFileSync(join(tmpRoot, "addon.gproj"), GPROJ_CONTENT, "utf-8");
     mkdirSync(join(tmpRoot, "prefabs"));
     const etPath = join(tmpRoot, "prefabs", "test.et");
-    writeFileSync(etPath, PREFAB_CONTENT, "utf-8");
+    writePrefab(etPath, PREFAB_CONTENT);
 
     const db = openProjectIndex(":memory:");
     cleanups.push(() => db.close());
@@ -206,7 +222,7 @@ describe("ProjectWatcher", () => {
     writeFileSync(join(addonRoot, "addon.gproj"), GPROJ_CONTENT, "utf-8");
     mkdirSync(join(addonRoot, "prefabs"));
     const etPath = join(addonRoot, "prefabs", "test.et");
-    writeFileSync(etPath, PREFAB_CONTENT, "utf-8");
+    writePrefab(etPath, PREFAB_CONTENT);
 
     const db = openProjectIndex(":memory:");
     cleanups.push(() => db.close());
@@ -287,6 +303,11 @@ describe("ProjectWatcher", () => {
         `GenericEntity : "{A9806AF617972E97}Prefabs/Base.et" {\n ID "${etGuid}"\n}\n`,
         "utf-8",
       );
+      writeFileSync(
+        join(root, "Prefabs", "Foo.et.meta"),
+        `MetaFileClass {\n Name "{${etGuid}}Prefabs/Foo.et"\n}\n`,
+        "utf-8",
+      );
       return root;
     };
     const rootA = mk("AddonA", "AddonA", "1111111111111111", "AAAA000000000001");
@@ -334,5 +355,37 @@ describe("ProjectWatcher", () => {
     expect(count("SELECT COUNT(*) AS c FROM files WHERE project_id = 'AddonB' AND path = ?", "Prefabs/Foo.et")).toBe(1);
     expect(count("SELECT COUNT(*) AS c FROM resources WHERE project_id = 'AddonB' AND file_path = ?", "Prefabs/Foo.et")).toBe(1);
     expect(count("SELECT COUNT(*) AS c FROM resource_refs WHERE project_id = 'AddonB' AND source_file = ?", "Prefabs/Foo.et")).toBe(1);
+  });
+
+  // Phase-7 integration: the GUID lives in the .meta sidecar, so an edit to
+  // the sidecar alone must re-index the resource under its new GUID.
+  it("re-indexes a resource when only its .meta sidecar changes", async () => {
+    const tmpRoot = mkdtempSync(join(tmpdir(), "watcher-meta-"));
+    cleanups.push(() => rmSync(tmpRoot, { recursive: true, force: true }));
+
+    writeFileSync(join(tmpRoot, "addon.gproj"), GPROJ_CONTENT, "utf-8");
+    mkdirSync(join(tmpRoot, "prefabs"));
+    const etPath = join(tmpRoot, "prefabs", "test.et");
+    writePrefab(etPath, PREFAB_CONTENT);
+
+    const db = openProjectIndex(":memory:");
+    cleanups.push(() => db.close());
+    crawl(db, [{ path: tmpRoot, kind: "user" }]);
+    const guidOf = (): string | undefined =>
+      (
+        db.prepare("SELECT guid FROM resources WHERE file_path = ?").get("prefabs/test.et") as
+          | { guid: string }
+          | undefined
+      )?.guid;
+    expect(guidOf()).toBe("AAAA1111BBBB2222");
+
+    const watcher = new ProjectWatcher(db, tmpRoot, "user");
+    cleanups.push(async () => watcher.stop());
+    watcher.start();
+    await wait(200);
+
+    writeFileSync(`${etPath}.meta`, metaFor("1234567890ABCDEF", "prefabs/test.et"), "utf-8");
+    await wait(800);
+    expect(guidOf()).toBe("1234567890ABCDEF");
   });
 });

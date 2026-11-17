@@ -13,6 +13,8 @@ import {
   parseTutorialPage,
 } from "./doxygen-parser.js";
 import { writeOutput, type ScrapeOutput } from "./writer.js";
+import { locateSourceIndex } from "./backfill-io.js";
+import type { SourceIndex } from "../census/source-index.js";
 import { logger } from "../utils/logger.js";
 import type { ClassInfo, GroupInfo, HierarchyNode, WikiPage } from "../index/types.js";
 
@@ -20,6 +22,26 @@ export interface ScrapeOptions {
   source: "local" | "remote";
   workbenchPath: string;
   dataDir: string;
+  /**
+   * Backfill from the E02 source index (default true): the index file given
+   * here, else the census's current build in the artifacts folder. Skipped,
+   * with a log line, when no index is present.
+   */
+  backfill?: boolean;
+  sourceIndexFile?: string;
+}
+
+/**
+ * File names of class pages: `interface<Name>.html`. Doxygen keeps the class
+ * name's case in the file name, so a lowercase-named class has a lowercase
+ * page (`interfacestring.html`, `interfaceglobal__pointer.html`), and a
+ * template's page may carry a suffix (`interfacearray-1-g.html`).
+ */
+export const CLASS_PAGE_PATTERN = /^interface[A-Za-z0-9_].*\.html$/;
+
+/** A class page to parse: a class page file name that is not a `-members` (all members) list. */
+export function isClassPageFile(filename: string): boolean {
+  return CLASS_PAGE_PATTERN.test(filename) && !filename.includes("-members");
 }
 
 function scrapeLocalSource(
@@ -55,9 +77,9 @@ function scrapeLocalSource(
 
   // 3. Parse each class page
   let processed = 0;
-  for (const entry of readHtmlFromZip(workbenchPath, source, /^interface[A-Z].*\.html$/)) {
+  for (const entry of readHtmlFromZip(workbenchPath, source, CLASS_PAGE_PATTERN)) {
     // Skip -members.html files
-    if (entry.filename.includes("-members")) continue;
+    if (!isClassPageFile(entry.filename)) continue;
 
     try {
       const classInfo = parseClassPage(entry.html, source, entry.filename);
@@ -225,5 +247,16 @@ export async function scrape(options: ScrapeOptions): Promise<void> {
     },
   };
 
-  writeOutput(options.dataDir, output);
+  let sourceIndex: SourceIndex | undefined;
+  if (options.backfill !== false) {
+    const found = locateSourceIndex({ dataDir: options.dataDir, file: options.sourceIndexFile });
+    if (found.status === "found") {
+      sourceIndex = found.index;
+      logger.info(`Source backfill from the source index of build ${found.build}`);
+    } else {
+      logger.warn(`Source backfill skipped: ${found.reason}`);
+    }
+  }
+
+  writeOutput(options.dataDir, output, { sourceIndex });
 }

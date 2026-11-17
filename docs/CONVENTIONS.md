@@ -388,6 +388,12 @@ This is the canonical "where is my data" pattern in tests — use it verbatim.
 - `it("verbs the noun", ...)` — third person, present tense. Examples: `"finds IEntity"`, `"is case-insensitive"`, `"returns undefined for unknown class"`, `"rejects path separators"`.
 - One assertion concept per `it`, but multiple `expect` calls in a single `it` are fine when they verify the same concept.
 
+### Census row markers (2.0)
+
+A test that proves a census row's tier (`tests[]` in `data/census/ledger.jsonl`, plan 1.4) must
+contain the literal `census:<row id>` in its `it(...)` title or in a comment on the line above,
+so `scripts/census/validate.ts` can confirm the test names the row it claims to cover.
+
 ### Assertions
 
 - `expect(x).toBe(y)` for primitives and identity.

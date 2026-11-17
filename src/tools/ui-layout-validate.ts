@@ -160,8 +160,15 @@ export function collectIndexedStyleNames(
 ): Set<string> {
   const names = new Set<string>();
   // ProjectIndex doesn't carry a "styles only" filter, so we list and filter.
-  // Pull a generous page — modders rarely ship >1000 styles files.
-  const { rows } = index.listResources({ limit: 1000, offset: 0 });
+  // Page through every row: schema v4 indexes every file with a .meta
+  // (textures, meshes), so .styles rows can sit past any single page.
+  const rows: { file_path: string }[] = [];
+  const PAGE = 1000;
+  for (let offset = 0; ; offset += PAGE) {
+    const page = index.listResources({ limit: PAGE, offset });
+    rows.push(...page.rows);
+    if (page.rows.length < PAGE || offset + PAGE >= page.total) break;
+  }
   for (const row of rows) {
     if (!row.file_path.toLowerCase().endsWith(".styles")) continue;
     try {

@@ -7,21 +7,48 @@ import { validateProjectPath } from "../utils/safe-path.js";
 import { PakVirtualFS } from "../pak/vfs.js";
 import { resolveGameDataPath } from "../utils/game-paths.js";
 
-/** Extensions that are safe to read as text */
-const TEXT_EXTENSIONS = new Set([
-  ".c",
-  ".et",
-  ".conf",
-  ".gproj",
-  ".ent",
-  ".layer",
-  ".st",
-  ".layout",
-  ".txt",
-  ".json",
-  ".xml",
-  ".csv",
-]);
+/**
+ * Decide text vs binary from the bytes, not the extension: Bohemia's editors
+ * write many plain-text formats (animation graphs, behaviour trees, audio and
+ * particle documents, ...) that no extension list can keep up with. Text means
+ * no NUL byte anywhere in the (size-capped) buffer and valid UTF-8, with an
+ * optional UTF-8 BOM. UTF-16/32 documents (BOM-marked) are named, not decoded:
+ * this reader only decodes UTF-8.
+ */
+function sniffText(buf: Buffer): { text: string } | { reason: string } {
+  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xfe && buf[2] === 0 && buf[3] === 0) {
+    return { reason: "UTF-32LE text (BOM), not decoded by this reader" };
+  }
+  if (buf.length >= 4 && buf[0] === 0 && buf[1] === 0 && buf[2] === 0xfe && buf[3] === 0xff) {
+    return { reason: "UTF-32BE text (BOM), not decoded by this reader" };
+  }
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    return { reason: "UTF-16LE text (BOM), not decoded by this reader" };
+  }
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    return { reason: "UTF-16BE text (BOM), not decoded by this reader" };
+  }
+  const nul = buf.indexOf(0);
+  if (nul !== -1) return { reason: `contains a NUL byte at offset ${nul}` };
+  try {
+    // The decoder drops a leading UTF-8 BOM by default.
+    return { text: new TextDecoder("utf-8", { fatal: true }).decode(buf) };
+  } catch {
+    return { reason: "not valid UTF-8" };
+  }
+}
+
+function binaryRefusal(subPath: string, ext: string, size: number, reason: string) {
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: `Binary file: ${subPath} (${ext || "no extension"}, ${size} bytes): ${reason}. Only plain-text files can be read.`,
+      },
+    ],
+    isError: true,
+  };
+}
 
 export function registerGameRead(server: McpServer, config: Config): void {
   server.registerTool(
@@ -73,19 +100,6 @@ export function registerGameRead(server: McpServer, config: Config): void {
             };
           }
 
-          const ext = extname(filePath).toLowerCase();
-          if (!TEXT_EXTENSIONS.has(ext)) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Binary file: ${subPath} (${ext}, ${stats.size} bytes). Only text files (.c, .et, .conf, etc.) can be read.`,
-                },
-              ],
-              isError: true,
-            };
-          }
-
           if (stats.size > 512_000) {
             return {
               content: [
@@ -98,12 +112,15 @@ export function registerGameRead(server: McpServer, config: Config): void {
             };
           }
 
-          const content = readFileSync(filePath, "utf-8");
+          const sniffed = sniffText(readFileSync(filePath));
+          if ("reason" in sniffed) {
+            return binaryRefusal(subPath, extname(filePath).toLowerCase(), stats.size, sniffed.reason);
+          }
           return {
             content: [
               {
                 type: "text",
-                text: `// ${subPath}\n// ${stats.size} bytes\n\n${content}`,
+                text: `// ${subPath}\n// ${stats.size} bytes\n\n${sniffed.text}`,
               },
             ],
           };
@@ -127,19 +144,6 @@ export function registerGameRead(server: McpServer, config: Config): void {
         }
         if (pakVfs && pakPath !== null) {
           subPath = pakPath;
-          const ext = extname(subPath).toLowerCase();
-          if (!TEXT_EXTENSIONS.has(ext)) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: `Binary file: ${subPath} (${ext}). Only text files (.c, .et, .conf, etc.) can be read.`,
-                },
-              ],
-              isError: true,
-            };
-          }
-
           const fileSize = pakVfs.fileSize(subPath);
           if (fileSize > 512_000) {
             return {
@@ -153,12 +157,15 @@ export function registerGameRead(server: McpServer, config: Config): void {
             };
           }
 
-          const content = pakVfs.readTextFile(subPath);
+          const sniffed = sniffText(pakVfs.readFile(subPath));
+          if ("reason" in sniffed) {
+            return binaryRefusal(subPath, extname(subPath).toLowerCase(), fileSize, sniffed.reason);
+          }
           return {
             content: [
               {
                 type: "text",
-                text: `// ${subPath} (from .pak)\n// ${content.length} bytes\n\n${content}`,
+                text: `// ${subPath} (from .pak)\n// ${sniffed.text.length} bytes\n\n${sniffed.text}`,
               },
             ],
           };

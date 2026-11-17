@@ -168,6 +168,54 @@ CREATE TABLE files (
 CREATE INDEX IF NOT EXISTS idx_resources_project_file ON resources(project_id, file_path);
 `;
 
+/**
+ * v4 (Phase 7 audit refactor-index-01/03): `resources.guid` was the PRIMARY
+ * KEY and the scanner took it from a file's root `ID` / node id / `GUID`.
+ * For an `.et` that `ID` is the ENTITY id (prefabs that inherit from one base
+ * share it), and for a `.conf` / `.layout` the root node id is an object id;
+ * neither is the resource GUID. The resource GUID that `{GUID}path`
+ * references use lives only in the `<file>.meta` sidecar's `Name` line
+ * (`.gproj` is the exception: its `GUID` property). Keying by that wrong
+ * value folded inheriting prefabs into one row, and keying by GUID alone
+ * left the old row behind when a file's GUID changed.
+ *
+ * `resources` is rebuilt with one row per FILE, `UNIQUE (project_id,
+ * file_path)`, `guid` a plain indexed column (the same GUID may legitimately
+ * appear in two projects, e.g. a fork), and a new `entity_id` column holding
+ * the root `ID` the old schema mistook for the GUID. `project_id` stays
+ * nullable for source compatibility with hand-built rows.
+ *
+ * The old rows are dropped, not carried over: their `guid` values are wrong
+ * by construction. `files` is cleared so the next crawl re-reads every file
+ * (and its .meta) and repopulates `resources`. `resource_refs` is kept: the
+ * refs were always read from `{GUID}path` values and are correct; the
+ * re-crawl re-emits them per file and drops rows for vanished files.
+ */
+const SCHEMA_V4 = `
+CREATE TABLE resources_v4 (
+  guid TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  root_type TEXT NOT NULL,
+  class_name TEXT,
+  parent_inherit TEXT,
+  source TEXT NOT NULL CHECK (source IN ('user', 'core', 'workshop')),
+  last_indexed INTEGER NOT NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  entity_id TEXT,
+  UNIQUE (project_id, file_path)
+);
+DROP TABLE resources;
+ALTER TABLE resources_v4 RENAME TO resources;
+CREATE INDEX IF NOT EXISTS idx_resources_guid ON resources(guid);
+CREATE INDEX IF NOT EXISTS idx_resources_file ON resources(file_path);
+CREATE INDEX IF NOT EXISTS idx_resources_class ON resources(class_name);
+CREATE INDEX IF NOT EXISTS idx_resources_root_type ON resources(root_type);
+CREATE INDEX IF NOT EXISTS idx_resources_project_id ON resources(project_id);
+
+-- Force the re-crawl that repopulates resources from the .meta sidecars.
+DELETE FROM files;
+`;
+
 const MIGRATIONS: Migration[] = [
   {
     version: 1,
@@ -183,6 +231,11 @@ const MIGRATIONS: Migration[] = [
     version: 3,
     description: "Scope files + resource_refs by project_id (forces re-crawl)",
     sql: SCHEMA_V3,
+  },
+  {
+    version: 4,
+    description: "Resource GUID from the .meta sidecar, one row per file (forces re-crawl)",
+    sql: SCHEMA_V4,
   },
 ];
 

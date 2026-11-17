@@ -1,0 +1,3 @@
+{"rowId":"ui:keep","build":"2.0","module":"M","window":{"className":"W"},"automationId":"a.keep","name":"Keep","controlType":"Button","probe":"P-W8-02","evidence":"EV-2"}
+{"rowId":"ui:chg","build":"2.0","module":"M","window":{"className":"W"},"automationId":"a.chg","name":"New","controlType":"Button","probe":"P-W8-02","evidence":"EV-2"}
+{"rowId":"ui:fresh","build":"2.0","module":"M","window":{"className":"W"},"automationId":"a.fresh","name":"Fresh","controlType":"Button","probe":"P-W8-02","evidence":"EV-2"}

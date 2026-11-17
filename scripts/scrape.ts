@@ -9,6 +9,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 let source: "local" | "remote" = "local";
 let workbenchPath: string | undefined;
+// Source backfill (src/scraper/backfill.ts): on by default when the E02 source
+// index of the census's current build is in the artifacts folder.
+let backfill = true;
+let sourceIndexFile: string | undefined;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--source" && args[i + 1]) {
@@ -17,6 +21,11 @@ for (let i = 0; i < args.length; i++) {
   } else if (args[i] === "--workbench-path" && args[i + 1]) {
     workbenchPath = args[i + 1];
     i++;
+  } else if (args[i] === "--source-index" && args[i + 1]) {
+    sourceIndexFile = resolve(args[i + 1]);
+    i++;
+  } else if (args[i] === "--no-backfill") {
+    backfill = false;
   }
 }
 
@@ -27,4 +36,6 @@ await scrape({
   source,
   workbenchPath: workbenchPath || config.workbenchPath,
   dataDir,
+  backfill,
+  sourceIndexFile,
 });

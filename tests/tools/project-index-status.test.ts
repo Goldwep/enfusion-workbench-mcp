@@ -172,13 +172,19 @@ describe("integration: open in-memory DB, seed, query, and format", () => {
       "INSERT INTO projects (id, guid, title, root_path, source, last_scan) VALUES (?, ?, ?, ?, ?, ?)",
     ).run("addons/Bravo", "AAAA000000000002", "Bravo", "/p/Bravo", "workshop", NOW_MS - 90 * 60_000);
 
+    // A third user project with no resources: the old by-source subquery
+    // gave it Alpha's 2 (phase-7 audit refactor-index-11).
+    db.prepare(
+      "INSERT INTO projects (id, guid, title, root_path, source, last_scan) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run("addons/Charlie", "AAAA000000000003", "Charlie", "/p/Charlie", "user", NOW_MS - 120 * 60_000);
+
     const insertResource = db.prepare(
-      "INSERT INTO resources (guid, file_path, root_type, class_name, parent_inherit, source, last_indexed) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO resources (guid, file_path, root_type, class_name, parent_inherit, source, last_indexed, project_id) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     );
-    insertResource.run("ABCDEF0000000001", "Alpha/a.et", "Prefab", "Cls1", null, "user", NOW_MS);
-    insertResource.run("ABCDEF0000000002", "Alpha/b.et", "Prefab", "Cls2", null, "user", NOW_MS);
-    insertResource.run("ABCDEF0000000003", "Bravo/c.et", "Prefab", "Cls3", null, "workshop", NOW_MS);
+    insertResource.run("ABCDEF0000000001", "Alpha/a.et", "Prefab", "Cls1", null, "user", NOW_MS, "addons/Alpha");
+    insertResource.run("ABCDEF0000000002", "Alpha/b.et", "Prefab", "Cls2", null, "user", NOW_MS, "addons/Alpha");
+    insertResource.run("ABCDEF0000000003", "Bravo/c.et", "Prefab", "Cls3", null, "workshop", NOW_MS, "addons/Bravo");
 
     db.prepare(
       "INSERT INTO resource_refs (project_id, source_file, target_guid, ref_kind, context) VALUES (?, ?, ?, ?, ?)",
@@ -193,18 +199,18 @@ describe("integration: open in-memory DB, seed, query, and format", () => {
 
     // --- Query through the helpers ---
     const totals = queryTotals(db);
-    expect(totals).toEqual({ projects: 2, resources: 3, refs: 2, files: 1 });
+    expect(totals).toEqual({ projects: 3, resources: 3, refs: 2, files: 1 });
 
     const rollups = queryProjectRollups(db);
-    expect(rollups).toHaveLength(2);
+    expect(rollups).toHaveLength(3);
     // Alpha last_scan (-1m) is newer than Bravo (-90m) → Alpha first.
     expect(rollups[0].title).toBe("Alpha");
     expect(rollups[1].title).toBe("Bravo");
-    // resourceCount uses the source-grouping approximation:
-    //   Alpha (source=user) → 2 user resources.
-    //   Bravo (source=workshop) → 1 workshop resource.
+    // resourceCount counts each project's own rows.
     expect(rollups[0].resourceCount).toBe(2);
     expect(rollups[1].resourceCount).toBe(1);
+    expect(rollups[2].title).toBe("Charlie");
+    expect(rollups[2].resourceCount).toBe(0);
 
     const location = readDbLocation(db);
     expect(location.name).toBe(":memory:");
@@ -213,7 +219,7 @@ describe("integration: open in-memory DB, seed, query, and format", () => {
     // --- Format and verify structure ---
     const text = formatStatus(totals, rollups, location, NOW_MS);
     expect(text).toContain("## Project Index Status");
-    expect(text).toContain("**Total projects:** 2");
+    expect(text).toContain("**Total projects:** 3");
     expect(text).toContain("**Total resources:** 3");
     expect(text).toContain("**Total references:** 2");
     expect(text).toContain("**Total files tracked:** 1");
@@ -224,6 +230,8 @@ describe("integration: open in-memory DB, seed, query, and format", () => {
     expect(text).toContain("source=workshop");
     expect(text).toContain("/p/Alpha");
     expect(text).toContain("/p/Bravo");
+    expect(text).toContain("   Resources: 0");
+    expect(text).not.toContain("approx");
 
     db.close();
   });

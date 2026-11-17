@@ -85,7 +85,7 @@ describe("extractGlobalTagsBody", () => {
   });
 
   it("captures only the first GlobalTags block when multiple present", () => {
-    const text = `GlobalTags { "ALPHA" }\nGlobalTags { "BETA" }`;
+    const text = 'GlobalTags { "ALPHA" }\nGlobalTags { "BETA" }';
     const body = extractGlobalTagsBody(text);
     expect(body!).toContain("ALPHA");
     expect(body!).not.toContain("BETA");
@@ -160,14 +160,7 @@ describe("lintWeaponPose", () => {
     expect(r.ok).toBe(false);
     expect(r.missingTags).toEqual([...DEFAULT_EXPECTED_TAGS]);
     // All present tags are unknown relative to the default set.
-    expect(r.unknownTags.sort()).toEqual([
-      "ads",
-      "crouch",
-      "prone",
-      "reload",
-      "stance",
-      "weapon",
-    ]);
+    expect(r.unknownTags.sort()).toEqual(["ads", "crouch", "prone", "reload", "stance", "weapon"]);
   });
 
   it("dedupes repeated tags in the block", () => {
@@ -231,5 +224,43 @@ describe("formatPoseLintMarkdown", () => {
     for (const t of DEFAULT_EXPECTED_TAGS) {
       expect(md).toContain(`- ${t}`);
     }
+  });
+});
+
+// W4 fix-up 1 (w4-49-lint-tools, run 1): findings are the answer, not a tool error.
+describe("weapon_pose_lint tool: findings are not a tool error", () => {
+  type Handler = (a: { agr_path: string; expected_tags?: string[] }) => Promise<{
+    content: Array<{ text: string }>;
+    isError?: boolean;
+  }>;
+  async function handler(): Promise<Handler> {
+    const { registerWeaponPoseLint } = await import("../../src/tools/weapon-pose-lint.js");
+    let h: Handler | undefined;
+    const server = {
+      registerTool: (_n: string, _c: unknown, fn: Handler) => {
+        h = fn;
+      },
+    };
+    registerWeaponPoseLint(server as never);
+    if (!h) throw new Error("not registered");
+    return h;
+  }
+
+  it("an .agr with no GlobalTags block answers its findings without isError", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = mkdtempSync(join(tmpdir(), "wpl-"));
+    const file = join(dir, "tripods.agr");
+    writeFileSync(file, "AnimSrcGraph {\n}\n");
+    const r = await (await handler())({ agr_path: file });
+    expect(r.isError).toBeUndefined();
+    expect(r.content[0].text).toContain("no GlobalTags { ... } block found");
+    expect(r.content[0].text).toContain("- WEAPON");
+  });
+
+  it("a missing file is still a tool error", async () => {
+    const r = await (await handler())({ agr_path: "Z:/no/such/file.agr" });
+    expect(r.isError).toBe(true);
   });
 });

@@ -49,63 +49,70 @@ describe("faction_create — validateFactionKey", () => {
   });
 });
 
+// Shape and names from vanilla Configs/Factions/CIV.conf and Dummy.conf (game paks):
+// FactionKey "<key>" / FactionColor <R G B A as 0-1 floats> / UIInfo SCR_FactionUIInfo { Name }.
+// W11 run 6: the engine loaded a file written with m_sFactionKey and ignored the property.
+const IGNORED_NAMES = ["m_sFactionKey", "m_sFactionName", "m_FactionColor"];
+
 describe("faction_create — buildFactionConf shape", () => {
-  it("produces a SCR_Faction root with the required properties and color block", () => {
+  it("produces the vanilla SCR_Faction attribute names", () => {
     const root = buildFactionConf({
       factionKey: "US",
       displayName: "United States Army",
-      color: { r: 10, g: 20, b: 30 },
+      color: { r: 4, g: 141, b: 231 },
     });
     expect(root.type).toBe("SCR_Faction");
-    const key = root.properties.find((p) => p.key === "m_sFactionKey");
-    expect(key?.value).toBe("US");
-    const name = root.properties.find((p) => p.key === "m_sFactionName");
-    expect(name?.value).toBe("United States Army");
-    const colorNode = root.children.find((c) => c.type === "m_FactionColor");
-    expect(colorNode).toBeDefined();
-    const r = colorNode!.properties.find((p) => p.key === "R");
-    const g = colorNode!.properties.find((p) => p.key === "G");
-    const b = colorNode!.properties.find((p) => p.key === "B");
-    const a = colorNode!.properties.find((p) => p.key === "A");
-    expect(r?.value).toBe("10");
-    expect(g?.value).toBe("20");
-    expect(b?.value).toBe("30");
-    expect(a?.value).toBe("1");
+    expect(root.id).toBeUndefined();
+    expect(root.properties.find((p) => p.key === "FactionKey")?.value).toBe("US");
+    expect(root.properties.find((p) => p.key === "FactionColor")?.value).toBe(
+      "0.016 0.553 0.906 1",
+    );
+    const ui = root.children.find((c) => c.type === "UIInfo");
+    expect(ui?.className).toBe("SCR_FactionUIInfo");
+    expect(ui?.id).toMatch(/^\{[0-9A-F]{16}\}$/);
+    expect(ui?.properties.find((p) => p.key === "Name")?.value).toBe("United States Army");
+    const keys = [...root.properties.map((p) => p.key), ...root.children.map((c) => c.type)];
+    for (const bad of IGNORED_NAMES) expect(keys).not.toContain(bad);
   });
 });
 
 describe("faction_create — renderFactionConf round-trip", () => {
-  it("renders text that re-parses to the same shape", () => {
-    const opts = {
+  it("renders the vanilla shape and re-parses to it", () => {
+    const text = renderFactionConf({
       factionKey: "FIA",
       displayName: "Forces of Independent Armies",
-      color: { r: 200, g: 100, b: 50 },
-    };
-    const text = renderFactionConf(opts);
+      color: { r: 255, g: 0, b: 51 },
+      uiInfoGuid: "56B49118D8D0A9C5",
+    });
+    expect(text).toBe(
+      [
+        "SCR_Faction {",
+        ' FactionKey "FIA"',
+        " FactionColor 1 0 0.2 1",
+        ' UIInfo SCR_FactionUIInfo "{56B49118D8D0A9C5}" {',
+        '  Name "Forces of Independent Armies"',
+        " }",
+        "}",
+      ].join("\n"),
+    );
     const reparsed = parse(text);
     expect(reparsed.type).toBe("SCR_Faction");
-    const key = reparsed.properties.find((p) => p.key === "m_sFactionKey");
-    expect(key?.value).toBe("FIA");
-    const name = reparsed.properties.find((p) => p.key === "m_sFactionName");
-    expect(name?.value).toBe("Forces of Independent Armies");
-    const color = reparsed.children.find((c) => c.type === "m_FactionColor");
-    expect(color).toBeDefined();
-    const r = color!.properties.find((p) => p.key === "R");
-    expect(r?.value).toBe("200");
+    expect(reparsed.properties.find((p) => p.key === "FactionKey")?.value).toBe("FIA");
+    const ui = reparsed.children.find((c) => c.type === "UIInfo");
+    expect(ui?.className).toBe("SCR_FactionUIInfo");
+    expect(ui?.properties.find((p) => p.key === "Name")?.value).toBe(
+      "Forces of Independent Armies",
+    );
   });
 
-  it("contains the literal property names from the spec", () => {
+  it("never writes the member-style names the engine ignores", () => {
     const text = renderFactionConf({
       factionKey: "RUR",
       displayName: "Russian Federation",
       color: { r: 0, g: 0, b: 255 },
     });
-    expect(text).toContain("SCR_Faction");
-    expect(text).toContain("m_sFactionKey");
-    expect(text).toContain("m_sFactionName");
-    expect(text).toContain("m_FactionColor");
-    expect(text).toContain('"RUR"');
-    expect(text).toContain('"Russian Federation"');
+    for (const bad of IGNORED_NAMES) expect(text).not.toContain(bad);
+    expect(text).toContain('FactionKey "RUR"');
   });
 
   it("escapes quotes in the display name", () => {
@@ -114,7 +121,6 @@ describe("faction_create — renderFactionConf round-trip", () => {
       displayName: 'United "States" Army',
       color: { r: 0, g: 0, b: 0 },
     });
-    // Serializer escapes the inner quotes.
     expect(text).toContain('\\"States\\"');
   });
 });

@@ -378,3 +378,34 @@ describe("redactServerConfig — leak scan", () => {
     expect(pretty).toContain("<redacted>");
   });
 });
+
+// ── server_validate_config never echoes file text (read-knowledge-07) ────────
+
+describe("server_validate_config — no echo of secrets", () => {
+  it("a JSON parse error and a bad admins[] entry do not quote the file", async () => {
+    const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { captureTool, makeConfig, textOf } = await import("./_tool-harness.js");
+    const { registerServerValidateConfig, validateServerConfig } = await import(
+      "../../src/tools/server-validate-config.js"
+    );
+    const dir = mkdtempSync(join(tmpdir(), "svc-"));
+    try {
+      const p = join(dir, "server.json");
+      writeFileSync(p, `{"bindPort": 1, "passwordAdmin": hunter2secretvalue }`, "utf-8");
+      const tool = captureTool((s) => registerServerValidateConfig(s, makeConfig({ projectPath: dir })));
+      const r = await tool({ config_path: p });
+      expect(r.isError).toBe(true);
+      expect(textOf(r)).toMatch(/not valid JSON/);
+      expect(textOf(r)).not.toMatch(/hunter2|rdAdmin/);
+
+      const findings = validateServerConfig({ admins: ["secret-admin-name"] });
+      const admin = findings.find((f) => f.path === "admins[0]");
+      expect(admin?.message).toMatch(/a string of 17 characters/);
+      expect(JSON.stringify(findings)).not.toContain("secret-admin-name");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

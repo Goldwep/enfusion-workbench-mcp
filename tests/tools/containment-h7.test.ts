@@ -129,6 +129,15 @@ describe("server_config", () => {
     expect(ok.isError).toBeUndefined();
     expect(existsSync(join(root, "server.json"))).toBe(true);
   });
+
+  it("refuses with isError when server.json exists and overwrite is false (live-client-06)", async () => {
+    const tool = captureTool((s) => registerServerConfig(s, makeConfig({ projectPath: root })));
+    writeFileSync(join(root, "server.json"), "{}", "utf-8");
+    const r = await tool({ name: "Srv", scenarioId: "{X}Missions/a.conf", overwrite: false });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/File already exists/);
+    expect(readFileSync(join(root, "server.json"), "utf-8")).toBe("{}");
+  });
 });
 
 describe("scenario_create", () => {
@@ -152,6 +161,37 @@ describe("mod (create / build)", () => {
     const searchEngine = { hasClass: () => true, getClass: () => undefined } as unknown as SearchEngine;
     const patterns = { get: () => undefined, list: () => [] } as unknown as PatternLibrary;
     tool = captureTool((s) => registerMod(s, makeConfig({ projectPath: root }), searchEngine, patterns));
+  });
+
+  function patternTool(pattern: Record<string, unknown>): ToolHandler {
+    const searchEngine = { hasClass: () => true, getClass: () => undefined } as unknown as SearchEngine;
+    const patterns = {
+      get: (n: string) => (n === "p" ? pattern : undefined),
+      list: () => ["p"],
+    } as unknown as PatternLibrary;
+    return captureTool((s) => registerMod(s, makeConfig({ projectPath: root }), searchEngine, patterns));
+  }
+
+  it("create: a prefix that is not an Enforce identifier is refused before anything is written (offline-writers-12)", async () => {
+    const t = patternTool({ scripts: [], prefabs: [], configs: [] });
+    const r = await t({ action: "create", name: "my-mod", pattern: "p" });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/Invalid class prefix "MY-" \(derived from "my-mod"\)/);
+    expect(existsSync(join(root, "my-mod"))).toBe(false);
+    const bad = await t({ action: "create", name: "Fine", pattern: "p", prefix: "1X" });
+    expect(bad.isError).toBe(true);
+    expect(existsSync(join(root, "Fine"))).toBe(false);
+  });
+
+  it("create: a pattern collision removes the half-built addon, so a retry is not refused (offline-writers-11)", async () => {
+    const dup = { className: "{PREFIX}_A", scriptType: "component", parentClass: "", methods: [], description: "" };
+    const t = patternTool({ scripts: [dup, dup], prefabs: [], configs: [] });
+    const r = await t({ action: "create", name: "HalfMod", pattern: "p", prefix: "HM" });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/duplicate script file/);
+    expect(existsSync(join(root, "HalfMod"))).toBe(false);
+    const again = await tool({ action: "create", name: "HalfMod" });
+    expect(again.isError).toBeUndefined();
   });
 
   it("create: refuses projectPath outside root and writes nothing", async () => {
@@ -252,5 +292,34 @@ describe("building_setup", () => {
     expect(ok.isError).toBeUndefined();
     expect(existsSync(join(root, "Prefabs", "Structures", "House", "House.et"))).toBe(true);
     expect(existsSync(join(root, "Prefabs", "Structures", "House", "Parts", "wall_01.et"))).toBe(true);
+    expect(readFileSync(join(root, "Prefabs", "Structures", "House", "House.et"), "utf-8")).toMatch(
+      /\}Prefabs\/Structures\/House\/Parts\/wall_01\.et"/,
+    );
+  });
+
+  it("slot references follow outputDir to where the parts are written (offline-writers-07)", async () => {
+    const tool = captureTool((s) => registerBuildingSetup(s, makeConfig({ projectPath: root })));
+    const manifestPath = join(base, "m.json");
+    writeFileSync(manifestPath, JSON.stringify(manifest("House")), "utf-8");
+    const outDir = join(root, "Prefabs", "MyBuildings", "House");
+    const ok = await tool({ manifestPath, modPrefix: "", outputDir: outDir, dryRun: false });
+    expect(ok.isError).toBeUndefined();
+    expect(existsSync(join(outDir, "Parts", "wall_01.et"))).toBe(true);
+    const house = readFileSync(join(outDir, "House.et"), "utf-8");
+    expect(house).toMatch(/\}Prefabs\/MyBuildings\/House\/Parts\/wall_01\.et"/);
+    expect(house).not.toContain("Prefabs/Structures/House/Parts/");
+  });
+});
+
+describe("faction_create out_path (offline-writers-05)", () => {
+  it("refuses an out_path that is not a .conf, even with force, and leaves the file alone", async () => {
+    const { registerFactionCreate } = await import("../../src/tools/faction-create.js");
+    const tool = captureTool((s) => registerFactionCreate(s, makeConfig({ projectPath: root })));
+    const gproj = join(root, "MyMod.gproj");
+    writeFileSync(gproj, "GameProject {\n}\n", "utf-8");
+    const r = await tool({ faction_key: "US", display_name: "x", out_path: "MyMod.gproj", dry_run: false, force: true });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/must end in \.conf/);
+    expect(readFileSync(gproj, "utf-8")).toBe("GameProject {\n}\n");
   });
 });

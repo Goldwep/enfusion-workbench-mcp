@@ -1,0 +1,119 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_EditorControl",
+  "tool": "wb_editor",
+  "purpose": "World Editor play/edit mode, save, undo/redo, open resource.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_EditorControl.c",
+  "request": ["action", "debugMode", "fullScreen", "path"],
+  "response": ["status", "action", "message"],
+  "actions": [
+    {
+      "name": "play",
+      "summary": "Enter play mode (void call; read the mode back)",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [
+        { "key": "debugMode", "type": "bool", "required": false, "note": "script debug mode" },
+        {
+          "key": "fullScreen",
+          "type": "bool",
+          "required": false,
+          "note": "full-screen game window"
+        }
+      ],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "stop",
+      "summary": "Return to edit mode (void call)",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Always refused: retired, use EMCP_WB_Module save",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "Retired (review F11): the 1.x save had no project guard or confirm; the handler answers status error and saves nothing. EMCP_WB_Module save is the guarded save.",
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "saveAs",
+      "summary": "Always refused: no public Save As",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "SaveWorldAs exists only on GameWorldEditor; the handler answers status error and writes nothing.",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": false,
+          "note": "ignored; the action refuses"
+        }
+      ],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "undo",
+      "summary": "Edit > Undo",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "redo",
+      "summary": "Edit > Redo",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "openResource",
+      "summary": "Open a resource (SetOpenedResource)",
+      "mutating": true,
+      "projectOnly": false,
+      "params": [{ "key": "path", "type": "string", "required": true, "note": "resource path" }],
+      "response": [
+        { "key": "status", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "message", "type": "string" }
+      ],
+      "paging": false
+    }
+  ]
+}

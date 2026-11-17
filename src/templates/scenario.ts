@@ -87,7 +87,7 @@ export interface ConflictBaseSpec {
   type?: "base" | "major" | "MOB" | "controlPoint" | "sourceBase" | "harbor";
   /** Number of ambient patrol spawnpoints around this base (default 2, max 6) */
   patrolCount?: number;
-  /** Radio antenna service range in meters (default 1470) */
+  /** Not written: no 1.9.0.37 script or vanilla file holds a base radio-range property. */
   radioRange?: number;
   /**
    * CAH zone names for major bases. If omitted and type=major, names are auto-generated
@@ -163,8 +163,12 @@ function buildMissionConf(opts: ConflictScenarioOptions, worldRef: string): stri
   if (opts.xpMultiplier !== undefined && opts.xpMultiplier !== 1.0) {
     lines.push(` m_fXpMultiplier ${opts.xpMultiplier}`);
   }
-  if (opts.savingEnabled !== false) {
-    lines.push(" m_bIsSavingEnabled 1");
+  // Saving is SCR_MissionHeader's ESaveGameType flags m_eSaveTypes (Attribute default "15", all
+  // types on; "If all save types are disabled, the entire persistence system is disabled",
+  // scripts/Game/Mission/SCR_MissionHeader.c). No m_bIsSavingEnabled exists. Flags are written
+  // numerically as vanilla writes m_eEditableGameFlags (Missions/23_Campaign.conf).
+  if (opts.savingEnabled === false) {
+    lines.push(" m_eSaveTypes 0");
   }
 
   // Base whitelist — links .conf base names to world entities
@@ -215,7 +219,8 @@ function buildDefaultLayer(opts: ConflictScenarioOptions): string {
   lines.push(" m_fVictoryTimer 300");
   lines.push(" m_iRegularSuppliesIncome 50");
   lines.push(" m_bEstablishingBasesEnabled 0");
-  lines.push(" m_bHideBasesOutsideRadioRange 1");
+  // No m_bHideBasesOutsideRadioRange: neither SCR_GameModeCampaign's chain nor any vanilla file
+  // holds it (1.9.0.37 paks).
   lines.push("}");
 
   lines.push(`SCR_CampaignFactionManager CampaignFactionManager1 : "${PREFAB_FACTION_MGR}" {`);
@@ -263,7 +268,6 @@ function buildBasesLayer(opts: ConflictScenarioOptions): string {
 
     const [bx, by, bz] = parsePos(base.position);
     const baseType = base.type ?? "base";
-    const radioRange = base.radioRange ?? 1470;
     const isMOB = baseType === "MOB";
     const isMajor = baseType === "major";
 
@@ -277,19 +281,10 @@ function buildBasesLayer(opts: ConflictScenarioOptions): string {
     } else {
       lines.push("    m_fMaximumSeizingTime 120");
       lines.push("    m_fMinimumSeizingTime 30");
-      if (isMajor) {
-        lines.push("    m_iRadius 200");
-        lines.push("    m_bRequiresCaptureAndHoldAreas 1");
-        lines.push("    m_iAreaThreshold 50");
-        const zones = cahZoneNames(base);
-        lines.push("    m_aCaptureAndHoldAreaNames {");
-        for (const z of zones) lines.push(`     "${z}"`);
-        lines.push("    }");
-      }
-      lines.push("    m_RequiredGroupTypes {");
-      lines.push("     ASSAULT");
-      lines.push("     SF_ASSAULT");
-      lines.push("    }");
+      // m_iRadius is vanilla (Prefabs/Systems/MilitaryBase/ConflictBase_Base.et). The CAH and group
+      // type names this wrote (m_bRequiresCaptureAndHoldAreas, m_iAreaThreshold,
+      // m_aCaptureAndHoldAreaNames, m_RequiredGroupTypes) exist in no 1.9.0.37 script or file.
+      if (isMajor) lines.push("    m_iRadius 200");
     }
     lines.push("   }");
 
@@ -310,8 +305,9 @@ function buildBasesLayer(opts: ConflictScenarioOptions): string {
     if (isMOB) lines.push("    m_bCanBeHQ 1");
     lines.push(`    m_sBaseName "${base.name}"`);
     lines.push(`    m_sBaseNameUpper "${base.name.toUpperCase()}"`);
-    lines.push(`    m_fRadioAntennaServiceRange ${radioRange}`);
-    if (isMOB || isMajor) lines.push("    m_bExcludeFromRandomization 1");
+    // No radio range or randomization flag: m_fRadioAntennaServiceRange and
+    // m_bExcludeFromRandomization exist in no 1.9.0.37 script or file, and the base's attributes
+    // hold neither (radioRange is accepted and not written).
     lines.push("   }");
 
     // Supplies for MOB

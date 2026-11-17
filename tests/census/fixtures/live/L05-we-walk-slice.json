@@ -1,0 +1,468 @@
+{
+  "$comment": "Redacted slice of P3-3 gate 2 p33-g2-04-walk.json (World Editor, tiny world, edit/none): the root window with its Hierarchy and Resource Browser docks only; world title and sandbox name are placeholders.",
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - <world>",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "enabled": true,
+    "children": [
+      {
+        "controlType": "Window",
+        "name": "Hierarchy",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock",
+        "className": "QDockWidget",
+        "enabled": true,
+        "children": [
+          {
+            "controlType": "Group",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents",
+            "className": "QWidget",
+            "enabled": true,
+            "children": [
+              {
+                "controlType": "Edit",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterEdit",
+                "className": "QLineEdit",
+                "enabled": true,
+                "children": [
+                  {
+                    "controlType": "Button",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterEdit.QLineEditIconButton",
+                    "className": "QLineEditIconButton",
+                    "enabled": true
+                  }
+                ]
+              },
+              {
+                "controlType": "Text",
+                "name": "Selected: 0",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityCountLabel",
+                "className": "QLabel",
+                "enabled": true
+              },
+              {
+                "controlType": "Button",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityFilterButton",
+                "className": "QPushButton",
+                "enabled": true
+              },
+              {
+                "controlType": "Button",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityOptionsButton",
+                "className": "QPushButton",
+                "enabled": true
+              },
+              {
+                "controlType": "Tree",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                "className": "EntityTreeWidget",
+                "enabled": true,
+                "children": [
+                  {
+                    "controlType": "Header",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "name",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "prefab",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Header",
+                    "name": "class",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "unnamed",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "name": "default",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "TreeItem",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.hierarchyDockContents.entityTree",
+                    "enabled": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "enabled": true
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityTreeDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Resource Browser",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock",
+        "className": "QDockWidget",
+        "enabled": true,
+        "children": [
+          {
+            "controlType": "Group",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents",
+            "className": "QWidget",
+            "enabled": true,
+            "children": [
+              {
+                "controlType": "Group",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget",
+                "className": "ResourceBrowser",
+                "enabled": true,
+                "children": [
+                  {
+                    "controlType": "Edit",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.WBEditBox",
+                    "className": "WBEditBox",
+                    "enabled": true,
+                    "children": [
+                      {
+                        "controlType": "Button",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.WBEditBox.QLineEditIconButton",
+                        "className": "QLineEditIconButton",
+                        "enabled": true
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "CheckBox",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QToolButton",
+                    "className": "QToolButton",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Group",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.BreadcrumbTrailWidget",
+                    "className": "BreadcrumbTrailWidget",
+                    "enabled": true,
+                    "children": [
+                      {
+                        "controlType": "Button",
+                        "name": "ArmaReforger",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.BreadcrumbTrailWidget.QToolButton",
+                        "className": "QToolButton",
+                        "enabled": true
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Group",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.navigationButtons",
+                    "className": "QWidget",
+                    "enabled": true,
+                    "children": [
+                      {
+                        "controlType": "Button",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.navigationButtons.navigateBackward",
+                        "className": "QPushButton",
+                        "enabled": false
+                      },
+                      {
+                        "controlType": "Button",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.navigationButtons.navigateForward",
+                        "className": "QPushButton",
+                        "enabled": false
+                      },
+                      {
+                        "controlType": "Button",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.navigationButtons.navigateUp",
+                        "className": "QPushButton",
+                        "enabled": false
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Button",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.filterButton",
+                    "className": "QPushButton",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Button",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QPushButton",
+                    "className": "QPushButton",
+                    "enabled": true
+                  },
+                  {
+                    "controlType": "Custom",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter",
+                    "className": "QSplitter",
+                    "enabled": true,
+                    "children": [
+                      {
+                        "controlType": "Group",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel",
+                        "className": "QWidget",
+                        "enabled": true,
+                        "children": [
+                          {
+                            "controlType": "List",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                            "className": "ResourceListView",
+                            "enabled": true,
+                            "children": [
+                              {
+                                "controlType": "ListItem",
+                                "name": "AI",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "anims",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Assets",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Common",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Configs",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Language",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Missions",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Particles",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "PrefabLibrary",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Prefabs",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "PrefabsEditable",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "scripts",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Sounds",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "Terrains",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "UI",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "WBData",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              },
+                              {
+                                "controlType": "ListItem",
+                                "name": "worlds",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.ResourceListView",
+                                "enabled": true
+                              }
+                            ]
+                          },
+                          {
+                            "controlType": "Text",
+                            "name": "17 items ",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.QLabel",
+                            "className": "QLabel",
+                            "enabled": true
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "Import",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.QPushButton",
+                            "className": "QPushButton",
+                            "enabled": false
+                          },
+                          {
+                            "controlType": "Button",
+                            "name": "Create",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.gridPanel.QPushButton",
+                            "className": "QPushButton",
+                            "enabled": false
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Group",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel",
+                        "className": "QWidget",
+                        "enabled": true,
+                        "children": [
+                          {
+                            "controlType": "Custom",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter",
+                            "className": "QSplitter",
+                            "enabled": true,
+                            "children": [
+                              {
+                                "controlType": "Tree",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                "className": "ResourceTreeView",
+                                "enabled": true,
+                                "children": [
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "ArmaReforger",
+                                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                    "enabled": true
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "core",
+                                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                    "enabled": true
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "<sandbox>",
+                                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                    "enabled": true
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "logs",
+                                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                    "enabled": true
+                                  },
+                                  {
+                                    "controlType": "TreeItem",
+                                    "name": "profile",
+                                    "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.treePanel.QSplitter.ResourceTreeView",
+                                    "enabled": true
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Thumb",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.resourceBrowserDockContents.resourceBrowserWidget.QSplitter.qt_splithandle_gridPanel",
+                        "className": "QSplitterHandle",
+                        "enabled": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "enabled": true
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.resourcesDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "enabled": true
+          }
+        ]
+      }
+    ]
+  }
+}

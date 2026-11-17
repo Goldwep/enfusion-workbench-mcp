@@ -12,7 +12,7 @@
  *                            a space between keyword and `(`
  *   - missing_super_modded — `modded class Foo` methods that don't
  *                            invoke `super.<methodName>(...)` at all
- *   - rpc_missing_channel  — `[RPC]` with empty args (no channel/
+ *   - rpc_missing_channel  — `[RplRpc]` (or `[RPC]`) with empty args (no channel/
  *                            reliability specified)
  *
  * The full BI plugin has more rules; this v1 ships the highest-signal
@@ -122,18 +122,21 @@ function ruleMissingSuperModded(ast: ScriptAst): LintFinding[] {
   return out;
 }
 
+const RPC_ATTRIBUTE_NAMES = new Set(["RplRpc", "RPC"]);
+
 function ruleRpcMissingChannel(ast: ScriptAst): LintFinding[] {
   const out: LintFinding[] = [];
   for (const cls of ast.classes) {
     for (const m of cls.methods) {
-      const rpcAttrs = m.attributes.filter((a) => a.name === "RPC");
+      // Enforce's RPC attribute is `RplRpc`; bare `RPC` is kept for older code.
+      const rpcAttrs = m.attributes.filter((a) => RPC_ATTRIBUTE_NAMES.has(a.name));
       for (const a of rpcAttrs) {
         if (!a.args || a.args.trim().length === 0) {
           out.push({
             rule: "rpc_missing_channel",
             severity: "warning",
             line: m.range.start.line,
-            message: `${cls.name}.${m.name}() has [RPC] with no channel/reliability args. Common shapes: [RPC(RplChannel.Reliable, RplRcver.Server)].`,
+            message: `${cls.name}.${m.name}() has [${a.name}] with no channel/receiver args. Common shape: [RplRpc(RplChannel.Reliable, RplRcver.Server)].`,
           });
         }
       }
@@ -256,6 +259,19 @@ export function registerScriptLint(server: McpServer): void {
         if (script_path.startsWith("-")) {
           return {
             content: [{ type: "text" as const, text: "Invalid script_path: must not start with '-'" }],
+            isError: true,
+          };
+        }
+        // An unknown rule name would run nothing and print Clean (read-knowledge-10).
+        const unknown = (rules ?? []).filter((r) => !(ALL_RULES as readonly string[]).includes(r));
+        if (unknown.length > 0) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Unknown rule name(s): ${unknown.join(", ")}. Available: ${ALL_RULES.join(", ")}.`,
+              },
+            ],
             isError: true,
           };
         }

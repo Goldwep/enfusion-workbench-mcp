@@ -556,7 +556,7 @@ class EMCP_WB_<Domain> : NetApiHandler {
 
 Pattern checklist:
 
-- One Enforce-side handler per domain (terrain, character, job, …), **not** one per action. Hard cap ≤15 handler files at v1.0.0 (per `docs/L7-PLAN.md`).
+- One Enforce-side handler per domain (terrain, character, job, …), **not** one per action. The old ≤15 file cap (`docs/L7-PLAN.md`) is gone: 37 handler files declare a `NetApiHandler` today (`npx tsx scripts/count-inventory.ts`, counted over `mod/Scripts/WorkbenchGame/EnfusionMCP/*.c`). Add a file per domain, not per action.
 - `action` field discriminates inside the handler. Node-side tools call into the dispatcher with `{ action, ...args }`.
 - Use `payload: string` for any structured response richer than a flat field list. Node side parses as JSON.
 - Reserve `status: "not_implemented"` for placeholder actions — every L7 placeholder tool checks for this and surfaces a structured "not yet wired" message rather than an opaque error.

@@ -273,7 +273,7 @@ export function formatAwSummary(aw: ParsedAw): string {
 }
 
 export function formatValidationReport(
-  issues: Array<{ id: string; severity: string; message: string }>,
+  issues: Array<{ id: string; severity: string; message: string; demoted?: string }>,
   errorCount: number,
   warningCount: number,
 ): string {
@@ -289,6 +289,14 @@ export function formatValidationReport(
   for (const issue of issues) {
     const icon = issue.severity === "error" ? "[ERROR]" : "[WARN]";
     lines.push(`${icon} ${issue.id}: ${issue.message}`);
+  }
+
+  const demoted = [...new Set(issues.filter((i) => i.demoted).map((i) => i.id))];
+  if (demoted.length > 0) {
+    lines.push("");
+    lines.push(
+      `Demoted to warnings (they fire on shipping vanilla graphs): ${demoted.join(", ")}.`,
+    );
   }
 
   return lines.join("\n");

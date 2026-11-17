@@ -1,0 +1,7 @@
+MetaFileClass {
+ Name "{E1AA11BB22CC33DD}prefabs/test.et"
+ Configurations {
+  EntityTemplateResourceClass PC {
+  }
+ }
+}

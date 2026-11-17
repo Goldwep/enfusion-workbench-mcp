@@ -22,6 +22,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { resolve, basename } from "node:path";
 import { z } from "zod";
 import { atomicCommit, type PendingEdit } from "../refactor/byte-edit.js";
+import { parseCst, type CstEntry, type CstObject } from "../formats/enfusion-cst.js";
 import { ProjectIndex } from "../project-index/project-index.js";
 import { loadConfig, type Config } from "../config.js";
 import { assertInsideAnyRoot } from "../utils/path-guard.js";
@@ -29,11 +30,6 @@ import { readTextFileBounded } from "../utils/safe-read.js";
 
 const GUID_RE = /^[0-9A-Fa-f]{16}$/;
 const GUID_LINE_RE = /^"?([0-9A-Fa-f]{16})"?$/;
-// `Dependencies` keyword at a token boundary, followed by optional
-// whitespace and the opening brace. The block END is found by brace-depth
-// scanning (RBE-7 / M13) — a `[^}]*` regex stopped at the first `}` and
-// orphaned the tail of any block containing nested braces.
-const DEPS_OPEN_RE = /(?<![A-Za-z0-9_])Dependencies(\s*)\{/;
 
 /** Located Dependencies block: absolute offsets into the file content. */
 export interface DepsBlock {
@@ -48,38 +44,29 @@ export interface DepsBlock {
 }
 
 /**
- * Find the first `Dependencies { ... }` block, honouring nested braces and
- * quoted strings so the closing brace is the one at the SAME depth.
- * Returns null when there's no block or the braces are unbalanced.
+ * Find the first `Dependencies { ... }` block in document order through the lossless CST
+ * (src/formats/enfusion-cst.ts): nested braces, quoted strings and comments are tokens there, so
+ * the closing brace is the one at the SAME depth (RBE-7 / M13) and a `Dependencies {` inside a
+ * comment or a string is never taken. Returns null when there's no block or it is not closed.
  */
 export function findDepsBlock(content: string): DepsBlock | null {
-  const m = DEPS_OPEN_RE.exec(content);
-  if (!m) return null;
-  const openIdx = m.index + m[0].length - 1; // index of `{`
-  let depth = 0;
-  let inString = false;
-  for (let i = openIdx; i < content.length; i++) {
-    const ch = content[i];
-    if (inString) {
-      if (ch === "\\") i += 1;
-      else if (ch === '"') inString = false;
-      continue;
+  const find = (entries: readonly CstEntry[]): CstObject | null => {
+    for (const e of entries) {
+      if (e.kind !== "object") continue;
+      if (e.key === "Dependencies" && e.head.length === 1 && e.base.length === 0) return e;
+      const inner = find(e.children);
+      if (inner) return inner;
     }
-    if (ch === '"') inString = true;
-    else if (ch === "{") depth += 1;
-    else if (ch === "}") {
-      depth -= 1;
-      if (depth === 0) {
-        return {
-          start: m.index,
-          end: i + 1,
-          ws: m[1],
-          body: content.slice(openIdx + 1, i),
-        };
-      }
-    }
-  }
-  return null;
+    return null;
+  };
+  const obj = find(parseCst(content).root.children);
+  if (!obj || !obj.close) return null;
+  return {
+    start: obj.start,
+    end: obj.close.end,
+    ws: content.slice(obj.head[0]!.end, obj.open.start),
+    body: content.slice(obj.open.end, obj.close.start),
+  };
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────

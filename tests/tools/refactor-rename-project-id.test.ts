@@ -41,6 +41,18 @@ describe("refactor_rename_project_id containment (H7)", () => {
     expect(textOf(r)).toMatch(/must end in \.gproj/);
   });
 
+  it("a commit whose old_id matches nothing answers isError and writes nothing (refactor-index-09)", async () => {
+    const gproj = join(root, "Mod.gproj");
+    const original = `GameProject {\n ID "Old"\n}\n`;
+    writeFileSync(gproj, original, "utf-8");
+    const r = await tool()({ gproj_path: gproj, old_id: "Wrong", new_id: "New", commit: true, force: true });
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/REFUSED: no ID matched/);
+    expect(readFileSync(gproj, "utf-8")).toBe(original);
+    const dry = await tool()({ gproj_path: gproj, old_id: "Wrong", new_id: "New" });
+    expect(dry.isError).toBeUndefined();
+  });
+
   it("renames the ID inside the root", async () => {
     const gproj = join(root, "Mod.gproj");
     writeFileSync(gproj, `GameProject {\n ID "Old"\n TITLE "t"\n}\n`, "utf-8");

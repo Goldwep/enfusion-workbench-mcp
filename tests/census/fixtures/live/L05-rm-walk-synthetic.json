@@ -1,0 +1,29 @@
+{
+  "$comment": "SYNTHETIC (no live walk of a planted folder exists yet): the Resource Manager window with the Resource Browser showing the P4-3 planted folder <sandbox>/_throwaway/P4/u16/. Item names are placeholders shaped like plant copies; readme.txt is an E09 row of module none and must not become a target.",
+  "tree": {
+    "controlType": "Window",
+    "name": "Enfusion Workbench - <sandbox>",
+    "className": "WorkbenchQt",
+    "children": [
+      {
+        "controlType": "Window",
+        "name": "Resource Browser",
+        "className": "QDockWidget",
+        "automationId": "mainWindow.resourcesDock",
+        "children": [
+          {
+            "controlType": "List",
+            "className": "ResourceListView",
+            "children": [
+              { "controlType": "ListItem", "name": "u16_sample.conf" },
+              { "controlType": "ListItem", "name": "u16_other.conf" },
+              { "controlType": "ListItem", "name": "u16_sample.emat" },
+              { "controlType": "ListItem", "name": "u16_sample.layout" },
+              { "controlType": "ListItem", "name": "readme.txt" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

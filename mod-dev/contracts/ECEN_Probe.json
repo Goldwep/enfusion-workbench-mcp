@@ -1,0 +1,47 @@
+{
+  "request": [
+    "action",
+    "openModules",
+    "moduleName",
+    "index",
+    "depth",
+    "page",
+    "menuPath",
+    "keepFocus",
+    "candidate",
+    "className",
+    "text",
+    "path",
+    "folder",
+    "subScene",
+    "terrainIndex",
+    "diagEnum",
+    "diagId",
+    "engine",
+    "diagMenu",
+    "readRange",
+    "authMethod",
+    "authRoot",
+    "authVariant"
+  ],
+  "response": [
+    "status",
+    "action",
+    "message",
+    "factKeys",
+    "factValues",
+    "columns",
+    "cells",
+    "total",
+    "page",
+    "pageCount"
+  ],
+  "rules": {
+    "authProbe": "authMethod is FileExists, OpenFile, FindFiles or SearchResources; authRoot is $EMCP2_sandbox: (nothing outside the 2.0 sandbox); authVariant is a, or b for FindFiles only (a second call site of the same call). Lists compared exactly; anything else is status error before any API call. Facts, exactly five: method, root, variant, returned (the call's bool), count (callback calls; 0 for FileExists and OpenFile). FileExists checks <root>EMCP2_sandbox.gproj, a file, never the bare root. OpenFile opens <root>EMCP2_sandbox.gproj with FileMode.READ only after FileIO.FileExists answered true for it, and closes the handle at once. FindFiles filter .c; SearchResources extensions {conf}, recursive. No file name or path from a call is returned.",
+    "screenshot": "path is a bare file name <label>-<nonce>.bmp: a non-empty label, then after the last '-' a run nonce of at least 6 hex digits ([0-9a-fA-F]) the harness supplies per run. A name without that suffix is refused (status refused). folder is _throwaway or a folder under it. FileIO.FileExists is kept as a second guard; the nonce alone keeps the call from overwriting a file even when FileExists answers false after a refused authorization prompt.",
+    "loadContainer": "a resource name ending in .ent (any case, a world file) is refused with status error and fact error = 'world file refused'; nothing is loaded. The fact path goes through ShowPath.",
+    "layerRead": "subScene -1 (the default) means GetCurrentSubScene(). After that substitution an index < 0 or >= GetNumSubScenes() is answered with status error and fact error = 'subScene out of range' before any per-sub-scene getter runs. GetSubsceneLayerPath is skipped (currentEntityLayerPath empty) when GetCurrentEntityLayerId() is below 0.",
+    "terrainFacts": "terrainIndex must be 0 (the default); any other value is answered with status error and fact error = 'terrainIndex out of range'. GetTerrainBounds runs first; when it returns false the answer is status ok, hasBounds false, fact terrain = 'none', and no terrain getter is called.",
+    "executeAction": "menuPath must equal an entry of the allow-list compiled into ECEN_ProbeAllowList.c (Paths); with candidate true it must equal an entry of the candidate list instead (Candidates, DEC-100: execute_action.candidates, paths with no live result yet), never both lists at once. A segment holding a deny-list label or a refused word is refused on either list. Only a live battery sets candidate (tests/live/w9.live.ts --candidates); no shipped tool sends to this pack."
+  }
+}

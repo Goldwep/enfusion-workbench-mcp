@@ -13,5 +13,13 @@
       "mtime": "2026-08-13T12:12:40.019Z"
     }
   },
-  "buildBranch": "stable_1_88_80"
+  "buildBranch": "stable_1_88_80",
+  "sourceBackfill": {
+    "build": "1.8.0.13",
+    "inputsSha256": "07a4b21cfe67f641008d968d976013b3c4d8ca3dd0e442f1b5e25d89b2bd8045",
+    "files": [
+      "enfusion-classes.json",
+      "arma-classes.json"
+    ]
+  }
 }

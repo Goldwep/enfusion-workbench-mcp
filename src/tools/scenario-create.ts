@@ -12,34 +12,20 @@ import { validateFilename } from "../utils/safe-path.js";
 import { assertInsideRoot } from "../utils/path-guard.js";
 
 const BASE_SPEC_SCHEMA = z.object({
-  name: z
-    .string()
-    .min(1)
-    .describe(
-      "Base name / callsign, e.g. 'BaseAlpha'. Used as the entity name and in the mission header base whitelist. " +
-        "No spaces — use underscores or CamelCase.",
-    ),
-  position: z
-    .string()
-    .describe(
-      "World position as 'x y z', e.g. '1200 0 3400'. Y=0 is fine — Workbench snaps to terrain when opened.",
-    ),
+  name: z.string().min(1).describe("callsign, no spaces; entity name and header whitelist entry"),
+  position: z.string().describe("'x y z'; Y=0 is fine (snapped on open)"),
   faction: z.string().describe("Starting faction key: 'US', 'USSR', 'FIA', or a custom key."),
   type: z
     .enum(["base", "major", "MOB", "controlPoint", "sourceBase", "harbor"])
     .optional()
     .describe(
-      "Base type. 'base' (default) = standard contested base. 'major' = large base with CAH areas (harbour, port, airfield). " +
-        "'MOB' = main operating base / HQ (no seizing, 3000 supplies, radio source). " +
-        "'controlPoint' = lightweight capture point. 'sourceBase' = supply source only, not capturable. " +
-        "'harbor' = supply-income harbor (skipped in Bases.layer, uses own prefab family).",
+      "base (default, contested), major (with CAH areas), MOB (HQ, not seizable), " +
+        "controlPoint, sourceBase (supply only), harbor (supply income, not in Bases.layer)",
     ),
   radioRange: z
     .number()
     .optional()
-    .describe(
-      "Radio antenna service range in meters (default 1470). Increase for MOBs on islands.",
-    ),
+    .describe("ignored: 1.9.0.37 has no base radio-range property"),
   patrolCount: z
     .number()
     .min(0)
@@ -53,56 +39,28 @@ export function registerScenarioCreate(server: McpServer, config: Config): void 
     "scenario_create_conflict",
     {
       description:
-        "Generate a complete Conflict multiplayer scenario as up to 7 files: a mission header (.conf), a SubScene world stub (.ent), " +
-        "and layer files (default.layer with game mode + managers, Bases.layer with all military bases, " +
-        "CAH.layer with capture zones for major bases, Defenders.layer with patrol defenders, " +
-        "AmbientVehicles.layer with civilian vehicle spawns when civVehicleCount > 0). " +
-        "This matches the structure used by production Arma Reforger Workshop mods. " +
-        "Generates: GameMode_Seize entity, CampaignFactionManager, military bases with SCR_CampaignSeizingComponent + radio + patrol spawnpoints. " +
+        "Generate a Conflict scenario (up to 7 files): mission header .conf, SubScene .ent, and layers " +
+        "default (game mode, managers), Bases, CAH (major-base capture zones), Defenders, and " +
+        "AmbientVehicles (when civVehicleCount > 0). " +
         "Known worlds: " +
         KNOWN_WORLDS.join(", ") +
         ". " +
-        "For custom maps pass the full resource ref as worldName, e.g. '{GUID}worlds/MyMap.ent'. " +
-        "After generating, open the .ent file in Workbench to snap entities to terrain.",
+        "Open the .ent in Workbench afterwards to snap entities to terrain.",
       inputSchema: {
-        scenarioName: z
-          .string()
-          .min(1)
-          .describe(
-            "Scenario identifier used as the filename (no spaces, e.g. 'MyConflict_Everon'). " +
-              "Also used as the display name unless scenarioDisplayName is provided.",
-          ),
-        scenarioDisplayName: z
-          .string()
-          .optional()
-          .describe(
-            "Human-readable display name shown in the scenario browser (default: scenarioName).",
-          ),
-        worldName: z
-          .string()
-          .describe(
-            "Base world to inherit. Use 'Everon', 'Arland', or 'Western Everon' for vanilla maps, " +
-              "or a full resource ref like '{GUID}worlds/MyMap.ent' for custom maps.",
-          ),
+        scenarioName: z.string().min(1).describe("file name, no spaces; display name by default"),
+        scenarioDisplayName: z.string().optional(),
+        worldName: z.string().describe("a known world or a {GUID}worlds/X.ent ref"),
         bases: z
           .array(BASE_SPEC_SCHEMA)
           .min(1)
-          .describe(
-            "List of military bases to place. Include at least one MOB per faction and 2+ contested bases. " +
-              "Positions are world-space coordinates — use the map to find sensible locations.",
-          ),
+          .describe("bases to place: at least one MOB per faction and 2+ contested bases"),
         playerCount: z
           .number()
           .min(1)
           .max(256)
           .optional()
           .describe("Max player count (default 40)."),
-        xpMultiplier: z
-          .number()
-          .optional()
-          .describe(
-            "XP multiplier. Use 0.5 for PvE, 1.0 for standard PvP (default 1.0, omitted if 1.0).",
-          ),
+        xpMultiplier: z.number().optional().describe("default 1.0; 0.5 suits PvE"),
         savingEnabled: z
           .boolean()
           .optional()
@@ -121,9 +79,7 @@ export function registerScenarioCreate(server: McpServer, config: Config): void 
           .min(0)
           .max(50)
           .optional()
-          .describe(
-            "Number of civilian ambient vehicle spawnpoints to place (default 0). Generates AmbientVehicles.layer when > 0.",
-          ),
+          .describe("civilian vehicle spawnpoints, default 0"),
         projectPath: z
           .string()
           .optional()
@@ -211,25 +167,26 @@ export function registerScenarioCreate(server: McpServer, config: Config): void 
             };
           }
 
-          // Write all files with rollback on partial failure
+          // Write all files with rollback on partial failure. Exclusive creates (flag wx): a file
+          // that appeared after the existence check above is never replaced.
           const writtenPaths: string[] = [];
           try {
-            writeFileSync(confPath, output.missionConf, "utf-8");
+            writeFileSync(confPath, output.missionConf, { encoding: "utf-8", flag: "wx" });
             writtenPaths.push(confPath);
-            writeFileSync(entPath, output.worldEnt, "utf-8");
+            writeFileSync(entPath, output.worldEnt, { encoding: "utf-8", flag: "wx" });
             writtenPaths.push(entPath);
-            writeFileSync(defaultLayPath, output.defaultLayer, "utf-8");
+            writeFileSync(defaultLayPath, output.defaultLayer, { encoding: "utf-8", flag: "wx" });
             writtenPaths.push(defaultLayPath);
-            writeFileSync(basesLayPath, output.basesLayer, "utf-8");
+            writeFileSync(basesLayPath, output.basesLayer, { encoding: "utf-8", flag: "wx" });
             writtenPaths.push(basesLayPath);
-            writeFileSync(defendersLayPath, output.defendersLayer, "utf-8");
+            writeFileSync(defendersLayPath, output.defendersLayer, { encoding: "utf-8", flag: "wx" });
             writtenPaths.push(defendersLayPath);
             if (output.cahLayer) {
-              writeFileSync(cahLayPath, output.cahLayer, "utf-8");
+              writeFileSync(cahLayPath, output.cahLayer, { encoding: "utf-8", flag: "wx" });
               writtenPaths.push(cahLayPath);
             }
             if (output.ambientVehiclesLayer) {
-              writeFileSync(vehiclesLayPath, output.ambientVehiclesLayer, "utf-8");
+              writeFileSync(vehiclesLayPath, output.ambientVehiclesLayer, { encoding: "utf-8", flag: "wx" });
               writtenPaths.push(vehiclesLayPath);
             }
           } catch (writeErr) {

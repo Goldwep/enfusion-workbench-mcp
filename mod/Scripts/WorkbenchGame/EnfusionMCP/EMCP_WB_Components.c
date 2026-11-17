@@ -110,6 +110,24 @@ class EMCP_WB_Components : NetApiHandler
 			return resp;
 		}
 
+		// add and remove edit the open world: the guard of the W-wave edit handlers (DEC-058, EditApi
+		// of EMCP_WB_Entity.c): the project is found, the editor is not in play mode.
+		if (req.action == "add" || req.action == "remove")
+		{
+			if (!EMCP_WB_Guard.IsProjectFound())
+			{
+				resp.status = "error";
+				resp.message = EMCP_WB_Guard.NOT_IN_PROJECT + ": mutating actions need the handlers installed in the open project; nothing was changed";
+				return resp;
+			}
+			if (api.IsGameMode())
+			{
+				resp.status = "error";
+				resp.message = "WRONG_MODE: the World Editor is in play mode; nothing was changed - stop play first (wb_world stop)";
+				return resp;
+			}
+		}
+
 		if (req.action == "add")
 		{
 			if (req.componentClass == "")

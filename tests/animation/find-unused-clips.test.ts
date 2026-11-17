@@ -35,19 +35,18 @@ describe("extractAnmRefs", () => {
      AnimSrcNodeSource Walk {
        Source "{2222222222222222}Anims/walk_fwd.anm"
      }`;
-    expect([...extractAnmRefs(content)].sort()).toEqual([
-      "anims/idle.anm",
-      "anims/walk_fwd.anm",
-    ]);
+    expect([...extractAnmRefs(content)].sort()).toEqual(["anims/idle.anm", "anims/walk_fwd.anm"]);
   });
 
   it("collects ASI column refs", () => {
+    // Real layout (vanilla B12_player.asi): Lines / AnimSetInstanceSource_Line / Resource.
     const content = `
-     AnimSetInstanceColumn Erc {
-      Animations {
-       "{AAAAAAAAAAAAAAAA}Anims/idle_erc.anm"
-       "{BBBBBBBBBBBBBBBB}Anims/walk_fwd_erc.anm"
-       ""
+     Lines {
+      AnimSetInstanceSource_Line "Gadget.CroRas.Focused" {
+       Resource "{E026D5F801FAF110}Anims/Idle_Erc.anm"
+      }
+      AnimSetInstanceSource_Line "Gadget.CroRas.Offset" {
+       Resource "{2F75A2CF65919AC6}Anims/walk_fwd_erc.anm"
       }
      }`;
     expect([...extractAnmRefs(content)].sort()).toEqual([
@@ -62,8 +61,7 @@ describe("extractAnmRefs", () => {
   });
 
   it("de-duplicates repeated refs", () => {
-    const content =
-      'a "{1111111111111111}Anims/dup.anm" b "{2222222222222222}Anims/dup.anm"';
+    const content = 'a "{1111111111111111}Anims/dup.anm" b "{2222222222222222}Anims/dup.anm"';
     const refs = extractAnmRefs(content);
     expect(refs.size).toBe(1);
     expect([...refs]).toEqual(["anims/dup.anm"]);
@@ -132,10 +130,7 @@ describe("findUnusedClips", () => {
     mkdirSync(join(tmpRoot, "Graph"), { recursive: true });
     writeFileSync(join(tmpRoot, "Anims", "used.anm"), "X");
     writeFileSync(join(tmpRoot, "Anims", "unused.anm"), "YYYY");
-    writeFileSync(
-      join(tmpRoot, "Graph", "graph.agf"),
-      'Source "{1111111111111111}Anims/used.anm"',
-    );
+    writeFileSync(join(tmpRoot, "Graph", "graph.agf"), 'Source "{1111111111111111}Anims/used.anm"');
 
     const r = findUnusedClips([{ rootPath: tmpRoot }]);
     expect(r.totalOnDisk).toBe(2);
@@ -192,10 +187,7 @@ describe("findUnusedClips", () => {
     writeFileSync(join(a, "Anims", "shared.anm"), "AAAA");
     writeFileSync(join(b, "Anims", "shared.anm"), "B");
     writeFileSync(join(a, "Anims", "onlyA.anm"), "x");
-    writeFileSync(
-      join(a, "ref.agf"),
-      '"{1111111111111111}Anims/shared.anm"',
-    );
+    writeFileSync(join(a, "ref.agf"), '"{1111111111111111}Anims/shared.anm"');
 
     const r = findUnusedClips([
       { rootPath: a, projectId: "projA" },

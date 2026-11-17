@@ -34,7 +34,7 @@ export interface PrefabOptions {
   parentPrefab?: string;
   /** Additional components to add */
   components?: ComponentDef[];
-  /** Description (used for m_sDisplayName if applicable) */
+  /** Description, written as the editor display name (m_UIInfo Name) */
   description?: string;
   /**
    * Pre-resolved ancestor components (from prefab-ancestry walkChain).
@@ -95,24 +95,21 @@ export function generatePrefab(opts: PrefabOptions): string {
       componentNodes.push(compNode);
     }
 
-    // If there's a description and an editable component, set the display name
+    // Description becomes the editor display name. SCR_EditableEntityComponent
+    // has no m_sDisplayName member; vanilla prefabs carry the name on
+    // m_UIInfo SCR_EditableEntityUIInfo { Name } (2312 vanilla .et files).
     if (opts.description) {
-      const editableComp = componentNodes.find((c) => c.type === "SCR_EditableEntityComponent");
-      if (editableComp) {
-        editableComp.properties.push({
-          key: "m_sDisplayName",
-          value: opts.description,
-        });
-      } else {
-        // Add an editable entity component with the display name
-        const compGuid = generateGuid();
-        componentNodes.push(
-          createNode("SCR_EditableEntityComponent", {
-            id: `{${compGuid}}`,
-            properties: [{ key: "m_sDisplayName", value: opts.description }],
-          }),
-        );
+      const uiInfo = createNode("m_UIInfo", {
+        id: `{${generateGuid()}}`,
+        properties: [{ key: "Name", value: opts.description }],
+      });
+      uiInfo.className = "SCR_EditableEntityUIInfo";
+      let editableComp = componentNodes.find((c) => c.type === "SCR_EditableEntityComponent");
+      if (!editableComp) {
+        editableComp = createNode("SCR_EditableEntityComponent", { id: `{${generateGuid()}}` });
+        componentNodes.push(editableComp);
       }
+      editableComp.properties.push({ key: "m_UIInfo", value: uiInfo });
     }
 
     root.children.push(createNode("components", { children: componentNodes }));

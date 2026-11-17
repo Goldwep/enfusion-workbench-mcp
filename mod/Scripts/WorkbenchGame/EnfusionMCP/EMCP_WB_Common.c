@@ -8,6 +8,28 @@
 class EMCP_WB_Common
 {
 	//------------------------------------------------------------------------------------------------
+	//! Why no world is loaded in the World Editor, or "" when one is. The one check every W1 handler
+	//! makes before any engine call on the World Editor API beyond the reads below. A non-null API is
+	//! not enough: after a failed world load (W1.7 run of 2026-11-11, "can't load world") the API
+	//! exists with no world and GetNumSubScenes crashed Workbench (access violation in
+	//! EMCP_WB_World.State). Loaded means: a world path, or prefab edit mode, AND GetWorld non-null.
+	//! Only GetWorldPath, IsPrefabEditMode and GetWorld are called here (safe without a world).
+	static string NoWorldReason(WorldEditor worldEditor, WorldEditorAPI api)
+	{
+		if (!worldEditor)
+			return "the World Editor is not open: GetModule returned null";
+		if (!api)
+			return "the World Editor has no API: no world is open";
+		string worldPath = "";
+		api.GetWorldPath(worldPath);
+		if (worldPath == "" && !worldEditor.IsPrefabEditMode())
+			return "the World Editor has no world path: no world is loaded (the last load failed or is still running)";
+		if (!api.GetWorld())
+			return "GetWorld returned null: the world is not loaded";
+		return "";
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Linear scan of the editor entity list for an exact name match. Returns null when not found.
 	static IEntitySource FindEntityByName(WorldEditorAPI api, string name)
 	{

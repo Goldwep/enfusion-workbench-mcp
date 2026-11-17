@@ -99,10 +99,10 @@ describe("wb_build_data: argv (H9)", () => {
     const args = buildBuildDataArgs("PC", out, gp);
     expect(args[0]).toBe("-wbModule=ResourceManager");
     expect(args.slice(1, 4)).toEqual(["-buildData", "PC", out]);
-    const i = args.indexOf("-wbProjectPath");
+    const i = args.indexOf("-gproj");
     expect(args[i + 1]).toBe(gp);
-    expect(args.some((a) => a.startsWith("-wbProjectPath="))).toBe(false);
-    expect(args).toContain("-noPause");
+    expect(args.join(" ").toLowerCase()).not.toContain("wbprojectpath");
+    expect(args).not.toContain("-noPause");
   });
 
   it("the handler passes that argv as an array to runWorkbench (no shell)", async () => {

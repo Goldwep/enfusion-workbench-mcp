@@ -1,0 +1,25 @@
+{
+  "$comment": "L03 fixture, SYNTHETIC in the shape menus.py writes (sf-13 menus-sf-13.json keys) once L02's read_items descent lands: sf-13 read no item names (its Window items are one unnamed Menu). Item labels are the policy execute_action allow-list's Window labels plus one with no open dock; all [unverified] until the first L03 run.",
+  "schema": "emcp-uia-menus/1",
+  "provider": "fake",
+  "depth": 1,
+  "menus": [
+    {
+      "title": "Window",
+      "opened": true,
+      "collapsed": true,
+      "items": [
+        {
+          "controlType": "Menu",
+          "name": "",
+          "children": [
+            { "controlType": "MenuItem", "name": "Hierarchy", "enabled": true, "submenu": false },
+            { "controlType": "MenuItem", "name": "Log Console", "enabled": true, "submenu": false },
+            { "controlType": "MenuItem", "name": "Layers", "enabled": true, "submenu": false }
+          ]
+        }
+      ]
+    }
+  ],
+  "leftOpen": []
+}

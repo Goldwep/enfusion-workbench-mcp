@@ -5,7 +5,8 @@ export type ScriptType =
   | "action"
   | "entity"
   | "manager"
-  | "basic";
+  | "basic"
+  | "plugin";
 
 export interface ScriptOptions {
   /** Full class name including prefix (e.g., "TAG_MyComponent") */
@@ -20,7 +21,30 @@ export interface ScriptOptions {
   dynamicMethods?: string[];
   /** Description added as a comment at the top */
   description?: string;
+  /** plugin only: editor module written into wbModules (WorkbenchPlugin base); implied by the other bases. */
+  module?: string;
+  /** plugin only: shortcut in simple text form, e.g. "Ctrl+Shift+X". */
+  shortcut?: string;
+  /** plugin only: Font Awesome code point, a number or hex text like "0xF0C5". */
+  awesomeFontCode?: number | string;
 }
+
+/** Plugin and tool bases of scriptType "plugin" (parentClass), and the module each implies. */
+export const PLUGIN_PARENTS = {
+  WorkbenchPlugin: undefined,
+  WorldEditorPlugin: "WorldEditor",
+  ResourceManagerPlugin: "ResourceManager",
+  LocalizationEditorPlugin: "LocalizationEditor",
+  WorldEditorTool: "WorldEditor",
+} as const;
+
+/** Editor modules a WorkbenchPlugin may name in wbModules (the ones shipped plugins declare). */
+export const PLUGIN_MODULES = [
+  "WorldEditor",
+  "ResourceManager",
+  "ScriptEditor",
+  "LocalizationEditor",
+] as const;
 
 const DEFAULT_PARENTS: Record<ScriptType, string> = {
   modded: "", // must be provided
@@ -30,6 +54,7 @@ const DEFAULT_PARENTS: Record<ScriptType, string> = {
   entity: "GenericEntity",
   manager: "", // static class, no parent
   basic: "", // no parent
+  plugin: "WorkbenchPlugin",
 };
 
 const COMPONENT_METHODS = [
@@ -135,10 +160,104 @@ export function generateScript(opts: ScriptOptions): string {
     case "basic":
       lines.push(...generateBasic(opts.className, parent, effectiveMethods));
       break;
+    case "plugin":
+      lines.push(...generatePlugin(opts, parent));
+      break;
   }
 
   lines.push(""); // trailing newline
   return lines.join("\n");
+}
+
+/** Text safe inside an Enforce string literal on one line. */
+function quoteEnforce(text: string): string {
+  return `"${text.replace(/\s+/g, " ").trim().replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function formatFontCode(code: number | string): string {
+  const n =
+    typeof code === "number"
+      ? code
+      : /^(0x)?[0-9a-f]{1,5}$/i.test(code.trim())
+        ? parseInt(code.trim().replace(/^0x/i, ""), 16)
+        : NaN;
+  if (!Number.isInteger(n) || n < 1 || n > 0xfffff) {
+    throw new Error(`Invalid awesomeFontCode '${code}': use a Font Awesome code point like 0xF0C5`);
+  }
+  return `0x${n.toString(16).toUpperCase()}`;
+}
+
+function generatePlugin(opts: ScriptOptions, parent: string): string[] {
+  if (!Object.prototype.hasOwnProperty.call(PLUGIN_PARENTS, parent)) {
+    throw new Error(
+      `Invalid parentClass '${parent}' for a plugin: use ${Object.keys(PLUGIN_PARENTS).join(", ")}`,
+    );
+  }
+  const isTool = parent === "WorldEditorTool";
+  const implied = PLUGIN_PARENTS[parent as keyof typeof PLUGIN_PARENTS];
+  let wbModule: string | undefined = implied;
+  if (opts.module !== undefined) {
+    if (!(PLUGIN_MODULES as readonly string[]).includes(opts.module)) {
+      throw new Error(`Invalid module '${opts.module}': use ${PLUGIN_MODULES.join(", ")}`);
+    }
+    if (implied !== undefined && implied !== opts.module) {
+      throw new Error(
+        `A ${parent} always runs in ${implied}; module '${opts.module}' does not fit`,
+      );
+    }
+    wbModule = opts.module;
+  }
+
+  const args: string[] = [
+    `name: ${quoteEnforce(opts.className)}`,
+    `description: ${quoteEnforce(opts.description ?? "")}`,
+  ];
+  if (wbModule) args.push(`wbModules: {${quoteEnforce(wbModule)}}`);
+  if (opts.shortcut !== undefined) {
+    if (!/^[A-Za-z0-9+ ]{1,40}$/.test(opts.shortcut)) {
+      throw new Error(`Invalid shortcut '${opts.shortcut}': use text like "Ctrl+Shift+X"`);
+    }
+    args.push(`shortcut: ${quoteEnforce(opts.shortcut)}`);
+  }
+  if (opts.awesomeFontCode !== undefined) {
+    args.push(`awesomeFontCode: ${formatFontCode(opts.awesomeFontCode)}`);
+  }
+
+  const attribute = isTool ? "WorkbenchToolAttribute" : "WorkbenchPluginAttribute";
+  const lines: string[] = ["#ifdef WORKBENCH", `[${attribute}(${args.join(", ")})]`];
+  lines.push(`class ${opts.className} : ${parent}`, "{");
+  lines.push(
+    '  [Attribute(defvalue: "1", desc: "Sample setting, shown in the dialog or tool panel")]',
+    "  bool m_bSample;",
+    "",
+  );
+  if (isTool) {
+    lines.push(
+      "  override void OnActivate()",
+      "  {",
+      "    // Called when the tool is selected; its settings and buttons show in the Current Tool panel",
+      "  }",
+    );
+  } else {
+    lines.push(
+      "  override void Run()",
+      "  {",
+      "    // A plugin with an empty Run() is hidden from the Plugins menu, so show the dialog here",
+      `    Workbench.ScriptDialog(${quoteEnforce(opts.className)}, "", this);`,
+      "  }",
+    );
+  }
+  lines.push(
+    "",
+    '  [ButtonAttribute("Run")]',
+    "  void RunButton()",
+    "  {",
+    "    // The work goes here",
+    "  }",
+    "}",
+    "#endif",
+  );
+  return lines;
 }
 
 function generateModded(className: string, parent: string, methods?: string[]): string[] {
@@ -384,10 +503,9 @@ function extractParamNames(sig: string): string {
  * Scripts must be in the right folder or they're silently ignored.
  */
 export function getScriptModuleFolder(scriptType: ScriptType): string {
-  // All standard mod scripts go in Scripts/Game/
-  // WorkbenchGame/ is only for editor plugins
-  // GameLib/ is for engine extensions (rare)
-  return "Scripts/Game";
+  // Standard mod scripts go in Scripts/Game/; editor plugins and tools in
+  // Scripts/WorkbenchGame/. GameLib/ is for engine extensions (rare).
+  return scriptType === "plugin" ? "Scripts/WorkbenchGame" : "Scripts/Game";
 }
 
 /**

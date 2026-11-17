@@ -1,11 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { dirname } from "node:path";
 import type { Config } from "../config.js";
 import type { WorkbenchClient } from "../workbench/client.js";
-import { resolveGameDataPath, findLooseFile, resolveAddonDir } from "../utils/game-paths.js";
+import { resolveGameDataPath, findLooseFile } from "../utils/game-paths.js";
+import { resolveAddonRoot } from "../utils/addon-root.js";
+import { PakVirtualFS } from "../pak/vfs.js";
 import { validateProjectPath } from "../utils/safe-path.js";
+import { registerProjectFile } from "./wb-resources.js";
 import { requireEditMode, formatConnectionStatus } from "../workbench/status.js";
 import { isHandlerError, handlerErrorMessage, modeGateResponse } from "../workbench/response.js";
 
@@ -14,7 +17,8 @@ import { isHandlerError, handlerErrorMessage, modeGateResponse } from "../workbe
  *
  * Workflow:
  *   1. Ask Workbench for the entity's ancestor prefab path (e.g. "{GUID}Prefabs/Vehicles/...")
- *   2. Find that file in the game's loose files and copy it to destPath in the mod
+ *   2. Find that file (extracted library, loose game files, then the .pak archives, as
+ *      game_duplicate does) and copy its bytes to destPath in the mod
  *   3. RegisterResourceFile → Workbench assigns a new GUID via .meta
  *   4. Optionally delete the original and place the new copy
  */
@@ -27,35 +31,13 @@ export function registerWbEntityDuplicate(
     "wb_entity_duplicate",
     {
       description:
-        "Duplicate a scene entity (including locked base-game prefab instances) into your mod folder, " +
-        "assigning it a new resource GUID. Mirrors the TC_BatchCreatePrefabsPlugin workflow: " +
-        "saves the entity as a standalone .et prefab, registers it with Workbench, then replaces " +
-        "the original scene entity with the new duplicate. " +
-        "Use this after placing a base-game prefab in the scene to make it editable.",
+        "Save a placed entity (base-game instances too) as a new .et in your addon with a new GUID, " +
+        "register it, and by default replace the original in the scene, making it editable.",
       inputSchema: {
-        entityName: z
-          .string()
-          .describe("Name of the entity already placed in the scene (e.g. 'MyM998_01')"),
-        destPath: z
-          .string()
-          .describe(
-            "Destination path within your mod folder, relative to the addon root " +
-              "(e.g. 'Prefabs/Vehicles/MyCustomM998.et'). Must end in .et",
-          ),
-        modName: z
-          .string()
-          .optional()
-          .describe(
-            "Addon folder name under ENFUSION_PROJECT_PATH (e.g. 'MyMod'). " +
-              "If omitted, the first addon found in the project path is used.",
-          ),
-        replaceInScene: z
-          .boolean()
-          .default(true)
-          .describe(
-            "If true (default), delete the original entity and place the new duplicate. " +
-              "If false, only save the prefab file without touching the scene.",
-          ),
+        entityName: z.string().describe("entity placed in the scene"),
+        destPath: z.string().describe("addon-relative .et path"),
+        modName: z.string().optional().describe("addon folder; default the first found"),
+        replaceInScene: z.boolean().default(true).describe("false: only write the prefab file"),
       },
     },
     async ({ entityName, destPath, modName, replaceInScene }) => {
@@ -64,24 +46,20 @@ export function registerWbEntityDuplicate(
         return modeGateResponse(modeErr, client);
       }
 
-      // Resolve addon directory
-      const addonDir = resolveAddonDir(config.projectPath, modName ?? config.defaultMod);
-      if (!addonDir) {
+      // Resolve the addon directory (ENFUSION_PROJECT_PATH is the addons folder; src/utils/addon-root.ts)
+      const addon = resolveAddonRoot(config, { modName, firstIfSeveral: true });
+      if (!addon.ok) {
         return {
           content: [
             {
               type: "text",
-              text:
-                "Could not find addon directory. " +
-                (modName
-                  ? `'${modName}' not found under ${config.projectPath}`
-                  : `No addons found under ${config.projectPath}`) +
-                ". Provide modName matching the addon folder name.",
+              text: `Could not find addon directory: ${addon.message}. Provide modName matching the addon folder name.`,
             },
           ],
           isError: true,
         };
       }
+      const addonDir = addon.root;
 
       // Check destination doesn't already exist
       const absDestPath = validateProjectPath(addonDir, destPath.replace(/\\/g, "/"));
@@ -92,12 +70,13 @@ export function registerWbEntityDuplicate(
         };
       }
 
-      // Step 1: Get the ancestor prefab path from Workbench
+      // Step 1: Get the ancestor prefab path from Workbench. The W1 handler takes an entity
+      // reference (DEC-061), not the 1.x entityName key.
       const ancestorResp = await client.call<{
         status: string;
         message?: string;
         ancestorPath?: string;
-      }>("EMCP_WB_Prefabs", { action: "getAncestor", entityName });
+      }>("EMCP_WB_Prefabs", { action: "getAncestor", entity: `name:${entityName}` });
 
       if (ancestorResp.status !== "ok" || !ancestorResp.ancestorPath) {
         return {
@@ -114,32 +93,18 @@ export function registerWbEntityDuplicate(
       // ancestorPath is like "{GUID}Prefabs/Vehicles/Wheeled/BTR70/BTR70.et"
       const bareAncestorPath = ancestorResp.ancestorPath.replace(/^\{[0-9A-Fa-f]{16}\}/, "");
 
-      // Step 2: Find and copy the source file from game's loose files
-      const gameDataPath = resolveGameDataPath(config.gamePath);
-      if (!gameDataPath) {
-        return {
-          content: [{ type: "text", text: `Base game not found at ${config.gamePath}.` }],
-          isError: true,
-        };
+      // Step 2: Find the source file (a stock install ships the prefabs packed) and copy its bytes
+      const source = locateAncestorSource(config, bareAncestorPath);
+      if ("error" in source) {
+        return { content: [{ type: "text", text: source.error }], isError: true };
       }
-
-      const sourceFile = findLooseFile(gameDataPath, bareAncestorPath);
-      if (!sourceFile) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Source file not found in game data: ${bareAncestorPath}\nSearched under: ${gameDataPath}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+      const sourceFile = source.label;
 
       try {
-        const content = readFileSync(sourceFile, "utf-8");
+        // A byte copy (no UTF-8 round trip), created exclusively: an existing file is never replaced.
+        const content = source.read();
         mkdirSync(dirname(absDestPath), { recursive: true });
-        writeFileSync(absDestPath, content, "utf-8");
+        writeFileSync(absDestPath, content, { flag: "wx" });
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return {
@@ -150,19 +115,16 @@ export function registerWbEntityDuplicate(
 
       // Step 3: Register the file with Workbench → assigns new GUID via .meta
       if (!existsSync(absDestPath + ".meta")) {
-        const regResp = await client.call<{ status: string; message?: string }>(
-          "EMCP_WB_Resources",
-          { action: "register", path: absDestPath, buildRuntime: false },
-          { timeout: 30000 },
-        );
+        // EMCP_WB_Resources register (W2): project-relative path, written only with confirm.
+        const reg = await registerProjectFile(client, addonDir, absDestPath);
 
-        if (regResp.status !== "ok") {
+        if (!reg.ok) {
           return {
             content: [
               {
                 type: "text",
                 text:
-                  `Prefab saved but registration failed: ${regResp.message ?? JSON.stringify(regResp)}\n` +
+                  `Prefab saved but registration failed: ${reg.message}\n` +
                   `File at: ${absDestPath}\nRegister manually in Workbench Resource Browser.`,
               },
             ],
@@ -193,10 +155,10 @@ export function registerWbEntityDuplicate(
         };
       }
 
-      // Step 5: Read the entity's current transform BEFORE touching the scene.
-      // If the position cannot be read, ABORT here — never create a copy at the
-      // origin and never delete the original on a guess.
-      const transform = await readEntityTransform(client, entityName);
+      // Step 5: Read the entity's world transform and parent BEFORE touching the scene
+      // (wb_entity get: IEntity.GetOrigin, not the source's parent-local coords). If it cannot be
+      // read, ABORT here — never create a copy at the origin and never delete the original on a guess.
+      const transform = await readEntityPlacement(client, entityName);
       if (!transform) {
         return {
           content: [
@@ -208,9 +170,30 @@ export function registerWbEntityDuplicate(
                   `- Saved to: ${absDestPath}`,
                   `- GUID: ${newGuid ?? "(read .meta manually)"}`,
                   `- Reference: ${prefabRef}`,
-                  `- Could not read the world position of "${entityName}" (getWorldTransform/getProperty both failed).`,
+                  `- Could not read the world position of "${entityName}" (EMCP_WB_Entity get failed).`,
                   `- Original entity "${entityName}" was NOT deleted and no copy was placed.`,
-                  `- Place manually with wb_entity_create using the reference above, then delete the original.`,
+                  "- Place manually with wb_entity_create using the reference above, then delete the original.",
+                ].join("\n") + formatConnectionStatus(client),
+            },
+          ],
+          isError: true,
+        };
+      }
+      if (transform.parentId || transform.parentName) {
+        // The copy is created at top level (CreateEntity takes no parent): replacing a child
+        // would move it out of its parent's hierarchy.
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text:
+                [
+                  "**Prefab saved, but scene was NOT modified**",
+                  `- Saved to: ${absDestPath}`,
+                  `- GUID: ${newGuid ?? "(read .meta manually)"}`,
+                  `- Reference: ${prefabRef}`,
+                  `- "${entityName}" is a child of ${transform.parentName || transform.parentId}; the copy would be placed at top level, so no copy was placed and the original was NOT deleted.`,
+                  "- Place the reference under the same parent with wb_entity create (parent), then delete the original.",
                 ].join("\n") + formatConnectionStatus(client),
             },
           ],
@@ -273,10 +256,15 @@ export function registerWbEntityDuplicate(
         };
       }
 
-      // Verify the copy landed where the original is. Only then is it safe to
-      // delete the original. The handler echoes the parsed position back.
-      const placedAt = typeof createResp.position === "string" ? createResp.position : null;
-      if (!placedAt || !positionsMatch(placedAt, position)) {
+      // Verify the copy landed where the original is: read the created entity back (its world
+      // origin), never the create answer's position. Only then is it safe to delete the original.
+      const copyName =
+        typeof createResp.entityName === "string" && createResp.entityName
+          ? createResp.entityName
+          : newName;
+      const placed = await readEntityPlacement(client, copyName);
+      const placedAt = placed ? placed.position : null;
+      if (!placed || placed.parentId || placed.parentName || !positionsMatch(placed.position, position)) {
         return {
           content: [
             {
@@ -287,8 +275,8 @@ export function registerWbEntityDuplicate(
                   `- Saved to: ${absDestPath}`,
                   `- GUID: ${newGuid ?? "(read .meta manually)"}`,
                   `- Requested position: ${position}`,
-                  `- Handler reported: ${placedAt ?? "(no position in response)"}`,
-                  `- New entity placed as: ${newName}`,
+                  `- Read back: ${placedAt ?? "(the copy could not be read back)"}`,
+                  `- New entity placed as: ${copyName}`,
                   `- Original entity "${entityName}" was left in place. Verify in Workbench, then delete one manually.`,
                 ].join("\n") + formatConnectionStatus(client),
             },
@@ -352,6 +340,35 @@ export function registerWbEntityDuplicate(
   );
 }
 
+/**
+ * Where the ancestor prefab's bytes come from, in game_duplicate's order: the extracted library,
+ * the game's loose files, then the .pak archives (1.9.0.37 ships paks only). `label` names the
+ * source for the reply; `read` returns the raw bytes.
+ */
+export function locateAncestorSource(
+  config: Pick<Config, "gamePath" | "extractedPath">,
+  barePath: string,
+): { label: string; read: () => Buffer } | { error: string } {
+  if (config.extractedPath && existsSync(config.extractedPath)) {
+    const f = findLooseFile(config.extractedPath, barePath);
+    if (f) return { label: f, read: () => readFileSync(f) };
+  }
+  const gameDataPath = resolveGameDataPath(config.gamePath);
+  if (!gameDataPath) return { error: `Base game not found at ${config.gamePath}.` };
+  const loose = findLooseFile(gameDataPath, barePath);
+  if (loose) return { label: loose, read: () => readFileSync(loose) };
+  const vfs = PakVirtualFS.get(config.gamePath);
+  if (vfs && vfs.exists(barePath)) {
+    return { label: `${barePath} (.pak archive)`, read: () => vfs.readFile(barePath) };
+  }
+  return {
+    error:
+      `Source file not found in game data: ${barePath}\n` +
+      (config.extractedPath ? `Searched extracted library: ${config.extractedPath}\n` : "") +
+      `Searched loose files under ${gameDataPath} and the .pak archives under ${config.gamePath}`,
+  };
+}
+
 /** Parse an "x y z" vector string; null when it is not three finite numbers. */
 export function parseVec3(s: string): [number, number, number] | null {
   const parts = s.trim().split(/\s+/);
@@ -370,50 +387,34 @@ export function positionsMatch(a: string, b: string, tolerance = 0.01): boolean 
 }
 
 /**
- * Read an entity's world position (+ rotation when available).
- *
- * Primary: ModifyEntity getWorldTransform → properties[{name:"position"|"rotation", value}].
- * Fallback: ModifyEntity getProperty coords → the value comes back in `message`
- * (the handler has no `value` key — that misread was H1).
- * Returns null when no valid position could be read; callers must abort.
+ * Read an entity's world position, rotation and parent through EMCP_WB_Entity get (W1): `coords`
+ * and `angles` are the runtime entity's GetOrigin and GetAngles (world space), `parentId` is empty
+ * for a top-level entity. Returns null when no valid position could be read; callers must abort.
  */
-export async function readEntityTransform(
+export async function readEntityPlacement(
   client: WorkbenchClient,
   entityName: string,
-): Promise<{ position: string; rotation?: string } | null> {
+): Promise<{ position: string; rotation?: string; parentId: string; parentName: string } | null> {
   try {
-    const tr = await client.call<Record<string, unknown>>("EMCP_WB_ModifyEntity", {
-      action: "getWorldTransform",
-      name: entityName,
+    const r = await client.call<Record<string, unknown>>("EMCP_WB_Entity", {
+      action: "get",
+      entity: `name:${entityName}`,
     });
-    if (!isHandlerError(tr) && Array.isArray(tr.properties)) {
-      const props = tr.properties as Record<string, unknown>[];
-      const pos = props.find((p) => p.name === "position");
-      const rot = props.find((p) => p.name === "rotation");
-      const posVal = typeof pos?.value === "string" ? pos.value.trim() : "";
-      if (parseVec3(posVal)) {
-        const rotVal = typeof rot?.value === "string" ? rot.value.trim() : "";
-        return parseVec3(rotVal) ? { position: posVal, rotation: rotVal } : { position: posVal };
-      }
-    }
+    if (r.status !== "ok") return null;
+    const pos = typeof r.coords === "string" ? r.coords.trim() : "";
+    if (!parseVec3(pos)) return null;
+    const rot = typeof r.angles === "string" ? r.angles.trim() : "";
+    const parentId = typeof r.parentId === "string" ? r.parentId : "";
+    const parentName = typeof r.parentName === "string" ? r.parentName : "";
+    return {
+      position: pos,
+      ...(parseVec3(rot) ? { rotation: rot } : {}),
+      parentId,
+      parentName,
+    };
   } catch {
-    // fall through to getProperty
+    return null;
   }
-
-  try {
-    const gp = await client.call<Record<string, unknown>>("EMCP_WB_ModifyEntity", {
-      action: "getProperty",
-      name: entityName,
-      propertyKey: "coords",
-    });
-    if (!isHandlerError(gp) && typeof gp.message === "string") {
-      const val = gp.message.trim();
-      if (parseVec3(val)) return { position: val };
-    }
-  } catch {
-    // no position available
-  }
-  return null;
 }
 
 /** Read the GUID from a Workbench .meta file. Returns null if not found. */

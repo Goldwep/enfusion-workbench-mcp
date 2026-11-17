@@ -1,0 +1,61 @@
+{
+  "$comment": "SYNTHETIC L04 fixture (no live source): the shape an owner-opened Appendix B list 1 dialog (Login) is expected to have. Placeholders only; never a real walk.",
+  "schema": "emcp-uia-walk/1",
+  "completed": true,
+  "partial": false,
+  "sampling": { "applied": [] },
+  "target": { "className": "Qt683QWindowIcon", "title": "Login" },
+  "tree": {
+    "controlType": "Window",
+    "name": "Login",
+    "automationId": "Arma4WorkbenchApp.LoginDialog",
+    "className": "LoginDialog",
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "children": [
+          { "controlType": "Button", "name": "Close", "automationId": "Close", "className": "" }
+        ]
+      },
+      {
+        "controlType": "Text",
+        "name": "User name",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QLabel",
+        "className": "QLabel"
+      },
+      {
+        "controlType": "Edit",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QLineEdit",
+        "className": "QLineEdit"
+      },
+      {
+        "controlType": "Text",
+        "name": "Password",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QLabel",
+        "className": "QLabel"
+      },
+      {
+        "controlType": "Edit",
+        "name": "",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QLineEdit",
+        "className": "QLineEdit"
+      },
+      {
+        "controlType": "Button",
+        "name": "Login",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QPushButton",
+        "className": "QPushButton"
+      },
+      {
+        "controlType": "Button",
+        "name": "Cancel",
+        "automationId": "Arma4WorkbenchApp.LoginDialog.QPushButton",
+        "className": "QPushButton"
+      }
+    ]
+  }
+}

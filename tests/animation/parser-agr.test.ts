@@ -120,3 +120,34 @@ describe("parseAgrToStruct", () => {
     expect(result.defaultRunNode).toBeNull();
   });
 });
+
+describe("parseAgrToStruct on the 1.9 layout (CST reader)", () => {
+  const AGR = `AnimSrcGraph {
+ ControlTemplate AnimSrcGCT "{667283173DEFA51C}" {
+  Variables {
+   AnimSrcGCTVarString Label {
+   }
+  }
+  BoneMasks {
+   AnimSrcGCTBoneMask Upper {
+    Bones {
+     "spine1"
+     "spine2"
+    }
+   }
+  }
+ }
+ DefaultRunNode "MasterControl"
+}`;
+
+  it("reads String variables, Bones masks and the absence of GlobalTags", () => {
+    const r = parseAgrToStruct(AGR);
+    expect(r.variables).toEqual([
+      { name: "Label", type: "String", min: null, max: null, defaultValue: null },
+    ]);
+    expect(r.boneMasks).toEqual([{ name: "Upper", bones: ["spine1", "spine2"] }]);
+    expect(r.hasGlobalTags).toBe(false);
+    expect(r.globalTags).toEqual([]);
+    expect(r.defaultRunNode).toBe("MasterControl");
+  });
+});

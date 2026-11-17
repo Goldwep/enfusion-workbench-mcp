@@ -1,0 +1,7 @@
+MetaFileClass {
+ Name "{E2AA11BB22CC33DD}configs/test.conf"
+ Configurations {
+  ConfigResourceClass PC {
+  }
+ }
+}

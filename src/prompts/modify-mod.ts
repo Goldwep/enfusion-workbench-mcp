@@ -62,7 +62,7 @@ Follow this workflow — every step is mandatory:
    b. **wb_play** — This compiles ALL scripts (including the handler scripts) and enters game mode. This is the FIRST compilation step and MUST happen before wb_reload will work.
    c. **wb_stop** — Return to the World Editor after verifying the game launched successfully
    d. If compilation failed, fix with **project_write**, then use **wb_reload** (target: "scripts") to recompile, and try **wb_play** again
-   e. **wb_resources** (action: "register") — Register any new prefabs, configs, or layouts
+   e. **wb_resources** (action: "register", confirm: true; a dry run without it) — Register any new prefabs, configs, or layouts
 
 8. **wb_play** again if needed for further testing. Use **wb_stop** to return to editor.
 

@@ -1,49 +1,39 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WorkbenchClient } from "../workbench/client.js";
-import { formatConnectionStatus } from "../workbench/status.js";
-import { isHandlerError, handlerErrorResponse } from "../workbench/response.js";
+import { routeAlias } from "../manifest/aliases.js";
+import { runScripts, toToolResult, type ScriptsArgs } from "./wb-scripts.js";
 
+/**
+ * `wb_reload` — alias of `wb_scripts reload` (aliases.ts). The 1.x `target`
+ * moves to `scope`; only `scripts` has a native (ReloadScripts), so
+ * `plugins` and `both` are refused with INVALID_ARGUMENT.
+ */
 export function registerWbReload(server: McpServer, client: WorkbenchClient): void {
   server.registerTool(
     "wb_reload",
     {
       description:
-        "Reload scripts or plugins in the Workbench. Use after editing .c script files or Workbench plugins to pick up changes without restarting.",
+        "Alias of wb_scripts reload: ReloadScripts, then a re-ping.\n" +
+        "Mutating: reloads the scripts; refused while a mutating call is pending; a failed reload keeps the old handlers.",
       inputSchema: {
         target: z
           .enum(["scripts", "plugins", "both"])
           .default("scripts")
-          .describe("What to reload: scripts, plugins, or both"),
+          .describe("Only 'scripts' is supported"),
+      },
+      annotations: {
+        title: "Reload scripts",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
       },
     },
     async ({ target }) => {
-      try {
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_Reload", { target });
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, `Error reloading ${target}`);
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Reload Complete**\n\n${result.message || "Reload triggered."}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error reloading: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+      const routed = routeAlias("wb_reload", { target });
+      if (!routed) throw new Error("wb_reload alias is not routed");
+      return toToolResult(await runScripts(client, routed.args as unknown as ScriptsArgs));
     },
   );
 }

@@ -1,0 +1,83 @@
+{
+  "_note": "FAKE L02 lines for the L17 test: the menu title shape is menus-sf-13.json title 4 (sha above); the item labels are placeholders because sf-13 read no items.",
+  "lines": [
+    {
+      "dim": "ui",
+      "kind": "menu",
+      "module": "ResourceManager",
+      "key": {
+        "path": ["Utilities"]
+      },
+      "parent_key": null,
+      "origin": "vanilla",
+      "label": "Utilities",
+      "label_raw": "Utilities",
+      "locator": {
+        "menuPath": ["Utilities"],
+        "controlType": "MenuItem",
+        "windowClass": "Qt683QWindowIcon"
+      },
+      "observed_state": {},
+      "ref": "artifact:1e929f2d8f97fc025c023b5575c85feb8dcad73fcedce450c4f9b03f978f8276#m/Utilities",
+      "confidence": "high"
+    },
+    {
+      "dim": "ui",
+      "kind": "menu-item",
+      "module": "ResourceManager",
+      "key": {
+        "path": ["Utilities", "Generate GUID"]
+      },
+      "parent_key": {
+        "dim": "ui",
+        "kind": "menu",
+        "module": "ResourceManager",
+        "key": {
+          "path": ["Utilities"]
+        }
+      },
+      "origin": "vanilla",
+      "label": "Generate GUID",
+      "label_raw": "Generate GUID",
+      "locator": {
+        "menuPath": ["Utilities", "Generate GUID"],
+        "controlType": "MenuItem",
+        "windowClass": "Qt683QWindowIcon"
+      },
+      "observed_state": {},
+      "risk_hint": "safe",
+      "modal": "none",
+      "ref": "artifact:1e929f2d8f97fc025c023b5575c85feb8dcad73fcedce450c4f9b03f978f8276#m/Utilities/Generate GUID",
+      "confidence": "high"
+    },
+    {
+      "dim": "ui",
+      "kind": "menu-item",
+      "module": "ResourceManager",
+      "key": {
+        "path": ["Utilities", "Qt Introspection Tool"]
+      },
+      "parent_key": {
+        "dim": "ui",
+        "kind": "menu",
+        "module": "ResourceManager",
+        "key": {
+          "path": ["Utilities"]
+        }
+      },
+      "origin": "vanilla",
+      "label": "Qt Introspection Tool",
+      "label_raw": "Qt Introspection Tool",
+      "locator": {
+        "menuPath": ["Utilities", "Qt Introspection Tool"],
+        "controlType": "MenuItem",
+        "windowClass": "Qt683QWindowIcon"
+      },
+      "observed_state": {},
+      "risk_hint": "safe",
+      "modal": "none",
+      "ref": "artifact:1e929f2d8f97fc025c023b5575c85feb8dcad73fcedce450c4f9b03f978f8276#m/Utilities/Qt Introspection Tool",
+      "confidence": "high"
+    }
+  ]
+}

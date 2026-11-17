@@ -166,14 +166,64 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 	// Finds a component on the entity by class name, or null.
 	static IEntityComponentSource FindComponentByClass(IEntitySource entSrc, string className)
 	{
+		int compIdx = FindComponentIndexByClass(entSrc, className);
+		if (compIdx < 0)
+			return null;
+		return entSrc.GetComponent(compIdx);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// Index (GetComponent order) of the first component of the given class on the entity, or -1.
+	static int FindComponentIndexByClass(IEntitySource entSrc, string className)
+	{
 		int compCount = entSrc.GetComponentCount();
 		for (int ci = 0; ci < compCount; ci++)
 		{
 			IEntityComponentSource c = entSrc.GetComponent(ci);
 			if (c && c.GetClassName() == className)
-				return c;
+				return ci;
 		}
-		return null;
+		return -1;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// The engine path for a write through the entity (SetVariableValue, ClearVariableValue,
+	// ChangeObjectClass). A first segment that names a component class on the entity becomes
+	// ContainerIdPathEntry("components", index), the form Bohemia's code uses; U13 (DEC-045,
+	// EV-S-E-042) wrote and read back components[24] on the base character with the index from
+	// GetComponent order. Every other path goes through BuildPathEntries unchanged, so
+	// "components[i]" and plain property paths keep working. KD-008, fixed here.
+	static array<ref ContainerIdPathEntry> BuildEntityPathEntries(IEntitySource entSrc, string propertyPath)
+	{
+		if (propertyPath == "")
+			return null;
+
+		string head = propertyPath;
+		string rest = "";
+		int dot = propertyPath.IndexOf(".");
+		if (dot > -1)
+		{
+			head = propertyPath.Substring(0, dot);
+			rest = propertyPath.Substring(dot + 1, propertyPath.Length() - dot - 1);
+		}
+		if (head.IndexOf("[") > -1)
+			return BuildPathEntries(propertyPath);
+
+		int compIdx = FindComponentIndexByClass(entSrc, head);
+		if (compIdx < 0)
+			return BuildPathEntries(propertyPath);
+
+		array<ref ContainerIdPathEntry> entries = {};
+		entries.Insert(new ContainerIdPathEntry("components", compIdx));
+		array<ref ContainerIdPathEntry> tail = BuildPathEntries(rest);
+		if (tail)
+		{
+			for (int t = 0; t < tail.Count(); t++)
+			{
+				entries.Insert(tail[t]);
+			}
+		}
+		return entries;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -371,7 +421,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 				return resp;
 			}
 
-			array<ref ContainerIdPathEntry> pathEntries = BuildPathEntries(req.propertyPath);
+			array<ref ContainerIdPathEntry> pathEntries = BuildEntityPathEntries(entSrc, req.propertyPath);
 
 			api.BeginEntityAction("Set property via NetAPI");
 			bool result = api.SetVariableValue(entSrc, pathEntries, req.propertyKey, req.value);
@@ -397,7 +447,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 				return resp;
 			}
 
-			array<ref ContainerIdPathEntry> pathEntries = BuildPathEntries(req.propertyPath);
+			array<ref ContainerIdPathEntry> pathEntries = BuildEntityPathEntries(entSrc, req.propertyPath);
 
 			api.BeginEntityAction("Clear property via NetAPI");
 			bool result = api.ClearVariableValue(entSrc, pathEntries, req.propertyKey);
@@ -747,7 +797,7 @@ class EMCP_WB_ModifyEntity : NetApiHandler
 				fullPath += ".";
 			fullPath += req.propertyKey;
 
-			array<ref ContainerIdPathEntry> pathEntries = BuildPathEntries(fullPath);
+			array<ref ContainerIdPathEntry> pathEntries = BuildEntityPathEntries(entSrc, fullPath);
 
 			api.BeginEntityAction("Set object class via NetAPI");
 			bool result = api.ChangeObjectClass(entSrc, pathEntries, req.value);

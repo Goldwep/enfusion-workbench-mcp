@@ -2,12 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WorkbenchClient } from "../workbench/client.js";
 import { formatConnectionStatus } from "../workbench/status.js";
-import {
-  isHandlerError,
-  handlerErrorResponse,
-  handlerErrorMessage,
-} from "../workbench/response.js";
-import { openResourceFailed } from "./wb-editor.js";
+import { isHandlerError, handlerErrorResponse } from "../workbench/response.js";
 
 /**
  * Render the `list` response. The shape returned by the built-in
@@ -60,64 +55,64 @@ export function formatLoadedProjects(result: Record<string, unknown>): string {
   return lines.join("\n");
 }
 
+/**
+ * True for an in-payload failure from either handler family. Bohemia's NET
+ * handlers (LocateProject, LocatePrefabsFromPath, GetPrefabGUID) report
+ * failure as `status: "ERROR"` in upper case, which `isHandlerError` does not
+ * match; the EMCP_WB_* handlers use lower-case `"error"`.
+ */
+export function isBiHandlerError(result: unknown): boolean {
+  if (isHandlerError(result)) return true;
+  if (typeof result !== "object" || result === null) return false;
+  const status = (result as Record<string, unknown>).status;
+  return typeof status === "string" && status.toUpperCase() === "ERROR";
+}
+
+/**
+ * Why `open` refuses (live-tools-b-3): the only call it had, EditorControl openResource, hands a
+ * .gproj to the Resource Manager (ResourceManager.SetOpenedResource), which neither loads nor
+ * switches the project, and nothing reads back that a project was loaded. A running Workbench
+ * loads its project at launch; wb_launch gprojPath is the route that opens one.
+ */
+export const OPEN_REFUSAL =
+  "**Project NOT opened**: wb_projects open cannot load or switch a project in a running Workbench. " +
+  "The NET API has no project-switch call; opening a .gproj as a resource only selects it in the " +
+  "Resource Manager. Nothing was sent.\n\n" +
+  "To work on another project: save your work, close Workbench, then wb_launch gprojPath:<the .gproj>. " +
+  "wb_projects list shows the projects loaded now.";
+
 export function registerWbProjects(server: McpServer, client: WorkbenchClient): void {
   server.registerTool(
     "wb_projects",
     {
       description:
-        "Query project information from the Workbench. List all loaded addon projects, locate a specific project by name, or open a .gproj to load it into Workbench.",
+        "Query project information from the Workbench. List all loaded addon projects, or find which loaded addon contains an absolute path (locate; not verified live). open refuses: a running Workbench cannot switch project; use wb_launch gprojPath.",
       inputSchema: {
         action: z
           .enum(["list", "locate", "open"])
           .describe(
-            "Action: list (all loaded projects), locate (find specific project path), or open (load a .gproj into Workbench)",
+            "Action: list (all loaded projects), locate (name + root path of the loaded addon that contains an absolute path), or open (refused; it says how to open a project: wb_launch)",
           ),
         name: z
           .string()
           .optional()
           .describe(
-            "Project/addon name to locate (required for locate action), or .gproj file path (required for open action)",
+            "For locate (required): an absolute file or folder path inside a loaded addon; Bohemia's LocateProject takes a path, not an addon name. For open: ignored",
           ),
       },
     },
     async ({ action, name }) => {
       try {
         if (action === "open") {
-          if (!name) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: "Error: `name` is required for the open action. Provide the .gproj file path or addon name.",
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          const result = await client.call<Record<string, unknown>>("EMCP_WB_EditorControl", {
-            action: "openResource",
-            path: name,
-          });
-          if (openResourceFailed(result)) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**Project NOT opened**: ${name}\n${handlerErrorMessage(result)}${formatConnectionStatus(client)}`,
-                },
-              ],
-              isError: true,
-            };
-          }
-
+          // Nothing is sent: no supported call switches the project (OPEN_REFUSAL).
           return {
             content: [
               {
                 type: "text" as const,
-                text: `**Project Opened**\n\nLoaded: ${name}${result.message ? `\n${result.message}` : ""}${formatConnectionStatus(client)}`,
+                text: `${OPEN_REFUSAL}${name ? `\nRequested: ${name}` : ""}${formatConnectionStatus(client)}`,
               },
             ],
+            isError: true,
           };
         }
 
@@ -134,19 +129,28 @@ export function registerWbProjects(server: McpServer, client: WorkbenchClient): 
             };
           }
 
+          // Bohemia's LocateProject declares one request field, `path` (an
+          // absolute path), and answers { status, message, projectName,
+          // projectPath } for the loaded addon that contains it
+          // (AssetLibraryUtils.c:53-78, 80-108). Not verified live.
           const result = await client.call<Record<string, unknown>>("LocateProject", {
-            name,
+            path: name,
           });
-          if (isHandlerError(result)) {
-            return handlerErrorResponse(result, client, `Error locating project "${name}"`);
+          if (isBiHandlerError(result)) {
+            return handlerErrorResponse(
+              result,
+              client,
+              `Error locating project containing "${name}" (locate needs an absolute path inside a loaded addon)`,
+            );
           }
 
-          const path = result.path || result.projectPath || "(not found)";
+          const projectName = result.projectName || "(not reported)";
+          const projectPath = result.projectPath || "(not reported)";
           return {
             content: [
               {
                 type: "text" as const,
-                text: `**Project Located**\n\n- **Name:** ${name}\n- **Path:** ${path}${result.guid ? `\n- **GUID:** ${result.guid}` : ""}${formatConnectionStatus(client)}`,
+                text: `**Project Located**\n\n- **Queried path:** ${name}\n- **Project:** ${projectName}\n- **Project path:** ${projectPath}\n\n_Not verified live._${formatConnectionStatus(client)}`,
               },
             ],
           };

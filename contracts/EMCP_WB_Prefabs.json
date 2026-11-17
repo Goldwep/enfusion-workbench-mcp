@@ -1,0 +1,551 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Prefabs",
+  "tool": "wb_prefabs",
+  "purpose": "Prefabs and prefab edit mode.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Prefabs.c",
+  "request": [
+    "action",
+    "entity",
+    "path",
+    "confirm",
+    "member",
+    "entities",
+    "parent",
+    "convertTransform",
+    "prefab"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "ancestorPath",
+    "resourceName",
+    "dryRun",
+    "savedPath",
+    "prefabEdit",
+    "rootId",
+    "memberCount",
+    "added",
+    "undoName",
+    "removed",
+    "moved"
+  ],
+  "actions": [
+    {
+      "name": "getAncestor",
+      "summary": "Prefab an entity inherits from",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:<hex> | name:<n> | index:<i>"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "ancestorPath",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "createTemplate",
+      "summary": "Entity to a new .et; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:<hex> | name:<n> | index:<i>"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "new project-relative .et"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "save",
+      "summary": "Save the edited prefab; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": false,
+          "note": "default: prefab edit root"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "editState",
+      "summary": "Edit mode on, root, prefab",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "prefabEdit",
+          "type": "bool"
+        },
+        {
+          "key": "rootId",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "memberCount",
+          "type": "int"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "addMembers",
+      "summary": "Add a prefab under a member",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "member",
+          "type": "string",
+          "required": true,
+          "note": "instance; its prefab gets it"
+        },
+        {
+          "key": "prefab",
+          "type": "string",
+          "required": true,
+          "note": "{GUID}path.et"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "added",
+          "type": "array<string>",
+          "note": "the prefab added"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "removeMembers",
+      "summary": "Remove members",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": true,
+          "note": "prefab member children"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "removed",
+          "type": "array<string>",
+          "note": "ids"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "moveToPrefab",
+      "summary": "Move entities into a prefab",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "parent",
+          "type": "string",
+          "required": true,
+          "note": "instance in the world"
+        },
+        {
+          "key": "entities",
+          "type": "array<string>",
+          "required": true,
+          "note": "refs as entity; max 200"
+        },
+        {
+          "key": "convertTransform",
+          "type": "bool",
+          "required": false,
+          "note": "default true"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "moved",
+          "type": "array<string>",
+          "note": "ids"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "clone",
+      "summary": "Copy to a new .et; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "prefab",
+          "type": "string",
+          "required": true,
+          "note": "{GUID}path source"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "new project-relative .et"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "createChild",
+      "summary": "New child .et; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "prefab",
+          "type": "string",
+          "required": true,
+          "note": "{GUID}path parent"
+        },
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "new project-relative .et"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "resourceName",
+          "type": "string"
+        },
+        {
+          "key": "dryRun",
+          "type": "bool"
+        },
+        {
+          "key": "savedPath",
+          "type": "string"
+        },
+        {
+          "key": "undoName",
+          "type": "string",
+          "note": "history point name used"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

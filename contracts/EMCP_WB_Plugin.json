@@ -1,0 +1,427 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Plugin",
+  "tool": "wb_plugin",
+  "purpose": "Workbench plugins: catalog, presence, settings; runs reviewed dialog-free plugins.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Plugin.c",
+  "request": ["action", "moduleName", "className", "cursor", "limit", "name", "value", "confirm"],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "nextStep",
+    "moduleName",
+    "className",
+    "present",
+    "instance",
+    "instanceClass",
+    "variableCount",
+    "attributeCount",
+    "total",
+    "nextCursor",
+    "plugins",
+    "settings",
+    "name",
+    "type",
+    "attribute",
+    "value",
+    "previous",
+    "changed",
+    "ran",
+    "entry"
+  ],
+  "actions": [
+    {
+      "name": "list",
+      "summary": "Plugin catalog from the ledger (TS), paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": false,
+          "note": "filter by module"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "plugins",
+          "type": "array<string>",
+          "note": "rows {moduleName, className}"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "describe",
+      "summary": "Class present? GetPlugin instance? (module open)",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "module id"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "plugin class"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "present",
+          "type": "bool"
+        },
+        {
+          "key": "instance",
+          "type": "bool"
+        },
+        {
+          "key": "instanceClass",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "getSettings",
+      "summary": "Read the plugin's variables, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "module id"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "plugin class"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "present",
+          "type": "bool"
+        },
+        {
+          "key": "instance",
+          "type": "bool"
+        },
+        {
+          "key": "instanceClass",
+          "type": "string"
+        },
+        {
+          "key": "variableCount",
+          "type": "int"
+        },
+        {
+          "key": "attributeCount",
+          "type": "int"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "settings",
+          "type": "array<string>",
+          "note": "rows {name,type,attribute,value}"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "setSettings",
+      "summary": "Set one [Attribute] variable; dry run unless confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "With confirm NO_SETTER until P-W6-03 (a registry write stays refused, OI-W6-1); NOT_ALLOWLISTED; NOT_IN_PROJECT; INVALID_ARGUMENT for bad types or values.",
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "module id"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "plugin class"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": true,
+          "note": "variable name"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "required": true,
+          "note": "text; floats as text"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "present",
+          "type": "bool"
+        },
+        {
+          "key": "instance",
+          "type": "bool"
+        },
+        {
+          "key": "instanceClass",
+          "type": "string"
+        },
+        {
+          "key": "name",
+          "type": "string"
+        },
+        {
+          "key": "type",
+          "type": "string"
+        },
+        {
+          "key": "value",
+          "type": "string",
+          "note": "read back; unchanged on a dry run"
+        },
+        {
+          "key": "previous",
+          "type": "string"
+        },
+        {
+          "key": "changed",
+          "type": "bool"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "run",
+      "summary": "Run() of an allow-listed plugin; else a precondition check",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "PLUGIN_MODAL (E03 modal); NOT_ALLOWLISTED; NOT_IN_PROJECT; PRECONDITION_UNMET; with confirm GATED per class until P-W6-05. RunCommandline, Configure never run.",
+      "params": [
+        {
+          "key": "moduleName",
+          "type": "string",
+          "required": true,
+          "note": "module id"
+        },
+        {
+          "key": "className",
+          "type": "string",
+          "required": true,
+          "note": "plugin class"
+        },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true runs; else checks only"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "nextStep",
+          "type": "string"
+        },
+        {
+          "key": "moduleName",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "ran",
+          "type": "bool"
+        },
+        {
+          "key": "entry",
+          "type": "string",
+          "note": "Run"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

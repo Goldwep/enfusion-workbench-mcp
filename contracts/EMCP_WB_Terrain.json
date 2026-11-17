@@ -1,0 +1,368 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Terrain",
+  "tool": "wb_terrain",
+  "purpose": "Terrain of the open world, read only: facts, heights, height tiles.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Terrain.c",
+  "request": [
+    "action",
+    "terrainIndex",
+    "landArea",
+    "minMax",
+    "world_path",
+    "points",
+    "tileX",
+    "tileY",
+    "cursor",
+    "limit"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "hasTerrain",
+    "resolutionX",
+    "resolutionY",
+    "tilesX",
+    "tilesY",
+    "unitScale",
+    "boundsMin",
+    "boundsMax",
+    "minY",
+    "maxY",
+    "landArea",
+    "surfaces",
+    "rows",
+    "sampleCount",
+    "total",
+    "nextCursor",
+    "payload"
+  ],
+  "actions": [
+    {
+      "name": "info",
+      "summary": "Resolution, tiles, unit scale, bounds, min/max, land area, surfaces",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false,
+          "note": "default 0"
+        },
+        {
+          "key": "landArea",
+          "type": "bool",
+          "required": false,
+          "note": "compute land area (slow)"
+        },
+        {
+          "key": "minMax",
+          "type": "bool",
+          "required": false,
+          "note": "compute minY/maxY (slow)"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "hasTerrain",
+          "type": "bool"
+        },
+        {
+          "key": "resolutionX",
+          "type": "int"
+        },
+        {
+          "key": "resolutionY",
+          "type": "int"
+        },
+        {
+          "key": "tilesX",
+          "type": "int"
+        },
+        {
+          "key": "tilesY",
+          "type": "int"
+        },
+        {
+          "key": "unitScale",
+          "type": "float"
+        },
+        {
+          "key": "boundsMin",
+          "type": "string"
+        },
+        {
+          "key": "boundsMax",
+          "type": "string"
+        },
+        {
+          "key": "minY",
+          "type": "float",
+          "note": "only with minMax; 0 otherwise"
+        },
+        {
+          "key": "maxY",
+          "type": "float"
+        },
+        {
+          "key": "landArea",
+          "type": "float",
+          "note": "m2; 0 when not asked"
+        },
+        {
+          "key": "surfaces",
+          "type": "array<string>",
+          "note": "surface material resource names"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "heights",
+      "summary": "Terrain height at up to 200 points; onTerrain per point",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "points",
+          "type": "array<string>",
+          "required": true,
+          "note": "\"x z\" each, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "x|z|onTerrain|y"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "tile",
+      "summary": "Height samples of one tile, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "tileX",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "tileY",
+          "type": "int",
+          "required": true
+        },
+        {
+          "key": "terrainIndex",
+          "type": "int",
+          "required": false,
+          "note": "default 0"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of the previous page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "default 50, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok, error or refused"
+        },
+        {
+          "key": "code",
+          "type": "string",
+          "note": "error code; empty when ok"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "rows",
+          "type": "array<string>",
+          "note": "heights, row-major"
+        },
+        {
+          "key": "sampleCount",
+          "type": "int"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "items before paging"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string",
+          "note": "empty on the last page"
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "inspect",
+      "summary": "1.x terrain_inspect: bounds, world_path and open_world as a JSON payload",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "world_path",
+          "type": "string",
+          "required": true,
+          "note": "the world .ent (1.x)"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok or error (1.x)"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "payload",
+          "type": "string",
+          "note": "JSON: bounds, world_path, open_world"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "navmesh_status",
+      "summary": "1.x terrain_navmesh_status: not implemented",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "1.x placeholder kept as 1.x answered it: status error, message \"not implemented: ...\"; nothing is read.",
+      "params": [
+        {
+          "key": "world_path",
+          "type": "string",
+          "required": false,
+          "note": "sent by the 1.x tool; not read"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok or error (1.x)"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "road_export_graph",
+      "summary": "1.x terrain_road_export_graph: not implemented",
+      "mutating": false,
+      "projectOnly": false,
+      "refuses": "1.x placeholder kept as 1.x answered it: status error, message \"not implemented: ...\"; nothing is read.",
+      "params": [
+        {
+          "key": "world_path",
+          "type": "string",
+          "required": false,
+          "note": "sent by the 1.x tool; not read"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string",
+          "note": "ok or error (1.x)"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

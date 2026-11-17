@@ -1,0 +1,479 @@
+{
+  "$comment": "L06 fixture: redacted slice of P3-3 gate 2 walk p33-g2-04-walk.json (World Editor, state edit/none, sha be77b857...2ae3): the root, the TitleBar, the Prefab Library dock pruned to its PropertyGridBC, the Object Properties dock whole. Child indices are the slice, not the walk. Both grids are empty in this state (gridRowCount 0).",
+  "schema": "emcp-uia-walk/1",
+  "target": {
+    "className": "Qt683QWindowIcon",
+    "uiaClassName": "WorldEditorQt",
+    "title": "World Editor - Unnamed empty world",
+    "titlePattern": "^World Editor - Unnamed empty world$"
+  },
+  "completed": true,
+  "partial": false,
+  "sampling": {
+    "containers_sampled": 0,
+    "applied": []
+  },
+  "tree": {
+    "controlType": "Window",
+    "name": "World Editor - Unnamed empty world",
+    "automationId": "Arma4WorkbenchApp.worldEditorMain",
+    "className": "WorldEditorQt",
+    "patterns": ["Invoke", "Value", "Window", "Transform", "LegacyIAccessible"],
+    "gridRowCount": 0,
+    "gridColumnCount": 0,
+    "childCount": 18,
+    "children": [
+      {
+        "controlType": "TitleBar",
+        "name": "",
+        "automationId": "TitleBar",
+        "className": "",
+        "patterns": ["Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 4,
+        "children": [
+          {
+            "controlType": "MenuBar",
+            "name": "System",
+            "automationId": "SystemMenuBar",
+            "className": "",
+            "patterns": ["LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "MenuItem",
+                "name": "System",
+                "automationId": "",
+                "className": "",
+                "patterns": ["ExpandCollapse", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Minimize",
+            "automationId": "Minimize-Restore",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Maximize",
+            "automationId": "Maximize-Restore",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Close",
+            "className": "",
+            "patterns": ["Invoke", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Prefab Library",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock",
+        "className": "QDockWidget",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents",
+            "className": "QWidget",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 1,
+            "children": [
+              {
+                "controlType": "Group",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget",
+                "className": "TemplateLibraryWidget",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 7,
+                "children": [
+                  {
+                    "controlType": "Custom",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter",
+                    "className": "QSplitter",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 5,
+                    "children": [
+                      {
+                        "controlType": "Custom",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter",
+                        "className": "QSplitter",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "Group",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter.QWidget",
+                            "className": "QWidget",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 1,
+                            "children": [
+                              {
+                                "controlType": "Tree",
+                                "name": "",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.templateLibraryDock.templateLibraryDockContents.templateLibraryWidget.QSplitter.QSplitter.QWidget.PropertyGridBC",
+                                "className": "PropertyGridBC",
+                                "patterns": [
+                                  "Value",
+                                  "Selection",
+                                  "Grid",
+                                  "Table",
+                                  "LegacyIAccessible"
+                                ],
+                                "gridRowCount": 0,
+                                "gridColumnCount": 1,
+                                "childCount": 0,
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "controlType": "Window",
+        "name": "Object Properties",
+        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock",
+        "className": "QDockWidget",
+        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+        "gridRowCount": 0,
+        "gridColumnCount": 0,
+        "childCount": 3,
+        "children": [
+          {
+            "controlType": "Group",
+            "name": "",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents",
+            "className": "QWidget",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 3,
+            "children": [
+              {
+                "controlType": "Text",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.selectedObjectClassName",
+                "className": "QLabel",
+                "patterns": ["Invoke", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Edit",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.selectedObjectName",
+                "className": "QLineEdit",
+                "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 0,
+                "children": []
+              },
+              {
+                "controlType": "Custom",
+                "name": "",
+                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter",
+                "className": "QSplitter",
+                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                "gridRowCount": 0,
+                "gridColumnCount": 0,
+                "childCount": 3,
+                "children": [
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1",
+                    "className": "QWidget",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 8,
+                    "children": [
+                      {
+                        "controlType": "Custom",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter",
+                        "className": "QSplitter",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 3,
+                        "children": [
+                          {
+                            "controlType": "ComboBox",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.topLevelStorageCombo",
+                            "className": "QComboBox",
+                            "patterns": ["Invoke", "ExpandCollapse", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          },
+                          {
+                            "controlType": "Edit",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.propFilter",
+                            "className": "QLineEdit",
+                            "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 1,
+                            "children": [
+                              {
+                                "controlType": "Button",
+                                "name": "",
+                                "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.propFilter.QLineEditIconButton",
+                                "className": "QLineEditIconButton",
+                                "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                                "gridRowCount": 0,
+                                "gridColumnCount": 0,
+                                "childCount": 0,
+                                "children": []
+                              }
+                            ]
+                          },
+                          {
+                            "controlType": "Thumb",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.searchSplitter.qt_splithandle_",
+                            "className": "QSplitterHandle",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.gotoTopLevelStorageObjectButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.locatePrefabFileButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "CheckBox",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.showComponentHierarchyButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Toggle", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Tree",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.entityPropGrid",
+                        "className": "EntityPropertyGrid",
+                        "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 1,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "+ Add Component",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.addComponentButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "Apply to prefab",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.applyToPrefabButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget1.QPushButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Group",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget",
+                    "className": "QWidget",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 3,
+                    "children": [
+                      {
+                        "controlType": "Edit",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentFilter",
+                        "className": "QLineEdit",
+                        "patterns": ["Invoke", "Value", "Text", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 1,
+                        "children": [
+                          {
+                            "controlType": "Button",
+                            "name": "",
+                            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentFilter.QLineEditIconButton",
+                            "className": "QLineEditIconButton",
+                            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                            "gridRowCount": 0,
+                            "gridColumnCount": 0,
+                            "childCount": 0,
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "controlType": "Tree",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.componentTree",
+                        "className": "ComponentTreeWidget",
+                        "patterns": ["Value", "Selection", "Grid", "Table", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 2,
+                        "childCount": 0,
+                        "children": []
+                      },
+                      {
+                        "controlType": "Button",
+                        "name": "",
+                        "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.layoutWidget.QPushButton",
+                        "className": "QPushButton",
+                        "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                        "gridRowCount": 0,
+                        "gridColumnCount": 0,
+                        "childCount": 0,
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "controlType": "Thumb",
+                    "name": "",
+                    "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.entityPropDockContents.propsSplitter.qt_splithandle_",
+                    "className": "QSplitterHandle",
+                    "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+                    "gridRowCount": 0,
+                    "gridColumnCount": 0,
+                    "childCount": 0,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "controlType": "Button",
+            "name": "Close",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.qt_dockwidget_closebutton",
+            "className": "QDockWidgetTitleButton",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "controlType": "Button",
+            "name": "Float",
+            "automationId": "Arma4WorkbenchApp.worldEditorMain.entityPropDock.qt_dockwidget_floatbutton",
+            "className": "QDockWidgetTitleButton",
+            "patterns": ["Invoke", "Value", "LegacyIAccessible"],
+            "gridRowCount": 0,
+            "gridColumnCount": 0,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

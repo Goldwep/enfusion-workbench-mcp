@@ -270,13 +270,12 @@ describe("project-index migrate", () => {
       ).run("Prefabs/Unique.et", 1, 1, null, "user", now);
       v2.close();
 
-      // Re-open with the real entry point → migration to v3 runs.
-      const db = openProjectIndex(dbPath);
+      // Re-open up to v3 → migration to v3 runs (v4 has its own test below).
+      const db = openProjectIndexAtVersion(dbPath, 3);
       try {
         expect(
           (db.prepare("SELECT MAX(version) AS v FROM schema_version").get() as { v: number }).v,
         ).toBe(3);
-        expect(currentSchemaVersion()).toBe(3);
 
         // Re-crawl flag: `files` is empty, so every file re-parses on the next crawl.
         expect((db.prepare("SELECT COUNT(*) AS c FROM files").get() as { c: number }).c).toBe(0);
@@ -296,7 +295,7 @@ describe("project-index migrate", () => {
 
         // Idempotent: re-open is a no-op.
         db.close();
-        const again = openProjectIndex(dbPath);
+        const again = openProjectIndexAtVersion(dbPath, 3);
         expect(
           (again.prepare("SELECT MAX(version) AS v FROM schema_version").get() as { v: number }).v,
         ).toBe(3);
@@ -308,6 +307,55 @@ describe("project-index migrate", () => {
           /* already closed */
         }
       }
+    });
+  });
+
+  describe("v4: resource GUIDs from .meta (audit refactor-index-01/03)", () => {
+    const cleanups: (() => void)[] = [];
+    afterEach(() => {
+      while (cleanups.length > 0) cleanups.pop()?.();
+    });
+
+    it("upgrades a populated v3 db: entity-ID rows dropped, files cleared, refs kept, one row per file", () => {
+      const dir = mkdtempSync(join(tmpdir(), "emcp-migrate-v3-"));
+      cleanups.push(() => rmSync(dir, { recursive: true, force: true }));
+      const dbPath = join(dir, "index.db");
+      const v3 = openProjectIndexAtVersion(dbPath, 3);
+      const now = Date.now();
+      v3.prepare(
+        "INSERT INTO projects (id, guid, title, root_path, source, last_scan) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("ModA", "AAAA000000000001", "A", join(dir, "A"), "user", now);
+      // A v3 row keyed by an .et entity ID.
+      v3.prepare(
+        "INSERT INTO resources (guid, file_path, root_type, class_name, parent_inherit, source, project_id, last_indexed) VALUES (?,?,?,?,?,?,?,?)",
+      ).run("520EC961A090B1EE", "Prefabs/A.et", "GenericEntity", null, null, "user", "ModA", now);
+      v3.prepare(
+        "INSERT INTO resource_refs (project_id, source_file, target_guid, ref_kind, context) VALUES (?,?,?,?,?)",
+      ).run("ModA", "Prefabs/B.et", "687483D33CAB3952", "inheritance", "");
+      v3.prepare(
+        "INSERT INTO files (project_id, path, mtime, size, hash, source, last_indexed) VALUES (?,?,?,?,?,?,?)",
+      ).run("ModA", "Prefabs/A.et", 1, 1, null, "user", now);
+      v3.close();
+
+      const db = openProjectIndex(dbPath);
+      cleanups.push(() => db.close());
+      expect(currentSchemaVersion()).toBe(4);
+      expect(
+        (db.prepare("SELECT MAX(version) AS v FROM schema_version").get() as { v: number }).v,
+      ).toBe(4);
+      expect((db.prepare("SELECT COUNT(*) AS c FROM resources").get() as { c: number }).c).toBe(0);
+      expect((db.prepare("SELECT COUNT(*) AS c FROM files").get() as { c: number }).c).toBe(0);
+      expect((db.prepare("SELECT COUNT(*) AS c FROM resource_refs").get() as { c: number }).c).toBe(1);
+      const cols = (db.prepare("PRAGMA table_info(resources)").all() as { name: string }[]).map((c) => c.name);
+      expect(cols).toContain("entity_id");
+
+      // One row per (project, file); the same GUID may sit in two files.
+      const ins = db.prepare(
+        "INSERT INTO resources (guid, file_path, root_type, source, project_id, last_indexed) VALUES (?,?,?,?,?,?)",
+      );
+      ins.run("CCCC000000000001", "Prefabs/A.et", "GenericEntity", "user", "ModA", now);
+      ins.run("CCCC000000000001", "Prefabs/Copy.et", "GenericEntity", "user", "ModA", now);
+      expect(() => ins.run("DDDD000000000001", "Prefabs/A.et", "GenericEntity", "user", "ModA", now)).toThrow();
     });
   });
 

@@ -1,5 +1,6 @@
 import { readdirSync, existsSync } from "node:fs";
 import { resolve, join, sep } from "node:path";
+import { isPathInsideRoot } from "./path-guard.js";
 
 /**
  * Resolve the game data directory (loose/extracted files).
@@ -18,7 +19,11 @@ export function resolveGameDataPath(gamePath: string): string | null {
  * Handles paths with DataXXX prefix ("Data006/Prefabs/...") and bare paths ("Prefabs/...").
  */
 export function findLooseFile(gameDataPath: string, relativePath: string): string | null {
+  // A '..', absolute or drive-rooted relativePath must never resolve outside
+  // the game data folder (phase-7 audit: callers pass caller-supplied paths).
+  const inside = (p: string): boolean => isPathInsideRoot(p, gameDataPath);
   const direct = join(gameDataPath, relativePath);
+  if (!inside(direct)) return null;
   if (existsSync(direct)) return direct;
 
   if (!relativePath.startsWith("Data")) {
@@ -27,7 +32,8 @@ export function findLooseFile(gameDataPath: string, relativePath: string): strin
       for (const entry of entries) {
         if (!entry.isDirectory() || !entry.name.startsWith("Data")) continue;
         const candidate = join(gameDataPath, entry.name, relativePath);
-        if (existsSync(candidate)) return candidate;
+        const dataDir = join(gameDataPath, entry.name);
+        if (isPathInsideRoot(candidate, dataDir) && existsSync(candidate)) return candidate;
       }
     } catch {
       // ignore

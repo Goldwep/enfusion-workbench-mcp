@@ -26,6 +26,7 @@
 
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
+import { VocabularyError } from "../manifest/vocabulary.js";
 
 const IS_WIN32 = process.platform === "win32";
 
@@ -102,6 +103,33 @@ export function assertInsideRoot(resolved: string, root: string, label: string):
       `${label} resolves outside project root: ${resolved}. Must be inside ${resolve(root)}.`,
     );
   }
+}
+
+/**
+ * The project root for a tool that takes an optional caller `projectPath`.
+ * Without one, the configured root (or undefined when none is set). A caller
+ * path must sit inside the configured project root: any project under it is
+ * fine (DEC-058), a folder elsewhere on disk is not. Throws a
+ * `VocabularyError` NOT_IN_PROJECT, which the tools answer as a refusal.
+ */
+export function pinnedProjectRoot(
+  caller: string | undefined,
+  configured: string | undefined,
+): string | undefined {
+  if (!caller) return configured || undefined;
+  if (!configured) {
+    throw new VocabularyError(
+      "NOT_IN_PROJECT",
+      "projectPath needs a configured project root (ENFUSION_PROJECT_PATH) to stay inside",
+    );
+  }
+  if (!isPathInsideRoot(caller, configured)) {
+    throw new VocabularyError(
+      "NOT_IN_PROJECT",
+      `projectPath resolves outside the configured project root: ${resolve(stripWin32Prefix(caller))}. Must be inside ${resolve(configured)}.`,
+    );
+  }
+  return caller;
 }
 
 /**

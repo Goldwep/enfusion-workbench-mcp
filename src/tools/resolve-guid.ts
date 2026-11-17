@@ -64,9 +64,13 @@ export function registerResolveGuid(
   server: McpServer,
   db: Database.Database,
 ): void {
+  // Schema v4: one row per file, so a GUID may be claimed more than once
+  // (a fork, a copied asset with its .meta). Same preference order as
+  // ProjectIndex.resolveGuid; the other claimants are counted.
   const select = db.prepare(
     "SELECT guid, file_path, root_type, class_name, parent_inherit, source " +
-      "FROM resources WHERE guid = ?",
+      "FROM resources WHERE guid = ? " +
+      "ORDER BY CASE source WHEN 'user' THEN 0 WHEN 'workshop' THEN 1 ELSE 2 END, project_id, file_path",
   );
 
   server.registerTool(
@@ -96,7 +100,8 @@ export function registerResolveGuid(
           };
         }
 
-        const row = select.get(normalized) as ResourceRow | undefined;
+        const rows = select.all(normalized) as ResourceRow[];
+        const row = rows[0];
         if (!row) {
           return {
             content: [
@@ -105,10 +110,16 @@ export function registerResolveGuid(
           };
         }
 
+        let text = formatResolvedGuid(row);
+        if (rows.length > 1) {
+          text +=
+            `\n\n⚠ ${rows.length - 1} other file${rows.length > 2 ? "s" : ""} also claim this GUID: ` +
+            rows.slice(1, 6).map((r) => `${r.file_path} (${r.source})`).join(", ") +
+            (rows.length > 6 ? ", ..." : "") +
+            ". See `refactor_merge_duplicate_guids`.";
+        }
         return {
-          content: [
-            { type: "text" as const, text: formatResolvedGuid(row) },
-          ],
+          content: [{ type: "text" as const, text }],
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);

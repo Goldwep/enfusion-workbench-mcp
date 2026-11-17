@@ -37,6 +37,8 @@ import { registerWbScriptEditor } from "./tools/wb-script-editor.js";
 import { registerWbLocalization } from "./tools/wb-localization.js";
 import { registerWbProjects } from "./tools/wb-projects.js";
 import { registerWbValidate } from "./tools/wb-validate.js";
+import { registerWbMeta } from "./tools/wb-meta.js";
+import { registerScriptLsp } from "./tools/script-lsp.js";
 import { registerWbState } from "./tools/wb-state.js";
 import { registerGameBrowse } from "./tools/game-browse.js";
 import { registerGameRead } from "./tools/game-read.js";
@@ -76,6 +78,16 @@ import { registerWorkshopCheckDeps } from "./tools/workshop-check-deps.js";
 import { registerWbValidateScripts } from "./tools/wb-validate-scripts.js";
 import { registerWbCliRun } from "./tools/wb-cli-run.js";
 import { registerWbBuildData } from "./tools/wb-build-data.js";
+import { registerWbCensus } from "./tools/wb-census.js";
+import { registerWbScripts } from "./tools/wb-scripts.js";
+import { registerWbModule } from "./tools/wb-module.js";
+import { registerWbPluginTool } from "./tools/wb-plugin.js";
+import { registerWbContainer } from "./tools/wb-container.js";
+import { registerWbEntity } from "./tools/wb-entity.js";
+import { registerWbView } from "./tools/wb-view.js";
+import { registerWbWorld } from "./tools/wb-world.js";
+import { registerWbBiTool } from "./tools/wb-bi.js";
+import { registerWbGui } from "./tools/wb-gui.js";
 import { registerProjectValidate } from "./tools/project-validate.js";
 import { registerMaterialInspect } from "./tools/material-inspect.js";
 import { registerMaterialFindUnusedTextures } from "./tools/material-find-unused-textures.js";
@@ -86,6 +98,13 @@ import { registerUiLayoutValidate } from "./tools/ui-layout-validate.js";
 import { registerUiExtractStrings } from "./tools/ui-extract-strings.js";
 import { registerUiStylesInspect } from "./tools/ui-styles-inspect.js";
 import { registerParticleInspect } from "./tools/particle-inspect.js";
+import { registerBehaviorTree } from "./tools/behavior-tree.js";
+import { registerMetaFile } from "./tools/meta-file.js";
+import { registerImageset } from "./tools/imageset.js";
+import { registerLayoutEdit } from "./tools/layout-edit.js";
+import { registerConfigEdit } from "./tools/config-edit.js";
+import { registerProjectSettings } from "./tools/project-settings.js";
+import { registerStringTable } from "./tools/string-table.js";
 import { registerAssetOrphanScan } from "./tools/asset-orphan-scan.js";
 import { registerRefactorReplaceGuid } from "./tools/refactor-replace-guid.js";
 import { registerRefactorRenameProjectId } from "./tools/refactor-rename-project-id.js";
@@ -117,11 +136,33 @@ import { registerServerHealthProbe } from "./tools/server-health-probe.js";
 import { registerServerStop } from "./tools/server-stop.js";
 import { registerMissionSetupPrompt } from "./prompts/mission-setup.js";
 import { registerCharacterAnimPipelineGuidePrompt } from "./prompts/character-anim-pipeline-guide.js";
+import { registerWbAnim } from "./tools/wb-anim.js";
+import { registerWbAnimDebug } from "./tools/wb-anim-debug.js";
+import { registerAnimationWorkspace } from "./tools/animation-workspace.js";
+import { registerAnimationSet } from "./tools/animation-set.js";
+import { registerProcAnim } from "./tools/procanim.js";
+import { registerAudio } from "./tools/audio.js";
+import { registerParticle } from "./tools/particle.js";
+import { registerNavmesh } from "./tools/navmesh.js";
+import { registerWbAudio } from "./tools/wb-audio.js";
+import { registerWbParticle } from "./tools/wb-particle.js";
+import { registerWbNavmesh } from "./tools/wb-navmesh.js";
+import { registerWbWorldTools } from "./tools/wb-world-tools.js";
+import { registerWbShape } from "./tools/wb-shape.js";
+import { registerWbTerrainEdit } from "./tools/wb-terrain-edit.js";
+import { registerWbGenerator } from "./tools/wb-generator.js";
+import { registerWbSettings } from "./tools/wb-settings.js";
+import { registerWbLink } from "./tools/wb-link.js";
+import { registerWbDiag } from "./tools/wb-diag.js";
+import { registerWbMenu } from "./tools/wb-menu.js";
 import { logger } from "./utils/logger.js";
+import { gateToolRegistration } from "./manifest/tiers.js";
 import { existsSync } from "node:fs";
 import type { Config } from "./config.js";
 
-export function registerTools(server: McpServer, config: Config): void {
+export function registerTools(rawServer: McpServer, config: Config): void {
+  // ENFUSION_TOOLSET / ENFUSION_TOOLS gate every server.registerTool below (design section 7).
+  const { server, stats } = gateToolRegistration(rawServer);
   const searchEngine = new SearchEngine(config.dataDir);
   const patterns = new PatternLibrary(config.patternsDir);
 
@@ -145,7 +186,7 @@ export function registerTools(server: McpServer, config: Config): void {
   // Workbench Live Control tools (Phase 4)
   const wbClient = new WorkbenchClient(config.workbenchHost, config.workbenchPort, config);
   registerWbLaunch(server, config, wbClient);
-  registerWbConnect(server, wbClient);
+  registerWbConnect(server, wbClient, config);
   registerWbDiagnose(server, wbClient);
   registerWbReload(server, wbClient);
   registerWbEditorTools(server, wbClient);
@@ -161,6 +202,8 @@ export function registerTools(server: McpServer, config: Config): void {
   registerWbLocalization(server, wbClient);
   registerWbProjects(server, wbClient);
   registerWbValidate(server, wbClient, config);
+  // Wave W2 (DEC-063 OD-2): import settings and material slots of a .meta, core tier.
+  registerWbMeta(server, wbClient);
   registerWbState(server, wbClient);
   registerScenarioTools(server, wbClient);
   registerScenarioCreate(server, config);
@@ -238,11 +281,18 @@ export function registerTools(server: McpServer, config: Config): void {
   // Clean shutdown: stop watchers + close DB on SIGINT/SIGTERM so file
   // handles release (matters on Windows). One-shot guard so repeated signals
   // don't double-stop the watchers (chokidar's close() handles re-entry but
-  // we want a clean exit code regardless).
+  // we want a clean exit code regardless). The Workbench lease this server
+  // holds (if any) is released first, and again on any process exit; the
+  // release is best effort, never throws, and leaves another session's lease
+  // alone.
+  process.on("exit", () => {
+    wbClient.releaseLease();
+  });
   let shuttingDown = false;
   const handleShutdown = (): void => {
     if (shuttingDown) return;
     shuttingDown = true;
+    wbClient.releaseLease();
     logger.info(`[server] shutting down — stopping ${watchers.length} watcher(s)`);
     Promise.all(watchers.map((w) => w.stop()))
       .catch((e) => logger.debug(`[server] watcher stop error: ${e}`))
@@ -291,9 +341,24 @@ export function registerTools(server: McpServer, config: Config): void {
   registerWorkshopCheckDeps(server, projectIndex, config);
 
   // L3-7: Workbench CLI thin-wraps.
-  registerWbValidateScripts(server, config);
+  registerWbValidateScripts(server, config, wbClient);
   registerWbCliRun(server, config);
   registerWbBuildData(server, config);
+
+  // 2.0 census (Phase 1): offline queries over the ledger in data/census.
+  registerWbCensus(server, config);
+  // Phase 3 (DEC-048, 3.1 and 3.3): the new live tools; all four are core in src/manifest/tiers.ts.
+  registerWbScripts(server, wbClient);
+  registerWbModule(server, wbClient);
+  registerWbPluginTool(server, wbClient);
+  registerWbContainer(server, wbClient);
+  // Wave W1 (DEC-061, phase5-w1-spec.md section 2): the World Editor core tools, core tier.
+  registerWbEntity(server, wbClient);
+  registerWbView(server, wbClient);
+  registerWbWorld(server, wbClient, config);
+  // Phase 3 (DEC-048, 3.5 and 3.6): extended tier; wb_gui also needs ENFUSION_GUI=1.
+  registerWbBiTool(server, wbClient);
+  registerWbGui(server);
 
   // L3-8: consolidated validator dispatcher.
   registerProjectValidate(server);
@@ -310,9 +375,22 @@ export function registerTools(server: McpServer, config: Config): void {
   registerUiExtractStrings(server);
   registerUiStylesInspect(server);
 
-  // L4-5: particle inspect + cross-cutting asset orphan scan.
-  registerParticleInspect(server, projectIndex);
+  // L4-5: particle inspect + cross-cutting asset orphan scan. particle_inspect is an alias of
+  // particle inspect since W5 (DEC-068 OD-1).
+  registerParticleInspect(server, projectIndex, config);
   registerAssetOrphanScan(server, projectIndex);
+
+  // Phase 5: behavior trees as files (no script call edits a tree).
+  registerBehaviorTree(server, config);
+  // Waves W2 and W3 (DEC-063, DEC-065): offline file tools, extended tier.
+  registerMetaFile(server, config);
+  registerImageset(server, config);
+  registerLayoutEdit(server, config);
+  registerConfigEdit(server, config);
+  registerProjectSettings(server, config);
+  registerStringTable(server, config);
+  // Wave W3 (DEC-063 OD-6): the Workbench language server client, extended tier; gated on P-W3-23.
+  registerScriptLsp(server, config);
 
   // L5-1: first resource refactor primitive — GUID-replace across project.
   registerRefactorReplaceGuid(server, projectIndexDb, projectIndex, config);
@@ -348,7 +426,7 @@ export function registerTools(server: McpServer, config: Config): void {
   registerScriptLint(server);
 
   // L6-6: safe-subset formatter (trailing ws, blank runs, EOF newline).
-  registerScriptFormat(server);
+  registerScriptFormat(server, config);
 
   // L5-5: diagnose duplicate-GUID collisions (closes L5).
   registerRefactorMergeDuplicateGuids(server);
@@ -357,8 +435,7 @@ export function registerTools(server: McpServer, config: Config): void {
   // EMCP_WB_Terrain.c Enforce handler isn't deployed yet (see docs/L7-PLAN.md).
   registerTerrainInspect(server, wbClient);
 
-  // L7-3a: navmesh tile coverage query. Handler placeholder shipped;
-  // wired to actual NavmeshWorldComponent next session.
+  // L7-3a: navmesh tile coverage; an alias of wb_navmesh status since W5 (DEC-068 OD-1).
   registerTerrainNavmeshStatus(server, wbClient);
 
   // L7-3b: road graph extraction. Placeholder; wires to RoadNetworkManager next session.
@@ -384,6 +461,36 @@ export function registerTools(server: McpServer, config: Config): void {
   registerServerScenarioPicker(server, config, projectIndex);
   registerServerHealthProbe(server);
 
+  // Wave W4 (DEC-067): animation, procedural animation; extended tier.
+  registerWbAnim(server, wbClient, config);
+  registerWbAnimDebug(server, wbClient);
+  registerAnimationWorkspace(server, config, wbClient);
+  registerAnimationSet(server, config);
+  registerProcAnim(server, config);
+
+  // Wave W5 (DEC-068): audio, particle, navmesh; extended tier. The .acp graph actions of audio
+  // stay refused until probe P-W5-05 (OD-10).
+  registerAudio(server, config);
+  registerParticle(server, config);
+  registerNavmesh(server, config);
+  registerWbAudio(server, wbClient);
+  registerWbParticle(server, wbClient);
+  registerWbNavmesh(server, wbClient);
+
+  // Wave W6 (DEC-069): World Editor plugin ports and shapes; extended tier.
+  registerWbWorldTools(server, config, wbClient);
+  registerWbShape(server, wbClient, config);
+  // Wave W7 (DEC-075): terrain edits and generators, both extended.
+  registerWbTerrainEdit(server, wbClient, config);
+  registerWbGenerator(server, wbClient);
+  // Wave W8 (DEC-076): settings, links, the Diag Menu and menus, all extended.
+  registerWbSettings(server, {
+    knownPaths: () => [config.projectPath, config.workbenchPath, config.gamePath].filter(Boolean),
+  });
+  registerWbLink(server, wbClient);
+  registerWbDiag(server, wbClient);
+  registerWbMenu(server, wbClient);
+
   // L8 Wave 3 — interactive prompts (per critic: not tools).
   registerMissionSetupPrompt(server);
   registerCharacterAnimPipelineGuidePrompt(server);
@@ -396,4 +503,9 @@ export function registerTools(server: McpServer, config: Config): void {
   registerClassResource(server, searchEngine);
   registerPatternResource(server, patterns);
   registerGroupResource(server, searchEngine);
+
+  const overrides = process.env.ENFUSION_TOOLS ? ` overrides=${process.env.ENFUSION_TOOLS}` : "";
+  logger.info(
+    `[server] toolset=${stats.toolset}${overrides}: ${stats.registered.length} tools registered, ${stats.skipped.length} skipped`,
+  );
 }

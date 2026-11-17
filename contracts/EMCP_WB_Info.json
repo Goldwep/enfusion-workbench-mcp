@@ -1,0 +1,48 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Info",
+  "tool": "wb_diagnose",
+  "purpose": "Read-only bridge facts: build stamp, project found, module names (no open state), handlers, prompt hazard.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Info.c",
+  "request": ["action"],
+  "response": [
+    "status",
+    "message",
+    "buildStamp",
+    "projectFound",
+    "projectName",
+    "modules",
+    "unreadModules",
+    "worldPath",
+    "worldPathForm",
+    "handlerCount",
+    "handlers",
+    "handlerSource",
+    "filePromptHazard"
+  ],
+  "actions": [
+    {
+      "name": "info",
+      "summary": "Answer the bridge facts; opens nothing, writes nothing",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok or refused" },
+        { "key": "message", "type": "string" },
+        { "key": "buildStamp", "type": "string", "note": "EMCP_WB_BuildStamp.VALUE" },
+        { "key": "projectFound", "type": "bool", "note": "handlers found in one loaded project" },
+        { "key": "projectName", "type": "string", "note": "the project's addon id, or empty" },
+        { "key": "modules", "type": "string", "note": "names only; GetModule would open them" },
+        { "key": "unreadModules", "type": "string", "note": "ParticleEditor, never read" },
+        { "key": "worldPath", "type": "string", "note": "always empty (not read)" },
+        { "key": "worldPathForm", "type": "string", "note": "always unread (GetModule opens)" },
+        { "key": "handlerCount", "type": "int" },
+        { "key": "handlers", "type": "string", "note": "comma-separated class names" },
+        { "key": "handlerSource", "type": "string", "note": "compiled constant" },
+        { "key": "filePromptHazard", "type": "bool", "note": "true until S-F repeat (U27)" }
+      ],
+      "paging": false
+    }
+  ]
+}

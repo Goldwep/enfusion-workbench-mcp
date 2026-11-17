@@ -1,0 +1,568 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_Shape",
+  "tool": "wb_shape",
+  "purpose": "World Editor shapes: read points; create, edit, area, shapefile import, parallel copies.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Shape.c",
+  "request": [
+    "action",
+    "entity",
+    "cursor",
+    "limit",
+    "tesselated",
+    "points",
+    "closed",
+    "spline",
+    "layer",
+    "name",
+    "color",
+    "parent",
+    "shape",
+    "centre",
+    "width",
+    "length",
+    "segments",
+    "branches",
+    "innerRatio",
+    "snapToGround",
+    "target",
+    "path",
+    "offset",
+    "offsets",
+    "minDistance",
+    "asChild",
+    "op",
+    "index"
+  ],
+  "response": [
+    "status",
+    "action",
+    "code",
+    "message",
+    "next",
+    "id",
+    "className",
+    "closed",
+    "total",
+    "nextCursor",
+    "points",
+    "tangents",
+    "undoName",
+    "created",
+    "ids"
+  ],
+  "actions": [
+    {
+      "name": "points",
+      "summary": "Shape class, closed flag and points, paged; tesselated",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:<hex> | name:<n> | index:<i>"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "nextCursor of a page"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "rows per page, max 200"
+        },
+        {
+          "key": "tesselated",
+          "type": "bool",
+          "required": false,
+          "note": "tesselated points instead"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "closed",
+          "type": "bool"
+        },
+        {
+          "key": "total",
+          "type": "int"
+        },
+        {
+          "key": "nextCursor",
+          "type": "string"
+        },
+        {
+          "key": "points",
+          "type": "array<string>",
+          "note": "\"x y z\" world space"
+        },
+        {
+          "key": "tangents",
+          "type": "array<string>",
+          "note": "spline anchors: \"in|out|explicit\""
+        }
+      ],
+      "paging": true
+    },
+    {
+      "name": "create",
+      "summary": "Polyline or spline from points",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "points",
+          "type": "array<string>",
+          "required": true,
+          "note": "\"x y z\" world; 2 to 2000"
+        },
+        {
+          "key": "closed",
+          "type": "bool",
+          "required": false,
+          "note": "default false"
+        },
+        {
+          "key": "spline",
+          "type": "bool",
+          "required": false,
+          "note": "SplineShapeEntity; default polyline"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "required": false,
+          "note": "layer path; default active"
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "required": false,
+          "note": "default: generated"
+        },
+        {
+          "key": "color",
+          "type": "string",
+          "required": false,
+          "note": "\"r g b a\" 0..1"
+        },
+        {
+          "key": "parent",
+          "type": "string",
+          "required": false,
+          "note": "entity ref"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "className",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "points written"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "area",
+      "summary": "(TS) circle, rectangle or star outline",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: SCR_ShapeAreaTool maths, heights via wb_terrain heights, then create (or edit set with target).",
+      "params": [
+        {
+          "key": "shape",
+          "type": "string",
+          "required": true,
+          "note": "circle|rectangle|star"
+        },
+        {
+          "key": "centre",
+          "type": "string",
+          "required": false,
+          "note": "\"x y z\"; default camera trace"
+        },
+        {
+          "key": "width",
+          "type": "float",
+          "required": true,
+          "note": "metres"
+        },
+        {
+          "key": "length",
+          "type": "float",
+          "required": false,
+          "note": "metres; default width"
+        },
+        {
+          "key": "segments",
+          "type": "int",
+          "required": false,
+          "note": "circle segments or per side"
+        },
+        {
+          "key": "branches",
+          "type": "int",
+          "required": false,
+          "note": "star branches, default 5"
+        },
+        {
+          "key": "innerRatio",
+          "type": "float",
+          "required": false,
+          "note": "star inner radius, 0..1"
+        },
+        {
+          "key": "snapToGround",
+          "type": "bool",
+          "required": false,
+          "note": "y from terrain"
+        },
+        {
+          "key": "closed",
+          "type": "bool",
+          "required": false,
+          "note": "default true"
+        },
+        {
+          "key": "spline",
+          "type": "bool",
+          "required": false,
+          "note": "SplineShapeEntity"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "required": false,
+          "note": "layer path; default active"
+        },
+        {
+          "key": "target",
+          "type": "string",
+          "required": false,
+          "note": "existing shape ref: replace its points"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "import",
+      "summary": "(TS) shapefile lines and polygons",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "Served by the TS tool: parses .shp and .dbf in the project, then calls create per record. Point records are reported, not placed.",
+      "params": [
+        {
+          "key": "path",
+          "type": "string",
+          "required": true,
+          "note": "project-relative .shp"
+        },
+        {
+          "key": "offset",
+          "type": "string",
+          "required": false,
+          "note": "\"x y z\" added to every vertex"
+        },
+        {
+          "key": "spline",
+          "type": "bool",
+          "required": false,
+          "note": "SplineShapeEntity"
+        },
+        {
+          "key": "color",
+          "type": "string",
+          "required": false,
+          "note": "\"r g b a\" 0..1"
+        },
+        {
+          "key": "layer",
+          "type": "string",
+          "required": false,
+          "note": "layer path; default active"
+        },
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "record cursor for big files"
+        },
+        {
+          "key": "limit",
+          "type": "int",
+          "required": false,
+          "note": "records per call, max 200"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "parallel",
+      "summary": "Offset copies of a shape",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until probe P-W6-16 passes (a handler calling SCR_ParallelShapeHelper is unproven); the main session opens it.",
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "source shape ref"
+        },
+        {
+          "key": "offsets",
+          "type": "array<string>",
+          "required": true,
+          "note": "metres as text; max 16"
+        },
+        {
+          "key": "minDistance",
+          "type": "float",
+          "required": false,
+          "note": "point thinning, metres"
+        },
+        {
+          "key": "snapToGround",
+          "type": "bool",
+          "required": false,
+          "note": "default false"
+        },
+        {
+          "key": "spline",
+          "type": "bool",
+          "required": false,
+          "note": "spline output if source is one"
+        },
+        {
+          "key": "asChild",
+          "type": "bool",
+          "required": false,
+          "note": "parent copies to the source"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "created",
+          "type": "int"
+        },
+        {
+          "key": "ids",
+          "type": "array<string>"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    },
+    {
+      "name": "edit",
+      "summary": "Set, insert, remove, move points; open or close",
+      "mutating": true,
+      "projectOnly": true,
+      "refuses": "GATED until P-W7-14 passes.",
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "shape ref"
+        },
+        {
+          "key": "op",
+          "type": "string",
+          "required": true,
+          "note": "set|insert|remove|move|open|close"
+        },
+        {
+          "key": "index",
+          "type": "int",
+          "required": false,
+          "note": "point index; insert, remove, move"
+        },
+        {
+          "key": "points",
+          "type": "array<string>",
+          "required": false,
+          "note": "\"x y z\" world; set, insert, move"
+        },
+        {
+          "key": "snapToGround",
+          "type": "bool",
+          "required": false,
+          "note": "y from terrain"
+        }
+      ],
+      "response": [
+        {
+          "key": "status",
+          "type": "string"
+        },
+        {
+          "key": "action",
+          "type": "string"
+        },
+        {
+          "key": "code",
+          "type": "string"
+        },
+        {
+          "key": "message",
+          "type": "string"
+        },
+        {
+          "key": "next",
+          "type": "string"
+        },
+        {
+          "key": "id",
+          "type": "string"
+        },
+        {
+          "key": "total",
+          "type": "int",
+          "note": "points after the edit"
+        },
+        {
+          "key": "closed",
+          "type": "bool"
+        },
+        {
+          "key": "undoName",
+          "type": "string"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

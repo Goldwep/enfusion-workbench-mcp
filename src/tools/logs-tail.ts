@@ -8,6 +8,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { resolveSession, parseLogFile, type LogLine } from "../logs/parser.js";
 import type { Config } from "../config.js";
 
@@ -77,6 +78,7 @@ export function registerLogsTail(server: McpServer, config: Config): void {
                 text: `No ${which} logs path configured.`,
               },
             ],
+            isError: true,
           };
         }
         const resolved = resolveSession(rootPath, session);
@@ -88,9 +90,22 @@ export function registerLogsTail(server: McpServer, config: Config): void {
                 text: `Session '${session}' not found under ${rootPath}. Try \`logs_list\` first.`,
               },
             ],
+            isError: true,
           };
         }
         const channelPath = join(resolved.absPath, `${channel}.log`);
+        // A missing channel file is not an empty log (read-knowledge-08).
+        if (!existsSync(channelPath)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No ${channel}.log in session '${resolved.name}' (${resolved.absPath}). Try \`logs_list\`.`,
+              },
+            ],
+            isError: true,
+          };
+        }
         const parsed = parseLogFile(channelPath);
         const shown = parsed.slice(-numLines);
         const text = formatTail({

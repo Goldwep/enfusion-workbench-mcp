@@ -43,6 +43,7 @@ import {
   type ArtefactCheckResult,
   headlessSpawnBlocker,
 } from "../workbench/cli-runner.js";
+import { withScriptAuthorizeAll } from "../workbench/client.js";
 import { LaunchWatchdog } from "../workbench/launch-watchdog.js";
 import { inspectProcessWindows, nudgeEnfusionLauncher } from "../workbench/launcher-nudge.js";
 import { WorkbenchLaunchTracker, snapshotSessionDirs } from "../workbench/launch-tracker.js";
@@ -63,23 +64,27 @@ export const DEFAULT_BUILD_TIMEOUT_S = 100;
 /**
  * Build the -buildData argv. `-wbModule=ResourceManager` is mandatory
  * (BIKI, see file header); the platform and out dir are positional
- * values after `-buildData`; `-wbProjectPath` and its value ride as
- * separate entries (engine tokenizer gotcha, see cli-runner.ts).
+ * values after `-buildData`; the project rides as `-gproj <path>`, two
+ * separate entries (DEC-047 L7; engine tokenizer gotcha, see cli-runner.ts).
+ * The project switch is never the one KD-001 recorded. UNRESOLVED (DEC-047
+ * L7): whether `-buildData` composes with `-gproj` the way the BIKI example
+ * shows it without a project switch is not measured; the verb stays, the
+ * answer says so, and `-noPause` (a KD-004 switch no measured table holds)
+ * is no longer passed.
  */
 export function buildBuildDataArgs(
   platform: BuildPlatform,
   outDirFull: string,
   gprojFull: string,
 ): string[] {
-  return [
+  return withScriptAuthorizeAll([
     "-wbModule=ResourceManager",
     "-buildData",
     platform,
     outDirFull,
-    "-wbProjectPath",
+    "-gproj",
     gprojFull,
-    "-noPause",
-  ];
+  ]);
 }
 
 /** Bounded recursive walk — enough to answer "did the build write anything?". */
@@ -199,7 +204,7 @@ export async function executeBuildData(
       depCheckError = e instanceof Error ? e.message : String(e);
     }
 
-    const blocker = headlessSpawnBlocker();
+    const blocker = headlessSpawnBlocker(undefined, config);
     if (blocker) return { text: blocker, isError: true };
 
     const args = buildBuildDataArgs(platform, outFull, gprojFull);
@@ -254,6 +259,9 @@ export async function executeBuildData(
     lines.push(`## wb_build_data: ${platform} → ${outFull}`);
     lines.push("");
     lines.push(`Source: ${gprojFull}`);
+    lines.push(
+      "Note: the -buildData plus -gproj form is unmeasured (DEC-047 L7); the verified evidence is the fresh file in out_dir, not the exit code.",
+    );
     lines.push(
       `Exit code: ${result.exitCode ?? "(killed)"}${result.timedOut ? " — TIMEOUT (process tree killed)" : ""}`,
     );
@@ -373,12 +381,8 @@ export function registerWbBuildData(server: McpServer, config: Config): void {
     "wb_build_data",
     {
       description:
-        "Run `ArmaReforgerWorkbenchSteamDiag.exe -wbModule=ResourceManager -buildData <platform> <outDir> -wbProjectPath <gproj>` to produce packed .pak output for a project (Workbench exits when the build completes). " +
-        "Success requires at least one file written to out_dir during the run — an exit 0 with an empty out_dir is reported as an error with the log tail. " +
-        `Default timeout is ${DEFAULT_BUILD_TIMEOUT_S}s so the call fits an MCP client window; on timeout the whole Workbench process tree is killed. ` +
-        'Long builds (1-10 min): either raise `timeout_seconds` explicitly, or use `action:"start"` (returns a job_id immediately, build continues in the background) then `action:"poll"` with that job_id until status is done. ' +
-        "If the launcher holds at its Projects picker (waiting for a human click on Open, often minimized), the run auto-confirms it by restoring the window and posting Enter; " +
-        "a genuine launch block reports the diagnosis (dependency GUID visibility + remedies) instead of a bare timeout.",
+        "Build packed .pak data for a project: -wbModule=ResourceManager -buildData <platform> <outDir> -gproj <gproj> (unresolved: the -buildData plus -gproj form is unmeasured, DEC-047 L7).\n" +
+        "Mutating: spawns its own Workbench, refused while one runs; writes out_dir; success needs a fresh file there. run, or start then poll a job_id.",
       inputSchema: {
         action: z
           .enum(["run", "start", "poll"])

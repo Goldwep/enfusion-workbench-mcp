@@ -1,601 +1,177 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WorkbenchClient } from "../workbench/client.js";
-import { formatConnectionStatus, requireEditMode } from "../workbench/status.js";
-import { isHandlerError, handlerErrorResponse, modeGateResponse } from "../workbench/response.js";
+import { runAliasViaModule } from "./wb-editor.js";
 
 /**
- * Render EMCP_WB_GetEntity output. Only keys the handler emits are read:
- * name, className, position, rotation, componentCount, layerID, subScene,
- * properties[{name,value}], components[{className,index}].
+ * The six 1.x entity tools, kept as aliases (OD-1, DEC-061). Each keeps its 1.x input schema and
+ * routes through src/manifest/aliases.ts into wb_entity, wb_view or wb_container, which answer in
+ * their own JSON shape. A 1.x argument with no equivalent is refused with INVALID_ARGUMENT naming
+ * the tool and action to use. Mode checks are the handlers' (WRONG_MODE). wb_entity_duplicate
+ * (wb-entity-duplicate.ts) is a composite with no single action and stays on the 1.x handlers.
+ * Descriptions are kept short: the aliases count toward the full tools/list budget (140k chars).
  */
-export function formatEntityDetails(data: Record<string, unknown>): string {
-  const lines: string[] = [];
 
-  if (data.name) lines.push(`- **Name:** ${data.name}`);
-  if (data.className) lines.push(`- **Class:** ${data.className}`);
-  if (data.position) lines.push(`- **Position:** ${data.position}`);
-  if (data.rotation) lines.push(`- **Rotation:** ${data.rotation}`);
-  if (data.layerID !== undefined) lines.push(`- **Layer ID:** ${data.layerID}`);
-  if (data.subScene !== undefined) lines.push(`- **Sub-Scene:** ${data.subScene}`);
-  if (data.componentCount !== undefined)
-    lines.push(`- **Component Count:** ${data.componentCount}`);
+/** Drops keys the caller left undefined so the alias mapper sees only real ones. */
+function given(args: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(args).filter(([, v]) => v !== undefined));
+}
 
-  if (Array.isArray(data.components) && data.components.length > 0) {
-    lines.push(`\n### Components (${data.components.length})`);
-    for (const c of data.components) {
-      const comp = c as Record<string, unknown>;
-      lines.push(`${comp.index ?? "?"}. ${comp.className || "Unknown"}`);
-    }
-  }
-
-  if (Array.isArray(data.properties) && data.properties.length > 0) {
-    lines.push(`\n### Properties (${data.properties.length})`);
-    lines.push("| Property | Value |", "|---|---|");
-    for (const p of data.properties) {
-      const prop = p as Record<string, unknown>;
-      lines.push(`| ${prop.name ?? "(unnamed)"} | ${prop.value ?? ""} |`);
-    }
-  }
-
-  return lines.join("\n");
+/** The element list of a 1.x listArrayItems message: "[0:ClassA, 1:ClassB] (2 items)". */
+export function parseArrayItems(message: string): { index: number; className: string }[] {
+  const m = /^\[(.*)\] \(\d+ items\)$/s.exec(message.trim());
+  if (!m || m[1]!.trim() === "") return [];
+  return m[1]!.split(", ").map((part) => {
+    const at = part.indexOf(":");
+    return { index: Number(part.slice(0, at)), className: part.slice(at + 1) };
+  });
 }
 
 /**
- * Render EMCP_WB_ListEntities output. Handler emits totalCount, returnedCount,
- * offset, entities[{name,className,position}].
+ * 1.x wb_entity_modify listArrayItems. No wb_container action answers an array's elements (get
+ * answers the count, describe walks the whole entity to a fixed depth and skips null elements), so
+ * the call stays on its 1.x handler, EMCP_WB_ModifyEntity, with the 1.x keys.
  */
-export function formatEntityList(data: Record<string, unknown>): string {
-  const lines: string[] = [];
-  const entities = Array.isArray(data.entities) ? data.entities : [];
-  const total = typeof data.totalCount === "number" ? data.totalCount : entities.length;
-  const returned = typeof data.returnedCount === "number" ? data.returnedCount : entities.length;
-  const offset = typeof data.offset === "number" ? data.offset : 0;
-
-  lines.push(`**Entities** (showing ${returned} of ${total}, offset ${offset})\n`);
-
-  for (let i = 0; i < entities.length; i++) {
-    const ent = entities[i] as Record<string, unknown>;
-    const name = ent.name || "(unnamed)";
-    const cls = ent.className ? ` (${ent.className})` : "";
-    const pos = ent.position ? ` at ${ent.position}` : "";
-    lines.push(`${offset + i + 1}. **${name}**${cls}${pos}`);
+export async function runListArrayItems(client: WorkbenchClient, args: Record<string, unknown>) {
+  const name = typeof args.name === "string" ? args.name : "";
+  const target = `entity:name:${name}`;
+  const fail = (code: string, message: string) => ({
+    content: [
+      {
+        type: "text" as const,
+        text: JSON.stringify(
+          { ok: false, action: "listArrayItems", target, code, message, warnings: [] },
+          null,
+          2,
+        ),
+      },
+    ],
+    isError: true as const,
+  });
+  if (name === "") return fail("INVALID_ARGUMENT", "name is required (the 1.x entity name)");
+  const params: Record<string, unknown> = { name, action: "listArrayItems" };
+  if (typeof args.propertyPath === "string" && args.propertyPath !== "")
+    params.propertyPath = args.propertyPath;
+  if (typeof args.propertyKey === "string" && args.propertyKey !== "")
+    params.propertyKey = args.propertyKey;
+  let r: Record<string, unknown>;
+  try {
+    r = await client.call<Record<string, unknown>>("EMCP_WB_ModifyEntity", params);
+  } catch (e) {
+    return fail("UNREACHABLE", e instanceof Error ? e.message : String(e));
   }
-
-  if (total > offset + entities.length) {
-    lines.push(
-      `\n*${total - offset - entities.length} more entities not shown. Use offset/limit to paginate.*`,
-    );
-  }
-
-  return lines.join("\n");
+  const message = typeof r.message === "string" ? r.message : "";
+  if (r.status !== "ok") return fail("HANDLER_ERROR", message || "the handler answered an error");
+  const items = parseArrayItems(message);
+  const ok = {
+    ok: true,
+    action: "listArrayItems",
+    target,
+    changed: null,
+    readback: { items, count: items.length, message },
+    warnings: [
+      "1.x listArrayItems answered by its 1.x handler (EMCP_WB_ModifyEntity): no wb_container action lists array elements",
+    ],
+  };
+  return { content: [{ type: "text" as const, text: JSON.stringify(ok, null, 2) }] };
 }
 
 export function registerWbEntityTools(server: McpServer, client: WorkbenchClient): void {
-  // wb_entity_create
   server.registerTool(
     "wb_entity_create",
     {
-      description:
-        "Create a new entity in the World Editor from a prefab. Optionally set position, rotation, name, and target layer. Only works in edit mode (not play mode).",
+      description: "1.x alias of wb_entity create. layerID is refused: use layer there.",
       inputSchema: {
-        prefab: z
-          .string()
-          .describe("Prefab resource path (e.g., '{GUID}Prefabs/Characters/SoldierUS.et')"),
-        position: z
-          .string()
-          .optional()
-          .describe("World position as 'x y z' (e.g., '100 0 200'). Defaults to origin."),
-        rotation: z
-          .string()
-          .optional()
-          .describe("Rotation as 'pitch yaw roll' in degrees (e.g., '0 90 0')"),
-        name: z.string().optional().describe("Entity display name. Auto-generated if omitted."),
-        layerID: z
-          .number()
-          .int()
-          .optional()
-          .describe(
-            "Target numeric layer ID (see wb_layers list). Defaults to layer 0 if omitted.",
-          ),
+        prefab: z.string(),
+        position: z.string().optional().describe("'x y z'"),
+        rotation: z.string().optional().describe("'pitch yaw roll'"),
+        name: z.string().optional(),
+        layerID: z.number().int().optional(),
       },
     },
-    async ({ prefab, position, rotation, name, layerID }) => {
-      const modeErr = requireEditMode(client, "create entity");
-      if (modeErr) {
-        return modeGateResponse(modeErr, client);
-      }
-      try {
-        const params: Record<string, unknown> = { prefab };
-        if (position) params.position = position;
-        if (rotation) params.rotation = rotation;
-        if (name) params.name = name;
-        if (layerID !== undefined) params.layerID = layerID;
-
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_CreateEntity", params);
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, "Error creating entity");
-        }
-
-        // Handler emits entityName, entityClass, position.
-        const lines: string[] = ["**Entity Created**\n"];
-        if (result.entityName) lines.push(`- **Name:** ${result.entityName}`);
-        if (result.entityClass) lines.push(`- **Class:** ${result.entityClass}`);
-        lines.push(`- **Prefab:** ${prefab}`);
-        if (result.position) lines.push(`- **Position:** ${result.position}`);
-        else if (position) lines.push(`- **Position (requested):** ${position}`);
-        if (rotation) lines.push(`- **Rotation:** ${rotation}`);
-        if (layerID !== undefined) lines.push(`- **Layer ID:** ${layerID}`);
-        // Handler emits `warning` ("" when none), e.g. bare path without {GUID}.
-        if (typeof result.warning === "string" && result.warning.length > 0)
-          lines.push(`- **Warning:** ${result.warning}`);
-
-        return {
-          content: [
-            { type: "text" as const, text: lines.join("\n") + formatConnectionStatus(client) },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error creating entity: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async (args) => runAliasViaModule(client, "wb_entity_create", given(args)),
   );
 
-  // wb_entity_delete
   server.registerTool(
     "wb_entity_delete",
     {
-      description: "Delete an entity from the World Editor by name. Only works in edit mode.",
+      description: "1.x alias of wb_entity delete, by name.",
       inputSchema: {
-        name: z.string().describe("Name of the entity to delete"),
+        name: z.string(),
       },
     },
-    async ({ name }) => {
-      const modeErr = requireEditMode(client, "delete entity");
-      if (modeErr) {
-        return modeGateResponse(modeErr, client);
-      }
-      try {
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_DeleteEntity", {
-          name,
-        });
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, `Error deleting entity "${name}"`);
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Entity Deleted**\n\nRemoved entity: ${name}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error deleting entity "${name}": ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async (args) => runAliasViaModule(client, "wb_entity_delete", given(args)),
   );
 
-  // wb_entity_list
   server.registerTool(
     "wb_entity_list",
     {
-      description:
-        "List entities in the current world. Supports pagination and optional name filtering.",
+      description: "1.x alias of wb_entity list. Only offset 0: page with its cursor.",
       inputSchema: {
-        offset: z.number().default(0).describe("Starting offset for pagination (default 0)"),
-        limit: z.number().default(50).describe("Maximum number of entities to return (default 50)"),
-        nameFilter: z
-          .string()
-          .optional()
-          .describe("Filter entities by name substring (case-insensitive)"),
+        offset: z.number().default(0),
+        limit: z.number().default(50),
+        nameFilter: z.string().optional(),
       },
     },
-    async ({ offset, limit, nameFilter }) => {
-      try {
-        const params: Record<string, unknown> = { offset, limit };
-        if (nameFilter) params.nameFilter = nameFilter;
-
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_ListEntities", params);
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, "Error listing entities");
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatEntityList(result) + formatConnectionStatus(client),
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error listing entities: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async (args) => runAliasViaModule(client, "wb_entity_list", given(args)),
   );
 
-  // wb_entity_inspect
   server.registerTool(
     "wb_entity_inspect",
     {
-      description:
-        "Get detailed information about a specific entity, including its components, properties, position, and children. Identify by name or index.",
+      description: "1.x alias of wb_entity get, by name or index.",
       inputSchema: {
-        name: z.string().optional().describe("Entity name to inspect"),
-        index: z.number().optional().describe("Entity index (from wb_entity_list) to inspect"),
+        name: z.string().optional(),
+        index: z.number().optional(),
       },
     },
-    async ({ name, index }) => {
-      try {
-        const params: Record<string, unknown> = {};
-        if (name) params.name = name;
-        if (index !== undefined) params.index = index;
-
-        if (!name && index === undefined) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: "Error: Provide either `name` or `index` to identify the entity.",
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_GetEntity", params);
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, "Error inspecting entity");
-        }
-
-        const label = name || `index ${index}`;
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Entity: ${result.name || label}**\n\n${formatEntityDetails(result)}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error inspecting entity: ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async (args) => runAliasViaModule(client, "wb_entity_inspect", given(args)),
   );
 
-  // wb_entity_modify
   server.registerTool(
     "wb_entity_modify",
     {
       description:
-        "Modify an entity in the World Editor. Supports moving, rotating, renaming, reparenting, and setting or clearing component properties. Only works in edit mode.",
+        "1.x alias: move, rotate, rename, reparent, getWorldTransform -> wb_entity; makeVisible -> wb_view select; property actions -> wb_container on entity:name:<name>. listArrayItems: 1.x handler.",
       inputSchema: {
-        name: z.string().describe("Name of the entity to modify"),
-        action: z
-          .enum([
-            "move",
-            "rotate",
-            "rename",
-            "reparent",
-            "setProperty",
-            "clearProperty",
-            "getProperty",
-            "listProperties",
-            "listArrayItems",
-            "addArrayItem",
-            "removeArrayItem",
-            "setObjectClass",
-            "getWorldTransform",
-            "makeVisible",
-          ])
-          .describe(
-            "Modification action: move (set position), rotate (set rotation), rename, reparent (change parent entity), setProperty (set a component property), clearProperty (reset to default), getProperty (read a property value), listProperties (list all property names on entity or component), listArrayItems (list items in an array-of-objects property with class names and indices), addArrayItem (append item to array-of-objects property — like the + button), removeArrayItem (remove item from array by index), setObjectClass (change class of an object property — like the dropdown), getWorldTransform (read world position and rotation), makeVisible (scroll World Editor hierarchy to this entity)",
-          ),
-        value: z
-          .string()
-          .optional()
-          .describe(
-            "Value for the action: coordinates 'x y z' for move/rotate, new name for rename, parent name for reparent, property value for setProperty, item class for addArrayItem, new class for setObjectClass. Not needed for clearProperty/getProperty/listProperties/removeArrayItem.",
-          ),
-        propertyPath: z
-          .string()
-          .optional()
-          .describe(
-            "Component property path for setProperty/clearProperty (e.g., 'MeshObject.Object')",
-          ),
-        propertyKey: z
-          .string()
-          .optional()
-          .describe(
-            "Property key name for setProperty/clearProperty/getProperty/listProperties/listArrayItems/addArrayItem/removeArrayItem/setObjectClass",
-          ),
-        memberIndex: z
-          .number()
-          .default(-1)
-          .describe(
-            "Array element index for addArrayItem (insert position, -1 = append) or removeArrayItem (item to remove, 0-based)",
-          ),
-      },
-    },
-    async ({ name, action, value, propertyPath, propertyKey, memberIndex }) => {
-      // Only require edit mode for mutating actions, not read-only ones
-      const READ_ONLY_ACTIONS = [
-        "getProperty",
-        "listProperties",
-        "listArrayItems",
-        "getWorldTransform",
-        "makeVisible",
-      ];
-      if (!READ_ONLY_ACTIONS.includes(action)) {
-        const modeErr = requireEditMode(client, "modify entity");
-        if (modeErr) {
-          return modeGateResponse(modeErr, client);
-        }
-      }
-      try {
-        // Validate value is provided for actions that require it
-        // Note: setProperty allows empty string as a valid value, so it's validated separately
-        const actionsRequiringValue = [
+        name: z.string(),
+        action: z.enum([
           "move",
           "rotate",
           "rename",
           "reparent",
+          "setProperty",
+          "clearProperty",
+          "getProperty",
+          "listProperties",
+          "listArrayItems",
           "addArrayItem",
+          "removeArrayItem",
           "setObjectClass",
-        ];
-        if (actionsRequiringValue.includes(action) && (!value || value.trim() === "")) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: "value" parameter is required for the "${action}" action.`,
-              },
-            ],
-            isError: true,
-          };
-        }
-        if (action === "setProperty" && value === undefined) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: "value" parameter is required for the "${action}" action.`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        const params: Record<string, unknown> = { name, action };
-        if (!READ_ONLY_ACTIONS.includes(action)) {
-          params.value = value ?? "";
-        }
-        if (propertyPath) params.propertyPath = propertyPath;
-        if (propertyKey) params.propertyKey = propertyKey;
-        // Always send memberIndex for array actions (-1 = append for addArrayItem)
-        if (action === "addArrayItem" || action === "removeArrayItem") {
-          params.memberIndex = memberIndex;
-        }
-
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_ModifyEntity", params);
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, `Error modifying entity "${name}"`);
-        }
-
-        // Special output for getWorldTransform
-        if (action === "getWorldTransform") {
-          const props = Array.isArray(result.properties) ? result.properties : [];
-          const pos = (props as Record<string, unknown>[]).find((p) => p.name === "position");
-          const rot = (props as Record<string, unknown>[]).find((p) => p.name === "rotation");
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `**Transform: ${name}**\n\n- **Position:** ${(pos?.value as string | undefined)?.trim() || "(unknown)"}\n- **Rotation:** ${(rot?.value as string | undefined)?.trim() || "(unknown)"}${formatConnectionStatus(client)}`,
-              },
-            ],
-          };
-        }
-
-        // Enhanced output for listProperties
-        if (action === "listProperties") {
-          const props = Array.isArray(result.properties) ? result.properties : [];
-          if (props.length === 0) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**No properties found.**${formatConnectionStatus(client)}`,
-                },
-              ],
-            };
-          }
-          const lines = [
-            `**Properties${propertyPath ? " of " + propertyPath : ""}** (${props.length})\n`,
-            "| Property | Value |",
-            "|---|---|",
-          ];
-          for (const p of props) {
-            const prop = p as Record<string, unknown>;
-            lines.push(`| ${prop.name ?? "(unnamed)"} | ${prop.value || ""} |`);
-          }
-          return {
-            content: [
-              { type: "text" as const, text: lines.join("\n") + formatConnectionStatus(client) },
-            ],
-          };
-        }
-
-        const actionLabels: Record<string, string> = {
-          move: `Moved to ${value}`,
-          rotate: `Rotated to ${value}`,
-          rename: `Renamed to "${value}"`,
-          reparent: `Reparented to "${value}"`,
-          setProperty: `Set ${propertyPath || propertyKey || "property"} = ${value}`,
-          clearProperty: `Cleared ${propertyPath || propertyKey || "property"}`,
-          getProperty: `Got ${propertyPath ? propertyPath + "." : ""}${propertyKey || "property"}`,
-          listProperties: `Listed properties${propertyPath ? " of " + propertyPath : ""}`,
-          listArrayItems: `Listed array items in '${propertyKey || "array"}'`,
-          addArrayItem: `Added '${value}' to '${propertyKey || "array"}' at index ${memberIndex ?? -1}`,
-          removeArrayItem: `Removed index ${memberIndex ?? 0} from '${propertyKey || "array"}'`,
-          setObjectClass: `Changed class of '${propertyKey || "property"}' to '${value}'`,
-          getWorldTransform: `Got world transform of ${name}`,
-          makeVisible: `Scrolled to ${name}`,
-        };
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**Entity Modified**\n\n- **Entity:** ${name}\n- **Action:** ${actionLabels[action] || action}${result.message ? `\n- **Note:** ${result.message}` : ""}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error modifying entity "${name}": ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
+          "getWorldTransform",
+          "makeVisible",
+        ]),
+        value: z.string().optional(),
+        propertyPath: z.string().optional().describe("component class or dotted path"),
+        propertyKey: z.string().optional(),
+        memberIndex: z.number().default(-1),
+      },
     },
+    async (args) =>
+      args.action === "listArrayItems"
+        ? runListArrayItems(client, given(args))
+        : runAliasViaModule(client, "wb_entity_modify", given(args)),
   );
 
-  // wb_entity_select
   server.registerTool(
     "wb_entity_select",
     {
-      description:
-        "Manage entity selection in the World Editor. Select, deselect, clear selection, or get the current selection.",
+      description: "1.x alias of wb_view select and selection.",
       inputSchema: {
-        action: z
-          .enum(["select", "deselect", "clear", "getSelected"])
-          .describe("Selection action to perform"),
-        name: z
-          .string()
-          .optional()
-          .describe("Entity name (required for select/deselect, ignored for clear/getSelected)"),
+        action: z.enum(["select", "deselect", "clear", "getSelected"]),
+        name: z.string().optional(),
       },
     },
-    async ({ action, name }) => {
-      try {
-        if ((action === "select" || action === "deselect") && !name) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: \`name\` is required for the "${action}" action.`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        const params: Record<string, unknown> = { action };
-        if (name) params.name = name;
-
-        const result = await client.call<Record<string, unknown>>("EMCP_WB_SelectEntity", params);
-        if (isHandlerError(result)) {
-          return handlerErrorResponse(result, client, `Error with selection (${action})`);
-        }
-
-        if (action === "getSelected") {
-          // Handler emits selectedCount + selectedEntities[{name,className}]
-          // (the array is omitted entirely when nothing is selected).
-          const selected = Array.isArray(result.selectedEntities) ? result.selectedEntities : [];
-          const count =
-            typeof result.selectedCount === "number" ? result.selectedCount : selected.length;
-          if (selected.length === 0) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**No entities selected.** (selectedCount: ${count})${formatConnectionStatus(client)}`,
-                },
-              ],
-            };
-          }
-          const lines = [`**Selected Entities** (${count})\n`];
-          for (const ent of selected) {
-            const e = ent as Record<string, unknown>;
-            lines.push(`- ${e.name || "(unnamed)"}${e.className ? ` (${e.className})` : ""}`);
-          }
-          return {
-            content: [
-              { type: "text" as const, text: lines.join("\n") + formatConnectionStatus(client) },
-            ],
-          };
-        }
-
-        const labels: Record<string, string> = {
-          select: `Selected: ${name}`,
-          deselect: `Deselected: ${name}`,
-          clear: "Selection cleared",
-        };
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `**${labels[action]}**${result.message ? `\n\n${result.message}` : ""}${formatConnectionStatus(client)}`,
-            },
-          ],
-        };
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error with selection (${action}): ${msg}${formatConnectionStatus(client)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
+    async (args) => runAliasViaModule(client, "wb_entity_select", given(args)),
   );
 }

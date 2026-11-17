@@ -1,0 +1,35 @@
+{
+  "$comment": "The three probe-pack diagRead answers of S-D sd-05 (U34, edit mode, no viewport), response bodies only.",
+  "responses": {
+    "DEBUGUI_AI_PRINT_DEBUG": {
+      "status": "ok",
+      "action": "diagRead",
+      "message": "diag option read",
+      "factKeys": ["diagId", "engine", "diagEnum", "value", "bool", "rangeValue"],
+      "factValues": ["122", "false", "DEBUGUI_AI_PRINT_DEBUG", "0", "false", "0"],
+      "total": 0,
+      "page": 0,
+      "pageCount": 0
+    },
+    "DEBUGUI_AI_PRINT_GROUP_INFO": {
+      "status": "ok",
+      "action": "diagRead",
+      "message": "diag option read",
+      "factKeys": ["diagId", "engine", "diagEnum", "value", "bool", "rangeValue"],
+      "factValues": ["123", "false", "DEBUGUI_AI_PRINT_GROUP_INFO", "0", "false", "0"],
+      "total": 0,
+      "page": 0,
+      "pageCount": 0
+    },
+    "DEBUGUI_AI_DEBUG_COVERS": {
+      "status": "ok",
+      "action": "diagRead",
+      "message": "diag option read",
+      "factKeys": ["diagId", "engine", "diagEnum", "value", "bool", "rangeValue"],
+      "factValues": ["140", "false", "DEBUGUI_AI_DEBUG_COVERS", "0", "false", "0"],
+      "total": 0,
+      "page": 0,
+      "pageCount": 0
+    }
+  }
+}

@@ -1,13 +1,25 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SearchEngine, ComponentSearchResult } from "../index/search-engine.js";
+import { provenanceNote } from "./api-search.js";
 
-function formatComponentResult(result: ComponentSearchResult, verbose: boolean): string {
+/**
+ * `childNames` are the class's direct children as the engine derives them
+ * (`SearchEngine.getChildren`: stored children plus the classes that name it
+ * as a parent), the list api_search prints.
+ */
+function formatComponentResult(
+  result: ComponentSearchResult,
+  verbose: boolean,
+  childNames: string[],
+): string {
   const { component: cls, categories, eventHandlers } = result;
   const lines: string[] = [];
 
   lines.push(`## ${cls.name}`);
-  lines.push(`Source: ${cls.source === "enfusion" ? "Enfusion Engine" : "Arma Reforger"} API`);
+  lines.push(
+    `Source: ${cls.source === "enfusion" ? "Enfusion Engine" : "Arma Reforger"} API${provenanceNote(cls)}`,
+  );
   lines.push(`Category: ${categories.join(", ")}`);
   if (cls.parents.length > 0) lines.push(`Extends: ${cls.parents.join(", ")}`);
   if (cls.group) lines.push(`Group: ${cls.group}`);
@@ -26,15 +38,17 @@ function formatComponentResult(result: ComponentSearchResult, verbose: boolean):
   if (eventHandlers.length > 0) {
     lines.push("");
     lines.push(`### Event Handlers (${eventHandlers.length})`);
+    const allMethods = [...(cls.methods || []), ...(cls.protectedMethods || [])];
     for (const handler of eventHandlers) {
-      // Find the full signature for this handler
-      const allMethods = [...(cls.methods || []), ...(cls.protectedMethods || [])];
-      const method = allMethods.find((m) => m.name === handler);
-      if (method) {
-        const desc = method.description ? ` -- ${method.description}` : "";
-        lines.push(`- ${method.signature}${desc}`);
-      } else {
+      // The full signature of every overload of this handler
+      const overloads = allMethods.filter((m) => m.name === handler);
+      if (overloads.length === 0) {
         lines.push(`- ${handler}()`);
+        continue;
+      }
+      for (const method of overloads) {
+        const desc = method.description ? ` -- ${method.description}` : "";
+        lines.push(`- ${method.signature}${provenanceNote(method)}${desc}`);
       }
     }
   }
@@ -48,7 +62,7 @@ function formatComponentResult(result: ComponentSearchResult, verbose: boolean):
       lines.push(`### Public Methods (${nonEventMethods.length})`);
       for (const m of shown) {
         const desc = m.description ? ` -- ${m.description}` : "";
-        lines.push(`- ${m.signature}${desc}`);
+        lines.push(`- ${m.signature}${provenanceNote(m)}${desc}`);
       }
       if (nonEventMethods.length > 10) {
         lines.push(`  ... and ${nonEventMethods.length - 10} more`);
@@ -65,7 +79,7 @@ function formatComponentResult(result: ComponentSearchResult, verbose: boolean):
       lines.push(`### Protected Methods (${nonEventProtected.length})`);
       for (const m of shown) {
         const desc = m.description ? ` -- ${m.description}` : "";
-        lines.push(`- ${m.signature}${desc}`);
+        lines.push(`- ${m.signature}${provenanceNote(m)}${desc}`);
       }
       if (nonEventProtected.length > 10) {
         lines.push(`  ... and ${nonEventProtected.length - 10} more`);
@@ -88,9 +102,9 @@ function formatComponentResult(result: ComponentSearchResult, verbose: boolean):
     }
 
     // Children
-    if (cls.children.length > 0) {
-      const shown = cls.children.slice(0, 10);
-      const suffix = cls.children.length > 10 ? ` ... and ${cls.children.length - 10} more` : "";
+    if (childNames.length > 0) {
+      const shown = childNames.slice(0, 10);
+      const suffix = childNames.length > 10 ? ` ... and ${childNames.length - 10} more` : "";
       lines.push("");
       lines.push(`Direct subclasses: ${shown.join(", ")}${suffix}`);
     }
@@ -169,7 +183,9 @@ export function registerComponentSearch(server: McpServer, searchEngine: SearchE
 
       const verbose = results.length === 1;
       const header = `Found ${results.length} component${results.length !== 1 ? "s" : ""}:\n`;
-      const formatted = results.map((r) => formatComponentResult(r, verbose)).join("\n\n---\n\n");
+      const formatted = results
+        .map((r) => formatComponentResult(r, verbose, searchEngine.getChildren(r.component.name)))
+        .join("\n\n---\n\n");
 
       return {
         content: [{ type: "text", text: header + formatted }],

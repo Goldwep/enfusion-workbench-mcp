@@ -13,7 +13,7 @@
     },
     {
       "type": "RigidBody",
-      "properties": { "m_fMass": "1.0" },
+      "properties": { "Mass": "1.0" },
       "comment": "Mass in kg for physics simulation"
     }
   ],

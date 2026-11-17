@@ -1,0 +1,284 @@
+{
+  "$schema": "./_schema/contract.schema.json",
+  "handler": "EMCP_WB_World",
+  "tool": "wb_world",
+  "purpose": "The open world.",
+  "source": "mod/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_World.c",
+  "request": [
+    "action",
+    "recursive",
+    "path",
+    "confirm",
+    "debugMode",
+    "fullScreen",
+    "after",
+    "cursor",
+    "limit",
+    "text",
+    "coords",
+    "color",
+    "size",
+    "layer",
+    "entity",
+    "mode",
+    "category"
+  ],
+  "response": [
+    "status",
+    "code",
+    "next",
+    "message",
+    "action",
+    "worldPath",
+    "worldName",
+    "mode",
+    "editAction",
+    "restoring",
+    "modifying",
+    "creatingInWindow",
+    "generatorEvents",
+    "toolName",
+    "subScenes",
+    "currentSubScene",
+    "entityCount",
+    "rows",
+    "resourceName",
+    "dryRun",
+    "alreadyRegistered",
+    "eventSeq",
+    "categories",
+    "total",
+    "nextCursor",
+    "id",
+    "undoName",
+    "noteSize",
+    "noteCoords",
+    "noteColor",
+    "noteDistance"
+  ],
+  "actions": [
+    {
+      "name": "state",
+      "summary": "Mode, tool, path, sub-scenes",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "worldPath", "type": "string", "note": "$addon:path; empty when none" },
+        { "key": "worldName", "type": "string" },
+        { "key": "mode", "type": "string", "note": "edit, play, prefab or unknown" },
+        { "key": "editAction", "type": "bool", "note": "IsDoingEditAction" },
+        { "key": "restoring", "type": "bool", "note": "UndoOrRedoIsRestoring" },
+        { "key": "modifying", "type": "bool", "note": "IsModifyingData" },
+        { "key": "creatingInWindow", "type": "bool" },
+        { "key": "generatorEvents", "type": "bool" },
+        { "key": "toolName", "type": "string" },
+        { "key": "subScenes", "type": "int" },
+        { "key": "currentSubScene", "type": "int" },
+        { "key": "entityCount", "type": "int" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "browserSelection",
+      "summary": "Resource Browser selection",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        { "key": "recursive", "type": "bool", "required": false, "note": "default false" }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "rows", "type": "array<string>", "note": "resource names, at most 2000" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "register",
+      "summary": "Write a file's .meta; confirm",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        { "key": "path", "type": "string", "required": true, "note": "project-relative file" },
+        {
+          "key": "confirm",
+          "type": "bool",
+          "required": false,
+          "note": "true writes; else a dry run"
+        }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "resourceName", "type": "string" },
+        { "key": "alreadyRegistered", "type": "bool" },
+        { "key": "dryRun", "type": "bool" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "play",
+      "summary": "Enter play mode",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        { "key": "debugMode", "type": "bool", "required": false },
+        { "key": "fullScreen", "type": "bool", "required": false }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "mode", "type": "string", "note": "read once; poll state" },
+        { "key": "eventSeq", "type": "int", "note": "last recorder event" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "stop",
+      "summary": "Leave play mode",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "mode", "type": "string", "note": "read once; poll state" },
+        { "key": "eventSeq", "type": "int" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "playEvents",
+      "summary": "Play events after seq",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [{ "key": "after", "type": "int", "required": false, "note": "seq; default 0" }],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "rows", "type": "array<string>", "note": "seq|tick|event|world|mode|camera" },
+        { "key": "eventSeq", "type": "int" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "comments",
+      "summary": "Comment entities, paged",
+      "mutating": false,
+      "projectOnly": false,
+      "params": [
+        {
+          "key": "cursor",
+          "type": "string",
+          "required": false,
+          "note": "<start>:<count> of the previous page"
+        },
+        { "key": "limit", "type": "int", "required": false, "note": "default 50, max 200" }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "rows", "type": "array<string>", "note": "id|color|size|text" },
+        { "key": "categories", "type": "array<string>" },
+        { "key": "total", "type": "int", "note": "items before paging" },
+        { "key": "nextCursor", "type": "string", "note": "empty on the last page" }
+      ],
+      "paging": true
+    },
+    {
+      "name": "addComment",
+      "summary": "New comment entity",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        { "key": "text", "type": "string", "required": true },
+        { "key": "coords", "type": "string", "required": true, "note": "\"x y z\"" },
+        { "key": "color", "type": "string", "required": false, "note": "\"r g b\" 0..1" },
+        { "key": "size", "type": "float", "required": false, "note": "metres" },
+        { "key": "layer", "type": "string", "required": false, "note": "layer path" }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "id", "type": "string" },
+        { "key": "undoName", "type": "string", "note": "history point name used" }
+      ],
+      "paging": false
+    },
+    {
+      "name": "annotate",
+      "summary": "Add, move, remove an entity note",
+      "mutating": true,
+      "projectOnly": true,
+      "params": [
+        {
+          "key": "entity",
+          "type": "string",
+          "required": true,
+          "note": "id:<hex> | name:<n> | index:<i>"
+        },
+        { "key": "mode", "type": "string", "required": true, "note": "add, move or remove" },
+        { "key": "text", "type": "string", "required": false, "note": "add only" },
+        { "key": "category", "type": "string", "required": false, "note": "add only" },
+        {
+          "key": "color",
+          "type": "string",
+          "required": false,
+          "note": "\"r g b a\" 0..1; add only"
+        },
+        {
+          "key": "size",
+          "type": "float",
+          "required": false,
+          "note": "metres; add only; default from bounds"
+        },
+        { "key": "coords", "type": "string", "required": false, "note": "move only" }
+      ],
+      "response": [
+        { "key": "status", "type": "string", "note": "ok, error or refused" },
+        { "key": "code", "type": "string", "note": "error code; empty when ok" },
+        { "key": "next", "type": "string" },
+        { "key": "message", "type": "string" },
+        { "key": "action", "type": "string" },
+        { "key": "id", "type": "string" },
+        { "key": "undoName", "type": "string", "note": "history point name used" },
+        { "key": "noteSize", "type": "float", "note": "add: text height applied, metres" },
+        { "key": "noteCoords", "type": "string", "note": "add: where the note is" },
+        { "key": "noteColor", "type": "string", "note": "add: \"r g b a\" applied" },
+        {
+          "key": "noteDistance",
+          "type": "float",
+          "note": "add: distance scaled for; 0 = size given"
+        }
+      ],
+      "paging": false
+    }
+  ]
+}

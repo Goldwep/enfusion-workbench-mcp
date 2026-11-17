@@ -203,7 +203,7 @@
   {
     "path": "Tools_And_Workbench/workbench-plugins.md",
     "title": "Workbench Plugins",
-    "description": "WorldEditorPlugin/ScriptEditorPlugin structure, ScriptDialog, FileIO, CreateEntityTemplate, Code Formatter, Fill From Template, Object Brush, String Editor",
+    "description": "WorldEditorPlugin structure, Script Editor plugins (WorkbenchPlugin with wbModules ScriptEditor), RunCommandline/Workbench.Exit and -gproj, ScriptDialog, FileIO, CreateEntityTemplate, Code Formatter, Fill From Template, Object Brush, String Editor",
     "keywords": [
       "workbench",
       "plugin",
@@ -1096,6 +1096,30 @@
       "pitfall",
       "asi",
       "state"
+    ]
+  },
+  {
+    "path": "Character_And_Animation/animation/anim-lint-tools.md",
+    "title": "Animation Lint Tools",
+    "description": "Scope, output and limits of animation_find_unused_clips (unused .anm clips) and weapon_pose_lint (GlobalTags check of a character .agr); the prose moved out of the two tool descriptions",
+    "keywords": [
+      "animation",
+      "lint",
+      "unused",
+      "clip",
+      "anm",
+      "prune",
+      "publish",
+      "weapon",
+      "pose",
+      "agr",
+      "globaltags",
+      "tag",
+      "ads",
+      "stance",
+      "regex",
+      "animation_find_unused_clips",
+      "weapon_pose_lint"
     ]
   },
   {

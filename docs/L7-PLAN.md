@@ -4,7 +4,7 @@
 
 ## L7-1 EMCP handler consolidation pattern (foundation, must land first)
 
-Existing `mod/Scripts/WorkbenchGame/EnfusionMCP/` has per-action `.c` handler files. The L7 plan consolidates to **one handler per domain with an `action` dispatch field**. Hard cap: ≤15 handler files at v1.0.0.
+Existing `mod/Scripts/WorkbenchGame/EnfusionMCP/` has per-action `.c` handler files. The L7 plan consolidates to **one handler per domain with an `action` dispatch field**. The original plan capped this at 15 handler files at v1.0.0; that cap was not kept and nothing enforces it. Measured count: 37 files in `mod/Scripts/WorkbenchGame/EnfusionMCP/*.c` declare a `NetApiHandler` (45 `.c` files in the folder; `npx tsx scripts/count-inventory.ts` prints the current number; the recon counted 21 at the start of 2.0). The rule that stays: one handler per domain, `action` as the discriminator, not one file per action.
 
 **Domains for L7:**
 - `EMCP_WB_Terrain.c` — heightmap / road / river / water / navmesh actions
@@ -79,7 +79,7 @@ Node-side: a new `src/workbench/job-client.ts` wraps the JsonApi handshake. Each
 
 ## L7-3 First live tool — `terrain_inspect` (verification probe)
 
-Node-side tool ships now (`src/tools/terrain-inspect.ts` placeholder below); EMCP_WB_Terrain.c handler ships next session as the load-bearing artifact. The tool returns a clear "EMCP handler not deployed" error until then — gives a real signal to verify the architecture E2E.
+Node-side tool and the EMCP_WB_Terrain.c handler both ship (2.0). The handler reads the world open in the World Editor; since the phase-7 audit (DEC-107) the tool first checks with `EMCP_WB_World` state that `world_path` names that world, and the handler's payload names the world it read (`open_world`). The "EMCP handler not deployed" error remains only for a Workbench without the handler set.
 
 ## L7-4..9 Remaining tools (squad-delegate next session)
 

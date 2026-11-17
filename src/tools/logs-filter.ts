@@ -11,6 +11,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 import {
   resolveSession,
   parseLogFile,
@@ -133,7 +134,10 @@ export function registerLogsFilter(server: McpServer, config: Config): void {
       try {
         const rootPath = which === "game" ? config.gameLogsPath : config.logsPath;
         if (!rootPath) {
-          return { content: [{ type: "text" as const, text: `No ${which} logs path configured.` }] };
+          return {
+            content: [{ type: "text" as const, text: `No ${which} logs path configured.` }],
+            isError: true,
+          };
         }
         const resolved = resolveSession(rootPath, session);
         if (!resolved) {
@@ -144,10 +148,19 @@ export function registerLogsFilter(server: McpServer, config: Config): void {
                 text: `Session '${session}' not found. Try \`logs_list\`.`,
               },
             ],
+            isError: true,
           };
         }
-        // Cursor key binds every filter; if any changes, the cursor must too.
-        const key = JSON.stringify({ which, session, channel, level, category, pattern });
+        // Cursor key binds every filter; if any changes, the cursor must too. It binds the
+        // resolved session folder, not the ref: 'latest' can move between pages (read-knowledge-09).
+        const key = JSON.stringify({
+          which,
+          session: resolved.absPath,
+          channel,
+          level,
+          category,
+          pattern,
+        });
         const offset = cursor ? decodeCursor(cursor, key).o : 0;
 
         // Compile pattern (early-error before parsing the file).
@@ -203,6 +216,18 @@ export function registerLogsFilter(server: McpServer, config: Config): void {
         }
 
         const channelPath = join(resolved.absPath, `${channel}.log`);
+        // A missing channel file is not an empty log (read-knowledge-08).
+        if (!existsSync(channelPath)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `No ${channel}.log in session '${resolved.name}' (${resolved.absPath}). Try \`logs_list\`.`,
+              },
+            ],
+            isError: true,
+          };
+        }
         const all = parseLogFile(channelPath);
         const matches = all.filter((l) => {
           if (level !== "any" && l.level !== (level as LogLevel)) return false;

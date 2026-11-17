@@ -4,6 +4,9 @@ import {
   getScriptModuleFolder,
   getScriptFilename,
 } from "../../src/templates/script.js";
+import { buildSourceIndex } from "../../src/census/source-index.js";
+import type { FieldRecord, MethodRecord } from "../../src/census/enforce-source.js";
+import { pluginClasses } from "../../src/census/plugin-registry.js";
 
 describe("generateScript", () => {
   it("generates modded class", () => {
@@ -240,5 +243,111 @@ describe("getScriptModuleFolder", () => {
 describe("getScriptFilename", () => {
   it("appends .c extension", () => {
     expect(getScriptFilename("TAG_MyComponent")).toBe("TAG_MyComponent.c");
+  });
+});
+
+describe("scriptType plugin", () => {
+  const index = (code: string) =>
+    buildSourceIndex([{ path: "scripts/WorkbenchGame/Test.c", text: code }], { build: "1.0.0.1" });
+  const plugin = (code: string) => {
+    const found = pluginClasses(index(code));
+    expect(found).toHaveLength(1);
+    return found[0];
+  };
+
+  it("defaults to WorkbenchPlugin with Run, a setting field and a button, inside #ifdef WORKBENCH", () => {
+    const code = generateScript({ className: "TAG_MyPlugin", scriptType: "plugin" });
+    expect(code.startsWith("#ifdef WORKBENCH\n")).toBe(true);
+    expect(code.trimEnd().endsWith("#endif")).toBe(true);
+    expect(code).toContain("class TAG_MyPlugin : WorkbenchPlugin");
+    expect(code).toContain("override void Run()");
+    expect(code).toContain("Workbench.ScriptDialog(");
+    expect(code).toContain("[Attribute(");
+    expect(code).toContain('[ButtonAttribute("Run")]');
+    expect(code).not.toContain("wbModules");
+  });
+
+  it("the E03 attribute parser reads the generated attributes back", () => {
+    const code = generateScript({
+      className: "TAG_MyPlugin",
+      scriptType: "plugin",
+      parentClass: "WorkbenchPlugin",
+      module: "ScriptEditor",
+      description: 'Does a "thing"',
+      shortcut: "Ctrl+Shift+X",
+      awesomeFontCode: "0xf0c5",
+    });
+    const p = plugin(code);
+    expect(p.kind).toBe("plugin");
+    expect(p.name).toBe("TAG_MyPlugin");
+    expect(p.label).toBe("TAG_MyPlugin");
+    expect(p.description).toBe('Does a "thing"');
+    expect(p.shortcut).toBe("Ctrl+Shift+X");
+    expect(p.wbModules).toEqual(["ScriptEditor"]);
+    expect(p.module).toBe("ScriptEditor");
+    expect(p.unreadable).toEqual([]);
+    expect(p.args.awesomeFontCode).toBe("0xF0C5");
+    const ix = index(code);
+    const sample = ix.records.find(
+      (r): r is FieldRecord => r.kind === "field" && r.name === "m_bSample",
+    );
+    expect(sample?.attributes.map((a) => a.name)).toEqual(["Attribute"]);
+    const button = ix.records.find(
+      (r): r is MethodRecord => r.kind === "method" && r.name === "RunButton",
+    );
+    expect(button?.attributes.map((a) => a.name)).toEqual(["ButtonAttribute"]);
+    expect(ix.records.some((r) => r.kind === "method" && r.name === "Run")).toBe(true);
+  });
+
+  it.each([
+    ["WorldEditorPlugin", "WorldEditor"],
+    ["ResourceManagerPlugin", "ResourceManager"],
+    ["LocalizationEditorPlugin", "LocalizationEditor"],
+  ])("%s implies the %s module", (parentClass, mod) => {
+    const code = generateScript({ className: "TAG_P", scriptType: "plugin", parentClass });
+    expect(code).toContain(`class TAG_P : ${parentClass}`);
+    const p = plugin(code);
+    expect(p.kind).toBe("plugin");
+    expect(p.wbModules).toEqual([mod]);
+  });
+
+  it("WorldEditorTool uses WorkbenchToolAttribute and OnActivate", () => {
+    const code = generateScript({
+      className: "TAG_MyTool",
+      scriptType: "plugin",
+      parentClass: "WorldEditorTool",
+    });
+    expect(code).toContain("override void OnActivate()");
+    expect(code).not.toContain("override void Run()");
+    const p = plugin(code);
+    expect(p.kind).toBe("tool");
+    expect(p.wbModules).toEqual(["WorldEditor"]);
+  });
+
+  it("accepts a numeric awesomeFontCode", () => {
+    const code = generateScript({
+      className: "TAG_P",
+      scriptType: "plugin",
+      awesomeFontCode: 0xf188,
+    });
+    expect(code).toContain("awesomeFontCode: 0xF188");
+  });
+
+  it.each([
+    [{ parentClass: "ScriptComponent" }, "Invalid parentClass"],
+    [{ module: "Nope" }, "Invalid module"],
+    [{ parentClass: "WorldEditorPlugin", module: "ScriptEditor" }, "does not fit"],
+    [{ shortcut: 'a"b' }, "Invalid shortcut"],
+    [{ awesomeFontCode: "zz" }, "Invalid awesomeFontCode"],
+    [{ awesomeFontCode: 0 }, "Invalid awesomeFontCode"],
+  ])("refuses %j", (extra, msg) => {
+    expect(() => generateScript({ className: "TAG_P", scriptType: "plugin", ...extra })).toThrow(
+      msg,
+    );
+  });
+
+  it("returns Scripts/WorkbenchGame for plugin only", () => {
+    expect(getScriptModuleFolder("plugin")).toBe("Scripts/WorkbenchGame");
+    expect(getScriptModuleFolder("basic")).toBe("Scripts/Game");
   });
 });

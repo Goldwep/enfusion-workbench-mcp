@@ -217,7 +217,10 @@ export function validateServerConfig(raw: unknown): ValidationFinding[] {
         findings.push({
           severity: "warning",
           path: `admins[${i}]`,
-          message: `Admin entry doesn't look like a Steam64 ID (expected 17 digits): ${JSON.stringify(a)}`,
+          // admins[] is sensitive: describe the entry, never echo it (read-knowledge-07).
+          message: `Admin entry doesn't look like a Steam64 ID (expected 17 digits): got ${
+            typeof a === "string" ? `a string of ${a.length} characters` : `a ${a === null ? "null" : typeof a}`
+          }`,
         });
       }
     }
@@ -328,11 +331,19 @@ export function registerServerValidateConfig(server: McpServer, config: Config):
         try {
           raw = JSON.parse(text);
         } catch (e) {
+          // V8's message quotes the source around the bad token, which can hold a secret:
+          // report only the position (read-knowledge-07).
+          const pos = /position (\d+)/.exec(e instanceof Error ? e.message : String(e));
+          let where = "";
+          if (pos) {
+            const before = text.slice(0, Number(pos[1])).split(/\r?\n/);
+            where = ` near line ${before.length}, column ${before[before.length - 1].length + 1}`;
+          }
           return {
             content: [
               {
                 type: "text" as const,
-                text: `Error parsing server.json as JSON: ${e instanceof Error ? e.message : String(e)}`,
+                text: `Error parsing server.json as JSON: the file is not valid JSON${where} (source text not echoed).`,
               },
             ],
             isError: true,

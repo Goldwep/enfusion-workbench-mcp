@@ -1,0 +1,10 @@
+{"id":"r:keep","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T2","tier_evidence":[],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:old","build":{"first_seen":"1.0","last_seen":"1.0"},"tier":"T2","tier_evidence":[],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:new","build":{"first_seen":"2.0","last_seen":"2.0"},"tier":"T2","tier_evidence":[],"sources":[{"build":"2.0","enumerator":"E02"}]}
+{"id":"r:t5stale","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T5","tier_evidence":[{"ref":"E02@1.0","tier":"T0"},{"ref":"w1-10-fixture state-readback@1.0","tier":"T5"}],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:t5fresh","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T5","tier_evidence":[{"ref":"w1-10-fixture state-readback@2.0","tier":"T5"}],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:t5unnamed","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T5","tier_evidence":[{"ref":"some probe@1.0","tier":"T5"}],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:t5w3","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T5","tier_evidence":[{"ref":"w3-23-loc-insert state-readback@1.0","tier":"T5"}],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:t5w1b","build":{"first_seen":"1.0","last_seen":"2.0"},"tier":"T5","tier_evidence":[{"ref":"w1-11-other readback@1.0","tier":"T5"}],"sources":[{"build":"1.0","enumerator":"E02"}]}
+{"id":"r:import","build":{"first_seen":"1.0","last_seen":"1.0"},"tier":"T2","tier_evidence":[],"sources":[{"build":"1.0","enumerator":"E05"}]}
+{"id":"r:walked","build":{"first_seen":"1.0","last_seen":"1.0"},"tier":"T2","tier_evidence":[],"sources":[{"build":"1.0","enumerator":"L01"}]}

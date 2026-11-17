@@ -6,10 +6,14 @@
  * them for the consolidated output.
  *
  * Rules:
- *   F1: required fields (`m_sFactionKey`, `m_sFactionName`, `m_FactionColor`)
- *   F2: `m_sFactionKey` matches /^[A-Z][A-Z0-9_]{1,15}$/
- *   F3: color R/G/B values in [0, 255]
- *   F4: no duplicate `m_sFactionKey` across all faction .conf files in the
+ *   F1: `FactionKey` present; `FactionColor` and `UIInfo` present unless the
+ *       file inherits (`SCR_Faction : "<parent>.conf"`, as vanilla US.conf does);
+ *       the member-style names `m_sFactionKey` / `m_sFactionName` /
+ *       `m_FactionColor` that older faction_create output used are flagged,
+ *       because the engine loads the file and ignores them (W11 run 6)
+ *   F2: `FactionKey` matches /^[A-Z][A-Z0-9_]{1,15}$/
+ *   F3: `FactionColor` is four floats in [0, 1] (vanilla: `0.016 0.552 0.905 1`)
+ *   F4: no duplicate `FactionKey` across all faction .conf files in the
  *       project — surfaced as warnings on the second-and-later instances
  *   F5: faction key referenced by at least one entity/prefab — surfaced as
  *       a warning ("orphan faction") if not
@@ -52,13 +56,16 @@ function getChildByType(node: EnfusionNode, type: string): EnfusionNode | null {
   return node.children.find((c) => c.type === type) ?? null;
 }
 
-/** Parse an integer color channel, returning null when not a clean integer. */
-function parseChannel(raw: string | null): number | null {
-  if (raw === null) return null;
-  const v = parseInt(raw, 10);
-  if (!Number.isFinite(v) || String(v) !== raw.trim()) return null;
-  return v;
-}
+/** Member-style names the engine ignores on SCR_Faction, mapped to the attribute it holds. */
+const IGNORED_FACTION_NAMES: Record<string, string> = {
+  m_sFactionKey: "FactionKey",
+  m_sFactionName: "UIInfo SCR_FactionUIInfo { Name }",
+  m_FactionColor: "FactionColor",
+  m_sKey: "FactionKey",
+  m_sName: "UIInfo SCR_FactionUIInfo { Name }",
+  m_Color: "FactionColor",
+  m_sFlagPath: "m_sFactionFlag",
+};
 
 /**
  * Walk a directory for `.conf` files. Used to find sibling faction configs
@@ -92,12 +99,12 @@ function* walkConfFiles(root: string): Generator<string> {
 }
 
 /**
- * Extract the `m_sFactionKey` value from a parsed SCR_Faction node, or null
+ * Extract the `FactionKey` value from a parsed SCR_Faction node, or null
  * if the node isn't a faction or the key is missing.
  */
 function extractFactionKeyFromConfRoot(root: EnfusionNode): string | null {
   if (root.type !== "SCR_Faction") return null;
-  return getStringProp(root, "m_sFactionKey");
+  return getStringProp(root, "FactionKey");
 }
 
 // ── Per-file validation (rules F1-F3) ─────────────────────────────────────────
@@ -134,29 +141,47 @@ export function validateFactionFile(
     return findings;
   }
 
-  // F1: required fields present
-  const key = getStringProp(root, "m_sFactionKey");
+  // F1: ignored member-style names (written by older faction_create/config_create)
+  const present = new Set([
+    ...root.properties.map((p) => p.key),
+    ...root.children.map((c) => c.type),
+  ]);
+  for (const [bad, good] of Object.entries(IGNORED_FACTION_NAMES)) {
+    if (!present.has(bad)) continue;
+    findings.push({
+      severity: "error",
+      path: bad,
+      message: `'${bad}' is not an SCR_Faction attribute; the engine ignores it`,
+      hint: `Use ${good}, as vanilla Configs/Factions/*.conf do.`,
+    });
+  }
+
+  // F1: required attributes. An inheriting file takes the parent's values.
+  const inherits = root.inheritance !== undefined;
+  const key = getStringProp(root, "FactionKey");
   if (key === null || key.length === 0) {
     findings.push({
-      severity: "error",
-      path: "m_sFactionKey",
+      severity: inherits ? "warning" : "error",
+      path: "FactionKey",
       message: "Required field missing or empty",
     });
   }
-  const name = getStringProp(root, "m_sFactionName");
-  if (name === null || name.length === 0) {
+  const color = getStringProp(root, "FactionColor");
+  if (color === null && !inherits) {
     findings.push({
-      severity: "error",
-      path: "m_sFactionName",
-      message: "Required field missing or empty",
+      severity: "warning",
+      path: "FactionColor",
+      message: "FactionColor missing",
+      hint: "Four 0-1 floats R G B A, e.g. FactionColor 0.016 0.552 0.905 1",
     });
   }
-  const colorNode = getChildByType(root, "m_FactionColor");
-  if (colorNode === null) {
+  const ui = getChildByType(root, "UIInfo");
+  if (ui === null && !inherits) {
     findings.push({
-      severity: "error",
-      path: "m_FactionColor",
-      message: "Required block missing",
+      severity: "warning",
+      path: "UIInfo",
+      message: "UIInfo missing: the faction has no display name",
+      hint: 'Add UIInfo SCR_FactionUIInfo { Name "<display name>" }',
     });
   }
 
@@ -164,43 +189,29 @@ export function validateFactionFile(
   if (key !== null && key.length > 0 && !FACTION_KEY_RE.test(key)) {
     findings.push({
       severity: "error",
-      path: "m_sFactionKey",
+      path: "FactionKey",
       message: `Key "${key}" must match /^[A-Z][A-Z0-9_]{1,15}$/`,
       hint: "Keys are case-sensitive and used in scripts and component refs — uppercase + digits + underscore only.",
     });
   }
 
-  // F3: color channel ranges. Each channel is a key on the m_FactionColor
-  // child node — values are strings emitted as bare numbers, but the parser
-  // gives them back as strings; we re-parse here.
-  if (colorNode !== null) {
-    for (const channel of ["R", "G", "B"]) {
-      const raw = getStringProp(colorNode, channel);
-      if (raw === null) {
-        findings.push({
-          severity: "warning",
-          path: `m_FactionColor.${channel}`,
-          message: "Channel missing",
-          hint: "Defaults to 0 in the engine, but explicit is better.",
-        });
-        continue;
-      }
-      const v = parseChannel(raw);
-      if (v === null) {
-        findings.push({
-          severity: "error",
-          path: `m_FactionColor.${channel}`,
-          message: `Channel value "${raw}" is not an integer`,
-        });
-        continue;
-      }
-      if (v < 0 || v > 255) {
-        findings.push({
-          severity: "error",
-          path: `m_FactionColor.${channel}`,
-          message: `Channel value ${v} out of range [0, 255]`,
-        });
-      }
+  // F3: FactionColor is an inline vector of four 0-1 floats.
+  if (color !== null) {
+    const parts = color.trim().split(/\s+/);
+    const nums = parts.map(Number);
+    if (parts.length !== 4 || nums.some((n) => !Number.isFinite(n))) {
+      findings.push({
+        severity: "error",
+        path: "FactionColor",
+        message: `FactionColor "${color}" is not four numbers (R G B A)`,
+      });
+    } else if (nums.some((n) => n < 0 || n > 1)) {
+      findings.push({
+        severity: "error",
+        path: "FactionColor",
+        message: `FactionColor "${color}" has a channel outside [0, 1]`,
+        hint: "Channels are floats 0-1, not 0-255.",
+      });
     }
   }
 
@@ -339,7 +350,7 @@ export function validateFaction(targetPath: string): FactionValidationFinding[] 
       const relFirst = relative(projectRoot, files[0]).split("\\").join("/");
       findings.push({
         severity: "error",
-        path: `${relDup}:m_sFactionKey`,
+        path: `${relDup}:FactionKey`,
         message: `Duplicate faction key "${key}" — first seen in ${relFirst}`,
         hint: "Faction keys must be unique within a project.",
       });
@@ -360,7 +371,7 @@ export function validateFaction(targetPath: string): FactionValidationFinding[] 
         const rel = relative(projectRoot, f.path).split("\\").join("/");
         findings.push({
           severity: "warning",
-          path: `${rel}:m_sFactionKey`,
+          path: `${rel}:FactionKey`,
           message: `Orphan faction "${f.key}": no entity in the project references this key via "faction affiliation"`,
           hint:
             "Either no entity is bound to this faction yet, or affiliations are inherited from prefabs " +
