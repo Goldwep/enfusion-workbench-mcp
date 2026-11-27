@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 // Failure injection for renameSync: the hook sees (from, to) and may throw.
 const fsHook = vi.hoisted(() => ({ onRename: undefined as undefined | ((from: string, to: string) => void) }));
 vi.mock("node:fs", async (importOriginal) => {
@@ -304,5 +305,62 @@ describe("refactor_move_resource_path", () => {
     expect(existsSync(s.newAbs)).toBe(false);
     expect(existsSync(`${s.newAbs}.meta`)).toBe(false);
     expect(readFileSync(s.refAbs, "utf-8")).toBe(s.refOriginal);
+  });
+
+  // ── refactor-index-10 ──────────────────────────────────────────────────────
+
+  it("keeps the sidecar's original bytes as a backup beside it when the Name line is rewritten", async () => {
+    const s = seed({ sidecar: true });
+    const r = await s.move(true);
+    expect(r.isError).toBeUndefined();
+    expect(readFileSync(`${s.newAbs}.meta.bak`, "utf-8")).toBe(metaFor(OLD_REL));
+    expect(textOf(r)).toMatch(/Sidecar backup \(before the Name rewrite\): .*b\.et\.meta\.bak/);
+  });
+
+  it("a failed ref commit also removes the sidecar backup it made", async () => {
+    const s = seed({ sidecar: true });
+    fsHook.onRename = (from) => {
+      if (from.includes(".tmp.")) throw new Error("EPERM: simulated ref swap failure");
+    };
+    const r = await s.move(true);
+    fsHook.onRename = undefined;
+    expect(r.isError).toBe(true);
+    expect(existsSync(`${s.newAbs}.meta.bak`)).toBe(false);
+  });
+
+  it("refuses a ref file that changed between the plan and the commit (M15 stamps)", async () => {
+    const s = seed({ sidecar: true });
+    // The file rename is the first commit step; a write to the ref file lands after the plan.
+    fsHook.onRename = (from) => {
+      if (from === s.oldAbs) writeFileSync(s.refAbs, `${s.refOriginal}// edited meanwhile\n`, "utf-8");
+    };
+    const r = await s.move(true);
+    fsHook.onRename = undefined;
+    expect(r.isError).toBe(true);
+    expect(textOf(r)).toMatch(/file changed since plan/);
+    expect(existsSync(s.oldAbs)).toBe(true);
+    expect(existsSync(s.newAbs)).toBe(false);
+    expect(readFileSync(s.refAbs, "utf-8")).toBe(`${s.refOriginal}// edited meanwhile\n`);
+  });
+
+  it("refuses a resource with uncommitted git changes and no referrers unless force (git-clean covers the moved files)", async () => {
+    const { tool } = makeTool();
+    try {
+      execFileSync("git", ["init", "-q", root], { stdio: "ignore" });
+    } catch {
+      return; // no git binary: the check proceeds by design (byte-edit no-git-binary)
+    }
+    const oldAbs = join(root, "prefabs", "lonely.et");
+    writeFileSync(oldAbs, "GenericEntity {\n}\n", "utf-8");
+    writeFileSync(`${oldAbs}.meta`, `MetaFileClass {\n Name "{${GUID}}prefabs/lonely.et"\n}`, "utf-8");
+    const args = { project_root: root, old_path: "prefabs/lonely.et", new_path: "prefabs/moved.et", commit: true };
+    const refused = await tool({ ...args, force: false });
+    expect(refused.isError).toBe(true);
+    expect(textOf(refused)).toMatch(/REFUSED: nothing was moved.*Uncommitted git changes/s);
+    expect(existsSync(oldAbs)).toBe(true);
+    expect(existsSync(join(root, "prefabs", "moved.et"))).toBe(false);
+    const forced = await tool({ ...args, force: true });
+    expect(forced.isError).toBeUndefined();
+    expect(existsSync(join(root, "prefabs", "moved.et"))).toBe(true);
   });
 });

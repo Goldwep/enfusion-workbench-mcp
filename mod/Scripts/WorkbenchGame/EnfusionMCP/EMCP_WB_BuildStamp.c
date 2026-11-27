@@ -7,5 +7,5 @@
 
 class EMCP_WB_BuildStamp
 {
-	static const string VALUE = "de84eb5ac874b293fb1a93c9d43ad87703fca1a7";
+	static const string VALUE = "fd43038398f9f998d18eeac718546d88e6279e8b";
 }

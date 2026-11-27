@@ -3,6 +3,47 @@
 All notable changes to this project. Dates are YYYY-MM-DD. Full notes for 2.0 are in
 [docs/RELEASE-NOTES-2.0.md](docs/RELEASE-NOTES-2.0.md).
 
+## 2.0.0-rc.2 (2026-11-26)
+
+Fixes since rc.1. They pass the offline test suite; the live batteries have not been rerun on them yet. Arma
+Reforger Tools updated to 1.9.0.42 on the same day: its script API, plugins, net functions and executable tables
+read the same as 1.9.0.37 offline, and its changelog lists no Workbench change. Nothing was run against a live
+1.9.0.42 Workbench.
+
+### Fixed
+
+- **`wb_entity_duplicate`** refuses before it saves when Workbench has not loaded the addon `modName` names
+  (the engine writes into the open project), and places no copy when an entity already holds the temporary
+  `<name>_copy` name.
+
+- **`building_setup`** keeps a numbered backup (`.bak`, `.bak2`, ...) of any `.et` it replaces, and its dry run
+  lists the files it would replace.
+- **`scenario_apply_template`** refuses a target that is not a `.layer`, `.conf` or `.ent`. A `.et` was accepted
+  and got extra root objects.
+- **`refactor_move_resource_path`** refuses a resource or `.meta` with uncommitted git changes unless `force: true`,
+  also when nothing refers to it; keeps a backup of the `.meta` before rewriting its Name line; refuses a referencing
+  file that changed between plan and commit.
+- **`server_stop`** answers `unverified` when the PID is alive but its image cannot be read (tasklist failed): nothing
+  is signalled and the PID file is kept. Before, the PID file was deleted and the answer was `not_running`, so the
+  next `server_launch` could start a second server. `server_launch` treats such a PID as running.
+- **`wb_cleanup`** refuses (LEASE_HELD) while another session holds the Workbench lease for that mod, or for no
+  named project.
+- **`wb_launch`** kills the whole process tree when the launch is stuck at the launcher picker or on missing
+  dependencies, not only the spawned process.
+- **`wb_entity_duplicate`**: when the copy is placed but cannot take the name `<name>_copy`, the answer names the
+  copy that stands in the world and no longer advises placing it again. Needs the new handler set
+  (`EMCP_WB_CreateEntity` answers `created`; build stamp changed).
+- **`wb_entity_duplicate`** saves the placed entity through Workbench (`wb_prefabs createTemplate`), so its
+  instance overrides are kept and a project or dependency prefab works (before: a byte copy of the ancestor, game
+  data only). With `replaceInScene` the copy is created on the original's layer, checked, the original deleted and
+  the copy renamed to the original's name (before: layer 0, `<name>_copy`). Each failed step says what stands.
+  Whether the saved `.et` inherits from the ancestor or is flattened is not verified; not run live yet (w11-54).
+- **`wb_world`** `new`, `duplicate` and `saveAs` with `overwrite: true` copy every file they replace to
+  `<artifacts>/world/` first; the answer's `readback.snapshot` names the folder.
+- **`wb_validate_scripts`** (1.x alias) refuses `gproj_path`, `timeout_seconds` and `launcher_nudge` with
+  `INVALID_ARGUMENT`. They were silently ignored, so a `gproj_path` naming another project got the open project's
+  result.
+
 ## 2.0.0-rc.1 (2026-11-16)
 
 This is a release candidate, not the final 2.0.0. It ships the 2.0 code as it stands; some release

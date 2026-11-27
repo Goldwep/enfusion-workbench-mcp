@@ -14,7 +14,7 @@ Stamp a curated template (`fob_basic` / `checkpoint` / `patrol_grid`) into an ex
 
 | Name | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `target_layer_path` | string | yes | Absolute path to the target .layer / .conf / .et file. Must not start with '-' (flag-smuggle guard). |
+| `target_layer_path` | string | yes | Absolute path to the target .layer / .conf / .ent file. Must not start with '-' (flag-smuggle guard). |
 | `template_name` | string | yes | Which curated template to stamp One of: `fob_basic`, `checkpoint`, `patrol_grid`. |
 | `position` | object | yes | World position at which the template's origin is placed. |
 | `rotation_yaw_deg` | number | no | Yaw rotation in degrees around the Y axis, applied around `position`. Default 0. Default: `0`. |

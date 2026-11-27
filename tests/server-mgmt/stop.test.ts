@@ -222,15 +222,17 @@ describe("server-mgmt/stop — process identity (M20)", () => {
     expect(existsSync(pidFilePath)).toBe(false);
   });
 
-  it("treats an unresolvable image (tasklist failed) as foreign — never signals", async () => {
+  it("an unresolvable image (tasklist failed) is unverified: never signals, keeps the PID file (live-client-07)", async () => {
     const dir = setupDir();
     const pidFilePath = join(dir, PID_FILE_NAME);
     writePidFile(pidFilePath, SAMPLE);
     const { deps, calls } = makeDeps({ aliveSequence: [true] });
     const out = await stopServer({ pidFilePath, deps: { ...deps, imageName: () => null } });
-    expect(out.status).toBe("not_running");
+    expect(out.status).toBe("unverified");
+    expect(out.detail).toMatch(/could not be read/);
     expect(calls.sigterm).toHaveLength(0);
-    expect(existsSync(pidFilePath)).toBe(false);
+    expect(calls.sigkill).toHaveLength(0);
+    expect(existsSync(pidFilePath)).toBe(true);
   });
 
   it("proceeds to SIGTERM when the image matches (case-insensitive)", async () => {

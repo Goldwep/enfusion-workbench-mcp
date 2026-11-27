@@ -142,13 +142,13 @@ describe("the audit on this tree", () => {
   // steps stay open with their reason, and so do the types no step judged. W11 run 5 (EV-W11-113)
   // closed replace_guid on the owner .meta and an unindexed child. W11 run 8 (EV-W11-200..232,
   // summary EV-W11-233) closed .styles, .siga, the .conf copy and reference, the .gproj
-  // Dependencies, faction_create and mod's .c .conf; none of the five left is judgeable hand-free.
+  // Dependencies, faction_create and mod's .c .conf; none of the four left is judgeable hand-free
+  // (wb_entity_duplicate left the table: Workbench writes its .et, open-findings lta-08).
   it("pins the engine-accept gaps left after W11 run 8", () => {
     expect(audit.acceptGaps.map((g) => g.replace(/ \(.*$/, ""))).toEqual([
       "animation_workspace: .ae",
       "wb_settings: scratch .ini",
       "wb_terrain_edit: terrain file set",
-      "wb_entity_duplicate: .et copy",
       "server_config: server.json",
     ]);
   });
@@ -160,8 +160,8 @@ describe("the audit on this tree", () => {
   });
 
   // 2026-11-14 write-safety pass: every replacing write goes through writeFileAtomic (wb_world's
-  // snapshot, wb_terrain_edit's exports; its backups and scenario_create's and
-  // wb_entity_duplicate's files are wx creates), and writeWithBackup is a .bak then writeFileAtomic.
+  // snapshot, wb_terrain_edit's exports; its backups and scenario_create's
+  // files are wx creates), and writeWithBackup is a .bak then writeFileAtomic.
   it("finds every write route atomic or exclusive-create", () => {
     expect(writeWithBackupIsAtomic()).toBe(true);
     expect(audit.routeGaps).toEqual([]);
@@ -172,7 +172,6 @@ describe("the audit on this tree", () => {
   it("pins the creates-only rows, each writing with flag wx alone", () => {
     expect(audit.createsOnly).toEqual([
       "game_duplicate",
-      "wb_entity_duplicate",
       "script_create",
       "prefab",
       "layout_create",

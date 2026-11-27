@@ -10,6 +10,7 @@ import {
   WorkbenchError,
   handlerSetDigest,
   isOurStandaloneAddon,
+  LEASE_SESSION,
 } from "../../src/workbench/client.js";
 import {
   decodePascalString,
@@ -310,6 +311,60 @@ describe("cleanupHandlerScripts", () => {
         : modDir[0].toUpperCase() + modDir.slice(1);
     const client = new WorkbenchClient("127.0.0.1", 1);
     expect(client.cleanupHandlerScripts(flipped)).toBe(true);
+  });
+});
+
+describe("cleanupLeaseBlocker (live-client-08)", () => {
+  let tmp: string;
+  let config: Config;
+  const leaseFile = () => join(tmp, "lease", "workbench.lease.json");
+  const writeLease = (session: string, project: string | null) => {
+    mkdirSync(join(tmp, "lease"), { recursive: true });
+    const now = new Date().toISOString();
+    writeFileSync(
+      leaseFile(),
+      JSON.stringify({
+        session,
+        purpose: "live-session",
+        started_at: now,
+        heartbeat_at: now,
+        wb_pid: null,
+        project,
+      }),
+    );
+  };
+
+  beforeEach(() => {
+    tmp = mkdtempSync(join(tmpdir(), "emcp-cleanup-lease-"));
+    mkdirSync(join(tmp, "ModA"), { recursive: true });
+    config = { projectPath: tmp, leasePath: leaseFile() } as unknown as Config;
+  });
+  afterEach(() => rmSync(tmp, { recursive: true, force: true }));
+
+  it("no lease, no config: nothing blocks", () => {
+    expect(new WorkbenchClient("127.0.0.1", 1, config).cleanupLeaseBlocker(join(tmp, "ModA"))).toBeNull();
+    writeLease("other:1", null);
+    expect(new WorkbenchClient("127.0.0.1", 1).cleanupLeaseBlocker(join(tmp, "ModA"))).toBeNull();
+  });
+
+  it("another session's held lease on this project, or on no project, blocks", () => {
+    const client = new WorkbenchClient("127.0.0.1", 1, config);
+    writeLease("other:1", join(tmp, "ModA", "ModA.gproj"));
+    expect(client.cleanupLeaseBlocker(join(tmp, "ModA"))).toMatch(/other:1/);
+    writeLease("other:1", null);
+    expect(client.cleanupLeaseBlocker(join(tmp, "ModA"))).toMatch(/other:1/);
+  });
+
+  it("another session driving a different project does not block", () => {
+    const client = new WorkbenchClient("127.0.0.1", 1, config);
+    writeLease("other:1", join(tmp, "ModB", "ModB.gproj"));
+    expect(client.cleanupLeaseBlocker(join(tmp, "ModA"))).toBeNull();
+  });
+
+  it("our own lease does not block", () => {
+    const client = new WorkbenchClient("127.0.0.1", 1, config);
+    writeLease(LEASE_SESSION, join(tmp, "ModA", "ModA.gproj"));
+    expect(client.cleanupLeaseBlocker(join(tmp, "ModA"))).toBeNull();
   });
 });
 

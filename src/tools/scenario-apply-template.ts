@@ -91,7 +91,7 @@ export function registerScenarioApplyTemplate(server: McpServer, config: Config)
           .string()
           .min(1)
           .describe(
-            "Absolute path to the target .layer / .conf / .et file. Must not start with '-' (flag-smuggle guard).",
+            "Absolute path to the target .layer / .conf / .ent file. Must not start with '-' (flag-smuggle guard).",
           ),
         template_name: z
           .enum(TEMPLATE_NAMES as unknown as [TemplateName, ...TemplateName[]])
@@ -145,9 +145,22 @@ export function registerScenarioApplyTemplate(server: McpServer, config: Config)
           };
         }
 
-        const targetBytes = readFileSync(targetAbs);
         // Audit fix H-4: dispatch on file extension. `.conf` / `.ent` insert
         // inside their single root; `.layer` files append at the top level.
+        // Any other type is refused (offline-writers-09): a `.et` prefab is not a
+        // scenario layer, and appending gave it several root objects.
+        if (!/\.(layer|conf|ent)$/i.test(targetAbs)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Refused: ${targetAbs} is not a .layer, .conf or .ent file; scenario_apply_template stamps into a scenario layer. Nothing was written.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+        const targetBytes = readFileSync(targetAbs);
         const isSingleRoot = /\.(conf|ent)$/i.test(targetAbs);
         const result = applyTemplate(targetBytes, {
           template: template_name,

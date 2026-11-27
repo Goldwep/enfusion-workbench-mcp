@@ -10,7 +10,7 @@
  * is treated as failure.
  */
 import { describe, it, expect, vi } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -33,12 +33,7 @@ import { registerWbScriptEditor } from "../../src/tools/wb-script-editor.js";
 import { registerWbLocalization } from "../../src/tools/wb-localization.js";
 import { registerWbProjects } from "../../src/tools/wb-projects.js";
 import { registerWbLaunch } from "../../src/tools/wb-launch.js";
-import {
-  registerWbEntityDuplicate,
-  locateAncestorSource,
-} from "../../src/tools/wb-entity-duplicate.js";
-import { PakVirtualFS } from "../../src/pak/vfs.js";
-import { loadConfig } from "../../src/config.js";
+import { registerWbEntityDuplicate } from "../../src/tools/wb-entity-duplicate.js";
 import { isHandlerError } from "../../src/workbench/response.js";
 
 // ---------------------------------------------------------------------------
@@ -794,122 +789,250 @@ describe("wb_* contract: specific drift fixes", () => {
 });
 
 // ---------------------------------------------------------------------------
-// H1 / live-tools-a-02: wb_entity_duplicate — the world transform and parent come from
-// EMCP_WB_Entity get, the copy is read back the same way, and the original is never deleted
-// unless the read-back copy is where the original is (top level).
+// wb_entity_duplicate (open-findings lta-05 and lta-08, Option 1 each): the engine writes the
+// placed entity through EMCP_WB_Prefabs createTemplate (any ancestor, overrides kept), the copy is
+// created through EMCP_WB_Entity create on the original's layer, read back by its id, and only
+// then is the original deleted and the copy renamed to the original's name. A child is refused.
 // ---------------------------------------------------------------------------
 
-describe("wb_entity_duplicate (H1)", () => {
+describe("wb_entity_duplicate (createTemplate, W1 create on the original's layer)", () => {
+  const LAYER = "default";
+  const COPY_ID = "id:0x00000000000000c1";
+  const REL = "Prefabs/Copy.et";
+
   function fixture() {
     const root = mkdtempSync(join(tmpdir(), "wb-dup-"));
-    const gamePath = join(root, "game");
     const projectPath = join(root, "project");
-    mkdirSync(join(gamePath, "addons", "data", "Prefabs"), { recursive: true });
-    writeFileSync(join(gamePath, "addons", "data", "Prefabs", "Src.et"), "GenericEntity {}");
     mkdirSync(join(projectPath, "MyMod"), { recursive: true });
     writeFileSync(join(projectPath, "MyMod", "MyMod.gproj"), "GameProject {}");
-    const config = { ...dummyConfig, gamePath, projectPath } as Config;
-    return { root, config };
+    // No game data at all: createTemplate needs none (lta-08: project and dependency prefabs).
+    const config = { ...dummyConfig, gamePath: join(root, "no-game"), projectPath } as Config;
+    return { root, config, dest: join(projectPath, "MyMod", "Prefabs", "Copy.et") };
   }
 
   type Script = {
+    /** EMCP_WB_Prefabs createTemplate answer; default ok with a resource name. */
+    tpl?: Payload;
+    /** false: the handler answers ok but writes no file. */
+    writes?: boolean;
     /** EMCP_WB_Entity get of the original (name:Orig). */
     orig?: Payload;
-    /** EMCP_WB_Entity get of the copy (name:Orig_copy). */
+    /** EMCP_WB_Entity get of the copy (its id, or name:Orig_copy). */
     copy?: Payload;
-    /** The 1.x getWorldTransform answer (the source's own coords: parent-local for a child). */
-    transform?: Payload;
     create?: Payload;
     del?: Payload;
+    /** get of name:Orig after a failed delete. */
+    origAfterDelete?: Payload;
+    rename?: Payload;
+    register?: Payload;
+    /** get of name:Orig_copy BEFORE the create: an entity left by an earlier run. Default none. */
+    stale?: Payload;
+    /** What Workbench says of the addon's .gproj (default loaded). */
+    project?: "loaded" | "other" | "unknown";
   };
 
-  const top = (coords: string, angles = "0 0 0"): Payload => ({
+  const top = (coords: string, angles = "0 0 0", layer = LAYER): Payload => ({
     status: "ok",
     code: "",
     coords,
     angles,
     parentId: "",
     parentName: "",
+    layer,
+    subScene: 0,
   });
 
-  async function runDup(script: Script) {
+  const createdOk: Payload = {
+    status: "ok",
+    code: "",
+    action: "create",
+    id: COPY_ID,
+    name: "Orig_copy",
+    className: "X",
+    parentId: "",
+    layer: LAYER,
+  };
+
+  async function runDup(script: Script, args: Record<string, unknown> = {}) {
     const fx = fixture();
     try {
       const { server, tools } = fakeServer();
+      let deleted = false;
+      let createSent = false;
       const { client, calls } = fakeClient("edit", (apiFunc, params) => {
-        if (apiFunc === "EMCP_WB_Prefabs")
-          return {
+        if (apiFunc === "EMCP_WB_Prefabs" && params.action === "createTemplate") {
+          const answer = script.tpl ?? {
             status: "ok",
-            entityName: "Orig",
-            ancestorPath: "{0123456789ABCDEF}Prefabs/Src.et",
+            code: "",
+            action: "createTemplate",
+            dryRun: false,
+            savedPath: REL,
+            resourceName: `{2222222222222222}${REL}`,
+            undoName: "EMCP createTemplate",
+            message: "prefab written",
           };
+          if (answer.status === "ok" && script.writes !== false) writeFileSync(fx.dest, "GenericEntity {}");
+          return answer;
+        }
         if (apiFunc === "EMCP_WB_Resources")
-          return {
-            status: "ok",
-            message: "registered Prefabs/Copy.et",
-            registered: 1,
-            dryRun: 0,
-            resourceName: "{1111111111111111}Prefabs/Copy.et",
-          };
-        if (apiFunc === "EMCP_WB_Entity" && params.action === "get" && params.entity === "name:Orig")
-          return script.orig ?? { status: "error", code: "NOT_FOUND", message: "no entity" };
-        if (
-          apiFunc === "EMCP_WB_Entity" &&
-          params.action === "get" &&
-          params.entity === "name:Orig_copy"
-        )
-          return script.copy ?? { status: "error", code: "NOT_FOUND", message: "no entity" };
-        if (apiFunc === "EMCP_WB_ModifyEntity" && params.action === "getWorldTransform")
-          return script.transform ?? { status: "error", message: "no transform" };
-        if (apiFunc === "EMCP_WB_CreateEntity")
-          return script.create ?? { status: "error", message: "create not scripted" };
-        if (apiFunc === "EMCP_WB_DeleteEntity")
-          return script.del ?? { status: "ok", deletedName: "Orig", deletedClass: "X" };
-        return { status: "error", message: `unexpected ${apiFunc}` };
+          return (
+            script.register ?? {
+              status: "ok",
+              message: "registered",
+              registered: 1,
+              dryRun: 0,
+              resourceName: `{1111111111111111}${REL}`,
+            }
+          );
+        if (apiFunc === "EMCP_WB_Entity" && params.action === "get") {
+          if (params.entity === "name:Orig")
+            return deleted
+              ? (script.origAfterDelete ?? { status: "error", code: "ENTITY_NOT_FOUND", message: "none" })
+              : (script.orig ?? { status: "error", code: "ENTITY_NOT_FOUND", message: "no entity" });
+          if (params.entity === COPY_ID || params.entity === "name:Orig_copy")
+            return (
+              (createSent ? script.copy : script.stale) ?? {
+                status: "error",
+                code: "ENTITY_NOT_FOUND",
+                message: "no entity",
+              }
+            );
+        }
+        if (apiFunc === "EMCP_WB_Entity" && params.action === "create") {
+          createSent = true;
+          return script.create ?? { status: "error", code: "ENGINE_FALSE", message: "create not scripted" };
+        }
+        if (apiFunc === "EMCP_WB_Entity" && params.action === "delete") {
+          deleted = true;
+          return script.del ?? { status: "ok", code: "", deleted: ["id:0x00000000000000a1"], missing: [] };
+        }
+        if (apiFunc === "EMCP_WB_Entity" && params.action === "rename")
+          return script.rename ?? { status: "ok", code: "", id: COPY_ID, before: "Orig_copy", after: "Orig" };
+        return { status: "error", message: `unexpected ${apiFunc} ${String(params.action)}` };
       });
+      if (script.project) {
+        const match = script.project;
+        client.openProjectMatch = vi.fn(async () => ({ match, reported: "OtherMod" }));
+      }
       registerWbEntityDuplicate(server, fx.config, client);
       const handler = tools.get("wb_entity_duplicate")!;
       const result = await handler(
-        { entityName: "Orig", destPath: "Prefabs/Copy.et", modName: "MyMod", replaceInScene: true },
+        { entityName: "Orig", destPath: REL, modName: "MyMod", replaceInScene: true, ...args },
         {},
       );
-      const created = calls.filter((c) => c.apiFunc === "EMCP_WB_CreateEntity");
-      const deleted = calls.filter((c) => c.apiFunc === "EMCP_WB_DeleteEntity");
-      const copyExists = existsSync(join(fx.config.projectPath, "MyMod", "Prefabs", "Copy.et"));
-      const ancestor = calls.filter((c) => c.apiFunc === "EMCP_WB_Prefabs");
-      const registered = calls.filter((c) => c.apiFunc === "EMCP_WB_Resources");
-      const gets = calls.filter((c) => c.apiFunc === "EMCP_WB_Entity");
-      return { result, text: text(result), created, deleted, copyExists, ancestor, registered, gets };
+      const of = (api: string, action?: string) =>
+        calls.filter((c) => c.apiFunc === api && (action === undefined || c.params.action === action));
+      return {
+        result,
+        text: text(result),
+        calls,
+        templates: of("EMCP_WB_Prefabs", "createTemplate"),
+        created: of("EMCP_WB_Entity", "create"),
+        deleted: of("EMCP_WB_Entity", "delete"),
+        renamed: of("EMCP_WB_Entity", "rename"),
+        gets: of("EMCP_WB_Entity", "get"),
+        registered: of("EMCP_WB_Resources"),
+        legacy: calls.filter((c) => /^EMCP_WB_(CreateEntity|DeleteEntity|ModifyEntity)$/.test(c.apiFunc)),
+        fileExists: existsSync(fx.dest),
+      };
     } finally {
       rmSync(fx.root, { recursive: true, force: true });
     }
   }
 
-  it("registers the copy through the W2 handler: project-relative path, confirm true", async () => {
-    const r = await runDup({});
-    expect(r.copyExists).toBe(true);
-    expect(r.registered.map((c) => c.params)).toEqual([
-      { action: "register", path: "Prefabs/Copy.et", buildRuntime: false, confirm: true },
-    ]);
+  it("refuses before createTemplate when Workbench has not loaded the addon modName names", async () => {
+    const r = await runDup({ project: "other" });
+    expect(r.result.isError).toBe(true);
+    expect(r.text).toContain("is not a project Workbench has loaded (loaded: OtherMod)");
+    expect(r.templates).toHaveLength(0);
+    expect(r.created).toHaveLength(0);
+    expect(r.fileExists).toBe(false);
   });
 
-  const createdOk = { status: "ok", entityName: "Orig_copy", entityClass: "X", position: "10 20 30" };
+  it("places no copy when an entity already holds the temporary name", async () => {
+    const r = await runDup({ orig: top("1 2 3"), stale: top("9 9 9"), create: createdOk, copy: top("1 2 3") });
+    expect(r.result.isError).toBe(true);
+    expect(r.text).toContain('An entity named "Orig_copy" already stands in the world');
+    expect(r.created).toHaveLength(0);
+    expect(r.deleted).toHaveLength(0);
+    expect(r.renamed).toHaveLength(0);
+  });
 
-  it("places at the world transform, reads the copy back, then deletes the original", async () => {
-    const r = await runDup({
-      orig: top("10 20 30", "0 90 0"),
-      copy: top("10 20 30", "0 90 0"),
-      create: createdOk,
-    });
+  it("saves through createTemplate with confirm, by entity reference, with no game data needed (lta-08)", async () => {
+    const r = await runDup({}, { replaceInScene: false });
     expect(r.result.isError).not.toBe(true);
-    expect(r.created.length).toBe(1);
-    expect(r.created[0]?.params.position).toBe("10 20 30");
-    expect(r.created[0]?.params.rotation).toBe("0 90 0");
-    expect(r.gets.map((c) => c.params.entity)).toEqual(["name:Orig", "name:Orig_copy"]);
-    expect(r.deleted.length).toBe(1);
+    expect(r.templates.map((c) => c.params)).toEqual([
+      { action: "createTemplate", entity: "name:Orig", path: REL, confirm: true },
+    ]);
+    expect(r.templates[0]?.options).toMatchObject({ access: "mutate" });
+    expect(r.text).toContain("Prefab saved successfully");
+    expect(r.text).toContain("GUID: 2222222222222222");
+    expect(r.text).toContain("Unverified");
+    // The engine wrote the .meta (resourceName): no W2 registration, no world edit.
+    expect(r.registered).toEqual([]);
+    expect(r.created).toEqual([]);
+    expect(r.deleted).toEqual([]);
+    expect(r.legacy).toEqual([]);
+  });
+
+  it("registers through the W2 handler only when createTemplate gave no resource name and left no .meta", async () => {
+    const r = await runDup(
+      { tpl: { status: "ok", code: "", dryRun: false, savedPath: REL, resourceName: "", message: "prefab written" } },
+      { replaceInScene: false },
+    );
+    expect(r.registered.map((c) => c.params)).toEqual([
+      { action: "register", path: REL, buildRuntime: false, confirm: true },
+    ]);
+    expect(r.text).toContain("GUID: 1111111111111111");
+  });
+
+  it("a createTemplate refusal writes nothing and touches no entity", async () => {
+    const r = await runDup({
+      tpl: { status: "refused", code: "NOT_IN_PROJECT", message: "NewTargetInProject: outside", next: "pass a path inside the project" },
+      orig: top("1 1 1"),
+    });
+    expect(r.result.isError).toBe(true);
+    expect(r.text).toContain("Prefab not saved");
+    expect(r.text).toContain("NOT_IN_PROJECT");
+    expect(r.created).toEqual([]);
+    expect(r.deleted).toEqual([]);
+  });
+
+  it("an ok answer with no file on disk fails the read-back", async () => {
+    const r = await runDup({ writes: false, orig: top("1 1 1") });
+    expect(r.result.isError).toBe(true);
+    expect(r.text).toContain("the file is not on disk");
+    expect(r.created).toEqual([]);
+  });
+
+  it("creates on the original's layer, reads the copy back by id, deletes, then renames to the original's name (lta-05)", async () => {
+    const r = await runDup({
+      orig: top("10 20 30", "0 90 0", "Layers/Props"),
+      copy: top("10 20 30", "0 90 0", "Layers/Props"),
+      create: { ...createdOk, layer: "Layers/Props" },
+    });
+    expect(r.result.isError, r.text).not.toBe(true);
+    expect(r.created.map((c) => c.params)).toEqual([
+      {
+        action: "create",
+        prefab: `{2222222222222222}${REL}`,
+        name: "Orig_copy",
+        coords: "10 20 30",
+        angles: "0 90 0",
+        layer: "Layers/Props",
+      },
+    ]);
+    expect(r.gets.map((c) => c.params.entity)).toEqual(["name:Orig", "name:Orig_copy", COPY_ID]);
+    expect(r.deleted.map((c) => c.params)).toEqual([{ action: "delete", entities: ["name:Orig"] }]);
+    expect(r.renamed.map((c) => c.params)).toEqual([{ action: "rename", entity: COPY_ID, name: "Orig" }]);
+    // Order: create, read-back, delete, rename.
+    const order = r.calls
+      .filter((c) => c.apiFunc === "EMCP_WB_Entity")
+      .map((c) => `${String(c.params.action)}`);
+    expect(order).toEqual(["get", "get", "create", "get", "delete", "rename"]);
     expect(r.text).toContain("Entity duplicated successfully");
-    expect(r.text).toContain("at 10 20 30");
-    expect(r.copyExists).toBe(true);
+    expect(r.text).toContain('on layer "Layers/Props"');
+    expect(r.legacy).toEqual([]);
   });
 
   it("aborts before creating or deleting anything when the position cannot be read", async () => {
@@ -918,18 +1041,29 @@ describe("wb_entity_duplicate (H1)", () => {
     expect(r.created.length).toBe(0);
     expect(r.deleted.length).toBe(0);
     expect(r.text).toContain("NOT deleted");
-    // the prefab file itself was still saved
-    expect(r.copyExists).toBe(true);
+    expect(r.fileExists).toBe(true);
   });
 
-  it("never deletes the original when the read-back copy is elsewhere, whatever create echoes", async () => {
-    // The shipped CreateEntity echoed the request: an echo of the same position proves nothing.
+  it("never deletes the original when the read-back copy is elsewhere", async () => {
     const r = await runDup({ orig: top("10 20 30"), copy: top("0 0 0"), create: createdOk });
     expect(r.result.isError).toBe(true);
     expect(r.created.length).toBe(1);
     expect(r.deleted.length).toBe(0);
+    expect(r.renamed.length).toBe(0);
     expect(r.text).toContain("original NOT deleted");
-    expect(r.text).toContain("Read back: 0 0 0");
+    expect(r.text).toContain("the copy is at 0 0 0");
+    expect(r.text).toContain(`New entity placed as: Orig_copy (${COPY_ID})`);
+  });
+
+  it("never deletes the original when the copy reads back on another layer", async () => {
+    const r = await runDup({
+      orig: top("10 20 30", "0 0 0", "Layers/Props"),
+      copy: top("10 20 30", "0 0 0", "default"),
+      create: createdOk,
+    });
+    expect(r.result.isError).toBe(true);
+    expect(r.deleted.length).toBe(0);
+    expect(r.text).toContain('the copy is on layer "default"');
   });
 
   it("never deletes the original when the copy cannot be read back", async () => {
@@ -939,105 +1073,74 @@ describe("wb_entity_duplicate (H1)", () => {
     expect(r.text).toContain("original NOT deleted");
   });
 
-  it("leaves the scene alone for a child entity (its own coords are parent-local)", async () => {
-    // getWorldTransform answers the child's local coords and create echoed them: the 1.x check
-    // passed and the original was deleted, the copy at the local offset from the world origin.
+  it("leaves the scene alone for a child entity", async () => {
     const r = await runDup({
       orig: { ...top("101 2 3"), parentId: "id:0x00000000000000aa", parentName: "Building" },
-      transform: {
-        status: "ok",
-        properties: [{ name: "position", type: "vector", value: "1 2 3" }],
-      },
-      create: { ...createdOk, position: "1 2 3" },
-      copy: top("1 2 3"),
+      create: createdOk,
+      copy: top("101 2 3"),
     });
     expect(r.result.isError).toBe(true);
     expect(r.created.length).toBe(0);
     expect(r.deleted.length).toBe(0);
     expect(r.text).toContain("is a child of Building");
-    expect(r.copyExists).toBe(true);
+    expect(r.fileExists).toBe(true);
   });
 
-  it("never deletes the original when CreateEntity reports a handler error", async () => {
+  it("never deletes the original when create answers an error with nothing created", async () => {
     const r = await runDup({
       orig: top("1 1 1"),
-      create: { status: "error", message: "CreateEntity returned null" },
+      create: { status: "error", code: "ENGINE_FALSE", message: "the create call returned null; nothing was created" },
     });
     expect(r.result.isError).toBe(true);
     expect(r.deleted.length).toBe(0);
-    expect(r.text).toContain("CreateEntity returned null");
+    expect(r.text).toContain("Prefab saved but placement failed");
+    expect(r.text).toContain("the create call returned null");
   });
 
-  it("asks the W1 Prefabs handler for the ancestor by entity reference, not entityName", async () => {
-    const r = await runDup({});
-    expect(r.ancestor[0]?.params).toEqual({ action: "getAncestor", entity: "name:Orig" });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// wb_entity_duplicate on a paks-only install (1.9.0.37 ships no loose prefabs): the ancestor is
-// read through the pak VFS, as game_duplicate reads it, and copied byte for byte.
-// ---------------------------------------------------------------------------
-
-describe("wb_entity_duplicate reads the ancestor through the pak VFS", () => {
-  it("copies the pak bytes when the game has no loose file", async () => {
-    const root = mkdtempSync(join(tmpdir(), "wb-dup-pak-"));
-    const gamePath = join(root, "game");
-    const projectPath = join(root, "project");
-    mkdirSync(join(gamePath, "addons", "data"), { recursive: true });
-    mkdirSync(join(projectPath, "MyMod"), { recursive: true });
-    writeFileSync(join(projectPath, "MyMod", "MyMod.gproj"), "GameProject {}");
-    // CRLF, a tab and a non-ASCII byte: a byte copy keeps every one.
-    const bytes = Buffer.from('GenericEntity {\r\n\tID "é"\r\n}\r\n', "utf-8");
-    const reads: string[] = [];
-    const fakeVfs = {
-      exists: (p: string) => p === "Prefabs/Packed.et",
-      readFile: (p: string) => {
-        reads.push(p);
-        return bytes;
+  it("a create error after the entity stands names the copy and never advises placing again (lta-04)", async () => {
+    const r = await runDup({
+      orig: top("1 1 1"),
+      create: {
+        status: "error",
+        code: "ENGINE_FALSE",
+        message: "created, but RenameEntity to 'Orig_copy' returned false (name in use?)",
+        id: "id:0x0000000000000042",
+        name: "Entity_42",
       },
-    } as unknown as PakVirtualFS;
-    const spy = vi.spyOn(PakVirtualFS, "get").mockImplementation((g) =>
-      g === gamePath ? fakeVfs : null,
-    );
-    try {
-      const config = { ...dummyConfig, gamePath, projectPath } as Config;
-      expect(locateAncestorSource(config, "Prefabs/Missing.et")).toMatchObject({
-        error: expect.stringContaining("the .pak archives under"),
-      });
-      const { server, tools } = fakeServer();
-      const { client } = fakeClient("edit", (apiFunc) => {
-        if (apiFunc === "EMCP_WB_Prefabs")
-          return { status: "ok", ancestorPath: "{0123456789ABCDEF}Prefabs/Packed.et" };
-        if (apiFunc === "EMCP_WB_Resources")
-          return { status: "ok", message: "registered", registered: 1, dryRun: 0 };
-        return { status: "error", message: `unexpected ${apiFunc}` };
-      });
-      registerWbEntityDuplicate(server, config, client);
-      const result = await tools.get("wb_entity_duplicate")!(
-        { entityName: "Orig", destPath: "Prefabs/Copy.et", modName: "MyMod", replaceInScene: false },
-        {},
-      );
-      expect(result.isError).not.toBe(true);
-      expect(text(result)).toContain("Prefab saved successfully");
-      expect(reads).toEqual(["Prefabs/Packed.et"]);
-      const written = readFileSync(join(projectPath, "MyMod", "Prefabs", "Copy.et"));
-      expect(written.equals(bytes)).toBe(true);
-    } finally {
-      spy.mockRestore();
-      rmSync(root, { recursive: true, force: true });
-    }
+    });
+    expect(r.result.isError).toBe(true);
+    expect(r.created.length).toBe(1);
+    expect(r.deleted.length).toBe(0);
+    expect(r.text).toContain("Copy placed, but not under the requested name");
+    expect(r.text).toContain("New entity placed as: Entity_42 (id:0x0000000000000042)");
+    expect(r.text).not.toContain("Place manually using");
   });
 
-  // The installed game (skipped without one): a vanilla prefab no loose file holds is found.
-  const installed = loadConfig().gamePath;
-  const vfs = installed && existsSync(join(installed, "addons")) ? PakVirtualFS.get(installed) : null;
-  const packed = vfs ? vfs.allFilePaths().filter((p) => p.endsWith(".et")).slice(0, 1) : [];
-  it.skipIf(!vfs || packed.length === 0)("finds a vanilla .et in the installed paks", () => {
-    const src = locateAncestorSource({ gamePath: installed! }, packed[0]!);
-    expect("error" in src).toBe(false);
-    if (!("error" in src)) {
-      expect(src.read().equals(vfs!.readFile(packed[0]!))).toBe(true);
-    }
+  it("a failed delete reads the original back and says both stand; nothing is renamed", async () => {
+    const r = await runDup({
+      orig: top("1 1 1"),
+      copy: top("1 1 1"),
+      create: createdOk,
+      del: { status: "error", code: "ENGINE_FALSE", message: "the delete call returned false" },
+      origAfterDelete: top("1 1 1"),
+    });
+    expect(r.result.isError).toBe(true);
+    expect(r.renamed.length).toBe(0);
+    expect(r.text).toContain("both stand");
+    expect(r.text).toContain(`New entity placed as: Orig_copy (${COPY_ID})`);
+  });
+
+  it("a failed rename after the delete says the original is gone and the copy keeps its temporary name", async () => {
+    const r = await runDup({
+      orig: top("1 1 1"),
+      copy: top("1 1 1"),
+      create: createdOk,
+      rename: { status: "error", code: "ENGINE_FALSE", message: "RenameEntity returned false (name in use?)" },
+    });
+    expect(r.result.isError).toBe(true);
+    expect(r.deleted.length).toBe(1);
+    expect(r.text).toContain("copy keeps its temporary name");
+    expect(r.text).toContain('Original "Orig": deleted');
+    expect(r.text).not.toContain("successfully");
   });
 });

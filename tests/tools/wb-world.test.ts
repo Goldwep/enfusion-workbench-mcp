@@ -802,6 +802,32 @@ describe("offline writers", () => {
       expect(read("Worlds/A.ent")).toMatch(/^Layer default/);
     });
 
+    it("an overwrite snapshots every file it replaces to the artifacts folder first (live-tools-a-06)", async () => {
+      write("Worlds/A.ent", "old ent");
+      write("Worlds/A_Layers/default.layer", "GenericWorldEntity world : \"{X}x.et\" {\n}\nLamp L {\n}\n");
+      const { client } = fake(registerAnswer);
+      const r = await runWorld(
+        client,
+        { action: "new", path: "Worlds/A.ent", confirm: true, overwrite: true },
+        deps,
+      );
+      expect(r.ok).toBe(true);
+      const snap = "2026-11-11T10-00-00-000Z-new-A";
+      expect(r.ok && r.readback).toMatchObject({ snapshot: `<artifacts>/world/${snap}` });
+      const dir = join(artifacts, "world", snap);
+      expect(readFileSync(join(dir, "Worlds", "A.ent"), "utf8")).toBe("old ent");
+      expect(readFileSync(join(dir, "Worlds", "A_Layers", "default.layer"), "utf8")).toContain("Lamp L");
+      expect(read("Worlds/A_Layers/default.layer")).not.toContain("Lamp L");
+    });
+
+    it("a write of new files only keeps no snapshot", async () => {
+      const { client } = fake(registerAnswer);
+      const r = await runWorld(client, { action: "new", path: "Worlds/B.ent", confirm: true }, deps);
+      expect(r.ok).toBe(true);
+      expect(r.ok && (r.readback as Record<string, unknown>).snapshot).toBeUndefined();
+      expect(existsSync(join(artifacts, "world"))).toBe(false);
+    });
+
     it("a failed register leaves the files and says how to register", async () => {
       const { client } = fake(() => new WorkbenchError("down", "CONNECTION_REFUSED"));
       const r = await runWorld(

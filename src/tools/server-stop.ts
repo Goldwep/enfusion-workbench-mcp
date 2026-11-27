@@ -98,9 +98,14 @@ export function registerServerStop(server: McpServer, _config: Config): void {
               "WARNING: Server is still alive after SIGTERM + force-kill within the timeout. " +
               "PID file kept in place — re-run `server_stop` or kill the PID manually.";
             break;
+          case "unverified":
+            summary =
+              "WARNING: The PID is alive but its process image could not be read (tasklist failed), so it may be the server. " +
+              "Nothing was signalled and the PID file was kept — check the process yourself, then re-run `server_stop`.";
+            break;
         }
 
-        const isError = result.status === "timeout";
+        const isError = result.status === "timeout" || result.status === "unverified";
 
         return {
           content: [

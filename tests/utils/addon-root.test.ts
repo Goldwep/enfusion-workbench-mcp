@@ -112,6 +112,10 @@ function fakeClient(answer: Answer) {
     async probe() {
       throw new Error("probe not expected");
     },
+    // wb_entity_duplicate asks whether the addon is a loaded project before createTemplate.
+    async openProjectMatch() {
+      return { match: "loaded" as const, reported: "addon" };
+    },
   } as unknown as WorkbenchClient;
   return { client, sent };
 }
@@ -222,7 +226,7 @@ describe("registered tools read ENFUSION_PROJECT_PATH as the addons folder", () 
       registerWbEntityDuplicate(s, cfg({ projectPath: dir }), client),
     );
     const r = await h({ entityName: "E", destPath: "Prefabs/Copy.et", replaceInScene: false });
-    // Past the addon lookup: it fails later, on the missing game data.
+    // Past the addon lookup: it fails later (the fake createTemplate writes no file).
     expect(textOf(r)).not.toMatch(/No addons found|Could not find addon directory/);
   });
 });

@@ -8,7 +8,7 @@ import { runAliasViaModule } from "./wb-editor.js";
  * routes through src/manifest/aliases.ts into wb_entity, wb_view or wb_container, which answer in
  * their own JSON shape. A 1.x argument with no equivalent is refused with INVALID_ARGUMENT naming
  * the tool and action to use. Mode checks are the handlers' (WRONG_MODE). wb_entity_duplicate
- * (wb-entity-duplicate.ts) is a composite with no single action and stays on the 1.x handlers.
+ * (wb-entity-duplicate.ts) is a composite with no single action (W1 Prefabs and Entity calls).
  * Descriptions are kept short: the aliases count toward the full tools/list budget (140k chars).
  */
 

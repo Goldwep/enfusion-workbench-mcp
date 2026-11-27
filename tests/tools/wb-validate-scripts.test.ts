@@ -100,6 +100,45 @@ describe("wb_validate_scripts alias", () => {
     expect(calls.find(([f]) => f === "ValidateScripts")?.[1]).toEqual({ Configuration: "PC" });
   });
 
+  it("refuses the 1.x headless keys with INVALID_ARGUMENT and sends nothing (live-tools-b-6)", async () => {
+    const calls: string[] = [];
+    const client = {
+      queue: { inFlight: () => null },
+      lastBuildCheck: null,
+      ping: async () => true,
+      probe: async (fn: string) => {
+        calls.push(fn);
+        return { ScriptsCompiled: true };
+      },
+      call: async (fn: string) => {
+        calls.push(fn);
+        return { Success: true, Errors: 0, Warnings: 0 };
+      },
+    } as unknown as WorkbenchClient;
+    let handler:
+      | ((a: Record<string, unknown>) => Promise<{ isError?: boolean; content: { text: string }[] }>)
+      | null = null;
+    const server = {
+      registerTool: (_n: string, _d: unknown, h: typeof handler) => {
+        handler = h;
+      },
+    } as unknown as McpServer;
+    registerWbValidateScripts(server, {} as Config, client);
+    for (const extra of [
+      { gproj_path: "D:/ModB/ModB.gproj" },
+      { timeout_seconds: 30 },
+      { launcher_nudge: false },
+    ]) {
+      const res = await handler!({ config: "PC", ...extra });
+      expect(res.isError).toBe(true);
+      const body = JSON.parse(res.content[0].text);
+      expect(body).toMatchObject({ ok: false, action: "validate", code: "INVALID_ARGUMENT" });
+      expect(body.message).toContain(`${Object.keys(extra)[0]} has no equivalent`);
+      expect(body.message).toContain("wb_scripts validate");
+    }
+    expect(calls).toEqual([]);
+  });
+
   it("says so when it was registered without the client", async () => {
     let handler: ((a: Record<string, unknown>) => Promise<{ isError?: boolean }>) | null = null;
     const server = {

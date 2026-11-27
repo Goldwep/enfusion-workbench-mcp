@@ -74,6 +74,26 @@ describe("scenario_apply_template", () => {
     expect(textOf(res)).toContain("DRY-RUN");
     expect(readFileSync(target, "utf8")).toBe(LAYER);
   });
+
+  it("refuses a target that is not a .layer, .conf or .ent, and writes nothing (offline-writers-09)", async () => {
+    const tool = captureTool((s) => registerScenarioApplyTemplate(s, makeConfig({ projectPath: root })));
+    for (const name of ["X.et", "notes.txt"]) {
+      const target = join(root, "worlds", name);
+      writeFileSync(target, LAYER);
+      const res = await tool({
+        target_layer_path: target,
+        template_name: "checkpoint",
+        position: { x: 0, y: 0, z: 0 },
+        rotation_yaw_deg: 0,
+        dry_run: false,
+        force: true,
+      });
+      expect(res.isError).toBe(true);
+      expect(textOf(res)).toMatch(/not a \.layer, \.conf or \.ent file/);
+      expect(readFileSync(target, "utf8")).toBe(LAYER);
+      expect(existsSync(`${target}.bak`)).toBe(false);
+    }
+  });
 });
 
 describe("scenario_clone_area", () => {

@@ -39,6 +39,7 @@ import {
   type StuckReportInput,
 } from "../workbench/launch-reports.js";
 import { routeAlias } from "../manifest/aliases.js";
+import { VocabularyError, errorResponse } from "../manifest/vocabulary.js";
 import { runScripts, toToolResult, type ScriptsArgs } from "./wb-scripts.js";
 
 // Shared launch machinery re-exported for existing importers (tests +
@@ -137,7 +138,9 @@ export class ValidateRunTracker extends WorkbenchLaunchTracker {
 /**
  * The 1.x tool, now an alias of `wb_scripts validate`. `gproj_path`,
  * `timeout_seconds` and `launcher_nudge` belonged to the headless spawn and
- * are ignored; `config` becomes `configuration` (PC or WORKBENCH; the old
+ * are refused when given (the alias rule, src/manifest/aliases.ts; live-tools-b-6:
+ * a gproj_path that named another project got the open project's verdict);
+ * `config` becomes `configuration` (PC or WORKBENCH; the old
  * HEADLESS answers "unknown configuration" natively, DEC-040 U3, so it is
  * refused). `client` is the server's single WorkbenchClient: a second one
  * would break the one-queue rule (U30), so without it the tool says so.
@@ -158,9 +161,9 @@ export function registerWbValidateScripts(
           .enum(["PC", "WORKBENCH"])
           .default("WORKBENCH")
           .describe("Script configuration to compile"),
-        gproj_path: z.string().optional().describe("Ignored: validates the open project"),
-        timeout_seconds: z.number().optional().describe("Ignored"),
-        launcher_nudge: z.boolean().optional().describe("Ignored"),
+        gproj_path: z.string().optional().describe("1.x key, refused when given: validates the open project"),
+        timeout_seconds: z.number().optional().describe("1.x key, refused when given"),
+        launcher_nudge: z.boolean().optional().describe("1.x key, refused when given"),
       },
       annotations: {
         title: "Validate scripts",
@@ -170,7 +173,7 @@ export function registerWbValidateScripts(
         openWorldHint: false,
       },
     },
-    async ({ config: cfg }) => {
+    async ({ config: cfg, gproj_path, timeout_seconds, launcher_nudge }) => {
       if (!client) {
         return {
           content: [
@@ -182,7 +185,20 @@ export function registerWbValidateScripts(
           isError: true as const,
         };
       }
-      const routed = routeAlias("wb_validate_scripts", { configuration: cfg });
+      let routed: ReturnType<typeof routeAlias>;
+      try {
+        routed = routeAlias("wb_validate_scripts", {
+          configuration: cfg,
+          gproj_path,
+          timeout_seconds,
+          launcher_nudge,
+        });
+      } catch (e) {
+        if (e instanceof VocabularyError) {
+          return toToolResult(errorResponse("validate", "workbench:scripts", e.code, e.message));
+        }
+        throw e;
+      }
       if (!routed) throw new Error("wb_validate_scripts alias is not routed");
       return toToolResult(await runScripts(client, routed.args as unknown as ScriptsArgs));
     },

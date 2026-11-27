@@ -14,7 +14,7 @@ import {
   resolveHeadlessCwd,
   type RunResult,
 } from "../../src/workbench/cli-runner.js";
-import { mkdtempSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const IDLE_SCRIPT = "setInterval(() => {}, 1000)";
@@ -218,6 +218,15 @@ describe("cli-runner: killProcessTree (real taskkill on win32)", () => {
     expect(alive(parent.pid!)).toBe(false);
     expect(alive(grand)).toBe(false);
   }, 20_000);
+
+  it("wb_launch's stuck-launch branch kills the tree too, never the bare pid (live-client-09)", () => {
+    const src = readFileSync(join(import.meta.dirname, "..", "..", "src", "workbench", "client.ts"), "utf8");
+    const at = src.indexOf('stuck === "stuck:launcher-picker" || stuck === "stuck:missing-deps"');
+    expect(at).toBeGreaterThan(0);
+    const branch = src.slice(at, src.indexOf("buildStuckReport(", at));
+    expect(branch).toContain("await killProcessTree(proc.pid)");
+    expect(branch).not.toMatch(/process\.kill\(/);
+  });
 });
 
 describe("resolveHeadlessCwd (game-dir cwd for headless spawns)", () => {

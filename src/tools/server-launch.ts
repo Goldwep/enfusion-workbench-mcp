@@ -163,6 +163,9 @@ export function registerServerLaunch(server: McpServer, _config: Config): void {
                 text:
                   "## server_launch — refused (already running)\n\n" +
                   `A server appears to already be running against \`${configAbsPath}\`.\n\n` +
+                  (running.unverified
+                    ? "The PID is alive but its process image could not be read (tasklist failed), so it may be the server.\n\n"
+                    : "") +
                   `- **PID:** ${running.contents.pid}\n` +
                   `- **Started:** ${running.contents.started_at}\n` +
                   `- **Scenario:** \`${running.contents.scenario_id}\`\n` +

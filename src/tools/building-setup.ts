@@ -1,8 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { writeFileAtomic } from "../utils/atomic-write.js";
+import { backUp } from "../utils/backup.js";
 import { resolve, join, relative, sep } from "node:path";
 import type { Config } from "../config.js";
 import { validateFilename } from "../utils/safe-path.js";
@@ -159,6 +160,24 @@ function indent(block: string, pad: string): string {
     .join("\n");
 }
 
+/**
+ * Writes `content` to `file` (write-then-rename) unless `dryRun`. An existing file is copied to its
+ * first free backup name first (src/utils/backup.ts, the rule of the other offline writers that
+ * replace a file, DEC-099), so a rerun or an outputDir holding a prefab of the same name never
+ * loses it (offline-writers-06). Returns the note for the report, or null for a new file.
+ */
+export function writeReplacing(file: string, content: string, dryRun: boolean): string | null {
+  const existed = existsSync(file);
+  if (dryRun) return existed ? `  exists: would be replaced, a backup kept (${file})` : null;
+  const backup = existed
+    ? backUp(file, (m) => {
+        throw new Error(m);
+      })
+    : null;
+  writeFileAtomic(file, content);
+  return backup ? `  replaced an existing file; backup: ${backup}` : null;
+}
+
 // ── Tool registration ────────────────────────────────────────────────────────
 
 export function registerBuildingSetup(server: McpServer, config: Config): void {
@@ -274,12 +293,11 @@ export function registerBuildingSetup(server: McpServer, config: Config): void {
 
         lines.push(`[Part] ${part.name} -> ${slotType}${phaseInfo}`);
 
-        if (!dryRun) {
-          mkdirSync(partDir, { recursive: true });
-          // A rerun replaces the parts, so write-then-rename (write-safety gap 20).
-          writeFileAtomic(partPath, partContent);
-          createdFiles.push(partPath);
-        }
+        if (!dryRun) mkdirSync(partDir, { recursive: true });
+        // A rerun replaces the parts, so write-then-rename (write-safety gap 20).
+        const partNote = writeReplacing(partPath, partContent, dryRun);
+        if (partNote) lines.push(partNote);
+        if (!dryRun) createdFiles.push(partPath);
       }
 
       // Create building structure prefab
@@ -294,11 +312,10 @@ export function registerBuildingSetup(server: McpServer, config: Config): void {
       lines.push("");
       lines.push(`[Building] ${manifest.building_name}.et`);
 
-      if (!dryRun) {
-        mkdirSync(outDir, { recursive: true });
-        writeFileAtomic(buildingPath, buildingContent);
-        createdFiles.push(buildingPath);
-      }
+      if (!dryRun) mkdirSync(outDir, { recursive: true });
+      const buildingNote = writeReplacing(buildingPath, buildingContent, dryRun);
+      if (buildingNote) lines.push(buildingNote);
+      if (!dryRun) createdFiles.push(buildingPath);
 
       lines.push("");
       if (dryRun) {

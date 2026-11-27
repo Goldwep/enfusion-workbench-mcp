@@ -16,9 +16,9 @@ Read: compile errors, warnings, success for configuration PC or WORKBENCH. Needs
 | Name | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `config` | string | no | Script configuration to compile One of: `PC`, `WORKBENCH`. Default: `"WORKBENCH"`. |
-| `gproj_path` | string | no | Ignored: validates the open project |
-| `timeout_seconds` | number | no | Ignored |
-| `launcher_nudge` | boolean | no | Ignored |
+| `gproj_path` | string | no | 1.x key, refused when given: validates the open project |
+| `timeout_seconds` | number | no | 1.x key, refused when given |
+| `launcher_nudge` | boolean | no | 1.x key, refused when given |
 
 ## Linked census rows
 

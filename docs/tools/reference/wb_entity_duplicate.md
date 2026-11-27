@@ -1,7 +1,7 @@
 # wb_entity_duplicate
 
 ```text
-Save a placed entity (base-game instances too) as a new .et in your addon with a new GUID, register it, and by default replace the original in the scene, making it editable.
+Save a placed entity, its instance overrides included, as a new .et in the open project (Workbench createTemplate: any prefab source; whether the result inherits from the ancestor or is flattened is unverified), then by default replace the original with an instance of it on the same layer under the same name. A child entity is refused.
 ```
 
 | Field | Value |
@@ -15,9 +15,9 @@ Save a placed entity (base-game instances too) as a new .et in your addon with a
 | Name | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `entityName` | string | yes | entity placed in the scene |
-| `destPath` | string | yes | addon-relative .et path |
+| `destPath` | string | yes | new addon-relative .et; the open project's |
 | `modName` | string | no | addon folder; default the first found |
-| `replaceInScene` | boolean | no | false: only write the prefab file Default: `true`. |
+| `replaceInScene` | boolean | no | false: write the prefab file and skip the replace; the placed entity may still become an instance of it Default: `true`. |
 
 ## Linked census rows
 

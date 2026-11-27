@@ -706,28 +706,8 @@ export const ROWS: Row[] = [
       note: "restore writes back the backed-up bytes (binary terrain files among them), each checked against its sha256; backups are exclusive creates in a fresh folder",
     },
   },
-  {
-    tool: "wb_entity_duplicate",
-    actions: "duplicate",
-    sources: ["src/tools/wb-entity-duplicate.ts"],
-    kind: "copy",
-    parser: "none: verbatim byte copy",
-    roundTrip: {
-      status: "n/a",
-      tests: [],
-      note: "a byte copy of the ancestor prefab (a Buffer, no UTF-8 round trip)",
-    },
-    accept: [
-      {
-        type: ".et copy",
-        note: "the source is read through the pak VFS as game_duplicate reads it (DEC-105, tests/tools/wb-contract.test.ts); W11 step w11-54-entity-duplicate (replaceInScene false, a named vanilla entity of the open scenario B) is written, hand-free, and has not run live yet",
-      },
-    ],
-    writeClass: {
-      kind: "creates-only",
-      note: "refuses an existing destination and writes with flag wx",
-    },
-  },
+  // wb_entity_duplicate left this table (open-findings lta-08): Workbench writes its .et through
+  // EMCP_WB_Prefabs createTemplate, so it is no offline writer; its engine-accept proof is w11-54.
   // Template creators: they parse nothing they write back, so the round trip does not apply, but
   // criterion 7 says every offline writer goes through the lossless parser and these do not.
   ...(

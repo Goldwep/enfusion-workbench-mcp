@@ -1,8 +1,8 @@
-# Release notes: 2.0 (2.0.0-rc.1)
+# Release notes: 2.0 (2.0.0-rc.2)
 
 ## Release candidate
 
-2.0.0-rc.1 (2026-11-16) is a release candidate. The code and the tools are the 2.0 set, but these
+2.0.0-rc.2 (2026-11-26) is a release candidate. The code and the tools are the 2.0 set, but these
 items are not finished:
 
 - **Deny lists are the unsigned seed.** The `ExecuteAction` deny lists in `data/census/policy.json`

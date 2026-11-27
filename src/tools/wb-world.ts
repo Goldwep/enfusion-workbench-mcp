@@ -22,6 +22,8 @@
  *   saveAs            wb_module save (confirm) -> duplicate the open world -> wb_module setResource
  *   setWorldEntity    swap the GenericWorldEntity prefab in `<name>_Layers/default.layer` (what
  *                     SCR_WorldFilesHelper.ReplaceWorldEntity edits), with a snapshot first
+ * An overwrite by new, duplicate or saveAs snapshots every file it replaces first, to the same
+ * artifacts folder (readback.snapshot; live-tools-a-06).
  *
  * Every input is checked before anything is sent or written. Not registered here: src/server.ts
  * registers it.
@@ -166,7 +168,7 @@ export interface WorldDeps {
   projectRoot?: string;
   /** ENFUSION_PROJECT_PATH and the default mod, read per call (src/utils/addon-root.ts). */
   addons?: AddonRootConfig;
-  /** Root of the artifacts folder for setWorldEntity snapshots (default: defaultArtifactsDir()). */
+  /** Root of the artifacts folder for the snapshots of setWorldEntity and of an overwrite (default: defaultArtifactsDir()). */
   artifactsRoot?: string;
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
@@ -883,12 +885,41 @@ function dryRunReadback(plan: PlannedFile[], extra: Raw = {}): Raw {
   };
 }
 
+/**
+ * Copies every planned file that already exists to `<artifacts>/world/<stamp>-<action>-<world>/`,
+ * under its project-relative path, before an overwrite replaces it (live-tools-a-06): the same
+ * artifacts folder as setWorldEntity's snapshot, outside the project so no backup lands in a
+ * layers folder a later duplicate would copy. Returns that folder as `<artifacts>/...`, or null
+ * when nothing existed.
+ */
+function snapshotExisting(
+  plan: PlannedFile[],
+  action: string,
+  world: string,
+  deps: WorldDeps,
+): string | null {
+  const existing = plan.filter((p) => existsSync(p.abs));
+  if (existing.length === 0) return null;
+  const now = (deps.now ?? (() => new Date()))();
+  const dirName = `${now.toISOString().replace(/[:.]/g, "-")}-${action}-${world}`;
+  const dir = join(deps.artifactsRoot ?? defaultArtifactsDir(), "world", dirName);
+  for (const p of existing) {
+    const dst = join(dir, ...p.rel.split("/"));
+    mkdirSync(dirname(dst), { recursive: true });
+    writeFileAtomic(dst, readFileSync(p.abs));
+  }
+  return `<artifacts>/world/${dirName}`;
+}
+
 async function writeAndRegister(
   client: WorldClient,
   plan: PlannedFile[],
   warnings: string[],
-): Promise<{ changed: Change[]; registered: Raw[]; next?: string }> {
+  snap: { action: string; world: string; deps: WorldDeps },
+): Promise<{ changed: Change[]; registered: Raw[]; next?: string; snapshot: string | null }> {
   const before = new Map(plan.map((p) => [p.abs, existsSync(p.abs)]));
+  // An overwrite keeps the replaced files: written before the first project write.
+  const snapshot = snapshotExisting(plan, snap.action, snap.world, snap.deps);
   writeAll(plan);
   const rels = plan.filter((p) => p.register).map((p) => p.rel);
   const registered = await registerAll(client, rels, warnings);
@@ -897,10 +928,15 @@ async function writeAndRegister(
     before: before.get(p.abs) ? "existed" : null,
     after: "written",
   }));
-  return { changed, registered, next: registerNext(rels, registered.length) };
+  return { changed, registered, next: registerNext(rels, registered.length), snapshot };
 }
 
-async function doNew(client: WorldClient, root: string, req: OfflineInput): Promise<WorldResponse> {
+async function doNew(
+  client: WorldClient,
+  root: string,
+  req: OfflineInput,
+  deps: WorldDeps,
+): Promise<WorldResponse> {
   const w = worldFiles(root, str(req.path), "path");
   const target = `path:${w.rel}`;
   const prefab = checkPrefab(req.prefab);
@@ -934,13 +970,17 @@ async function doNew(client: WorldClient, root: string, req: OfflineInput): Prom
       warnings,
     };
   }
-  const res = await writeAndRegister(client, plan, warnings);
+  const res = await writeAndRegister(client, plan, warnings, { action: "new", world: w.name, deps });
   const ok: ActionOk = {
     ok: true,
     action: "new",
     target,
     changed: res.changed,
-    readback: { files: plan.map((p) => p.rel), registered: res.registered },
+    readback: {
+      files: plan.map((p) => p.rel),
+      registered: res.registered,
+      ...(res.snapshot ? { snapshot: res.snapshot } : {}),
+    },
     warnings,
   };
   ok.next = res.next ?? `open it: wb_module setResource path:${w.rel}`;
@@ -951,6 +991,7 @@ async function doDuplicate(
   client: WorldClient,
   root: string,
   req: OfflineInput,
+  deps: WorldDeps,
 ): Promise<WorldResponse> {
   const src = worldFiles(root, str(req.path), "path");
   const dst = worldFiles(root, str(req.to), "to");
@@ -969,13 +1010,22 @@ async function doDuplicate(
       warnings,
     };
   }
-  const res = await writeAndRegister(client, plan, warnings);
+  const res = await writeAndRegister(client, plan, warnings, {
+    action: "duplicate",
+    world: dst.name,
+    deps,
+  });
   const ok: ActionOk = {
     ok: true,
     action: "duplicate",
     target,
     changed: res.changed,
-    readback: { from: src.rel, files: plan.map((p) => p.rel), registered: res.registered },
+    readback: {
+      from: src.rel,
+      files: plan.map((p) => p.rel),
+      registered: res.registered,
+      ...(res.snapshot ? { snapshot: res.snapshot } : {}),
+    },
     warnings,
   };
   if (res.next) ok.next = res.next;
@@ -991,6 +1041,7 @@ async function doSaveAs(
   client: WorldClient,
   root: string,
   req: OfflineInput,
+  deps: WorldDeps,
 ): Promise<WorldResponse> {
   const dst = worldFiles(root, str(req.to), "to");
   const target = `path:${dst.rel}`;
@@ -1065,7 +1116,7 @@ async function doSaveAs(
   let res: Awaited<ReturnType<typeof writeAndRegister>>;
   try {
     plan = duplicatePlan(root, src, dst, req.overwrite === true, warnings);
-    res = await writeAndRegister(client, plan, warnings);
+    res = await writeAndRegister(client, plan, warnings, { action: "saveAs", world: dst.name, deps });
   } catch (e) {
     const why = e instanceof Error ? e.message : String(e);
     return fail(
@@ -1099,6 +1150,7 @@ async function doSaveAs(
       files: plan.map((p) => p.rel),
       registered: res.registered,
       opened: opened.ok,
+      ...(res.snapshot ? { snapshot: res.snapshot } : {}),
     },
     warnings,
   };
@@ -1267,11 +1319,11 @@ async function runOffline(
     const root = offlineRoot(deps);
     switch (action) {
       case "new":
-        return await doNew(client, root, req);
+        return await doNew(client, root, req, deps);
       case "duplicate":
-        return await doDuplicate(client, root, req);
+        return await doDuplicate(client, root, req, deps);
       case "saveAs":
-        return await doSaveAs(client, root, req);
+        return await doSaveAs(client, root, req, deps);
       case "setWorldEntity":
         return await doSetWorldEntity(root, req, deps);
     }

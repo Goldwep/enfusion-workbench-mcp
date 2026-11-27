@@ -8,6 +8,7 @@ import {
   deletePidFile,
   isProcessAlive,
   isServerProcessAlive,
+  serverIdentity,
   parseTasklistImage,
   processImageName,
   pidFilePathFor,
@@ -431,6 +432,16 @@ describe("server-mgmt/launch — process identity (M20)", () => {
     });
     expect(out.state).toBe("stale");
     if (out.state === "stale") expect(out.reason).toBe("foreign");
+  });
+
+  it("checkRunningServer reports alive (unverified) when the image cannot be read, never stale (live-client-07)", () => {
+    const dir = setupDir();
+    const pidFilePath = join(dir, PID_FILE_NAME);
+    writePidFile(pidFilePath, SAMPLE);
+    const out = checkRunningServer({ pidFilePath, isAlive: () => true, imageName: () => null });
+    expect(out).toMatchObject({ state: "alive", unverified: true });
+    expect(serverIdentity(4242, { isAlive: () => true, imageName: () => null })).toBe("unknown");
+    expect(isServerProcessAlive(4242, { isAlive: () => true, imageName: () => null })).toBe(false);
   });
 
   it("checkRunningServer reports alive when the PID is alive and the image matches", () => {

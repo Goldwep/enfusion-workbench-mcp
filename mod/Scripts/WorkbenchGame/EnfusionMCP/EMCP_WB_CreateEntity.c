@@ -38,6 +38,9 @@ class EMCP_WB_CreateEntityResponse : JsonApiStruct
 	string position;
 	// Non-fatal advisory (e.g. bare prefab path without a {GUID} prefix). Empty when none.
 	string warning;
+	// True once the entity stands in the world, also when status is error after it (the rename
+	// failed, live-tools-a-04): the caller must not place a second one.
+	bool created;
 
 	void EMCP_WB_CreateEntityResponse()
 	{
@@ -47,6 +50,7 @@ class EMCP_WB_CreateEntityResponse : JsonApiStruct
 		RegV("entityClass");
 		RegV("position");
 		RegV("warning");
+		RegV("created");
 	}
 }
 
@@ -155,6 +159,7 @@ class EMCP_WB_CreateEntity : NetApiHandler
 
 		api.EndEntityAction();
 
+		resp.created = true;
 		resp.entityName = entSrc.GetName();
 		resp.entityClass = entSrc.GetClassName();
 		// The placed entity's world origin, read back (never the request echoed: live-tools-a-02);
@@ -166,7 +171,7 @@ class EMCP_WB_CreateEntity : NetApiHandler
 		if (renameFailed)
 		{
 			resp.status = "error";
-			resp.message = "Entity created from prefab " + req.prefab + " but RenameEntity to '" + entityName + "' returned false (name in use?). Actual name: " + resp.entityName;
+			resp.message = "Entity created from prefab " + req.prefab + " but RenameEntity to '" + entityName + "' returned false (name in use?). The entity was created and stands in the world as: " + resp.entityName;
 			return resp;
 		}
 

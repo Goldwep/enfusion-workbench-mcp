@@ -370,10 +370,27 @@ export function isServerProcessAlive(
     imageName?: (pid: number) => string | null;
   } = {},
 ): boolean {
-  if (!(deps.isAlive ?? isProcessAlive)(pid)) return false;
-  if (process.platform !== "win32" && !deps.imageName) return true;
+  return serverIdentity(pid, deps) === "ours";
+}
+
+/**
+ * Who a PID-file pid is: "dead", "ours" (alive and, on win32, ArmaReforgerServer.exe), "foreign"
+ * (alive, another image: a recycled PID) or "unknown" (alive, but the image could not be read,
+ * e.g. tasklist failed). "unknown" is not "foreign": never signal it, but never treat the PID
+ * file as stale either, or the only handle on a running server is lost (live-client-07).
+ */
+export function serverIdentity(
+  pid: number,
+  deps: {
+    isAlive?: (pid: number) => boolean;
+    imageName?: (pid: number) => string | null;
+  } = {},
+): "dead" | "ours" | "foreign" | "unknown" {
+  if (!(deps.isAlive ?? isProcessAlive)(pid)) return "dead";
+  if (process.platform !== "win32" && !deps.imageName) return "ours";
   const image = (deps.imageName ?? processImageName)(pid);
-  return image !== null && image.toLowerCase() === SERVER_IMAGE_NAME.toLowerCase();
+  if (image === null) return "unknown";
+  return image.toLowerCase() === SERVER_IMAGE_NAME.toLowerCase() ? "ours" : "foreign";
 }
 
 /**
@@ -383,12 +400,13 @@ export function isServerProcessAlive(
  *                belongs to a different image (recycled PID); caller should
  *                clean up and proceed.
  *   - "alive"  → PID file present AND our server still running; caller must
- *                refuse (unless `force=true`).
+ *                refuse (unless `force=true`). `unverified`: the process is
+ *                alive but its image could not be read, so it may be ours.
  */
 export type RunningServerCheck =
   | { state: "none" }
   | { state: "stale"; contents: PidFileContents; reason?: "dead" | "foreign" }
-  | { state: "alive"; contents: PidFileContents };
+  | { state: "alive"; contents: PidFileContents; unverified?: true };
 
 /**
  * Inspect the PID file at `pidFilePath` and report whether a server is
@@ -409,8 +427,11 @@ export function checkRunningServer(opts: {
   const alive = (opts.isAlive ?? isProcessAlive)(contents.pid);
   if (!alive) return { state: "stale", contents, reason: "dead" };
   const checkIdentity = opts.imageName !== undefined || opts.isAlive === undefined;
-  if (checkIdentity && !isServerProcessAlive(contents.pid, { isAlive: () => true, imageName: opts.imageName })) {
-    return { state: "stale", contents, reason: "foreign" };
+  if (checkIdentity) {
+    const who = serverIdentity(contents.pid, { isAlive: () => true, imageName: opts.imageName });
+    if (who === "foreign") return { state: "stale", contents, reason: "foreign" };
+    // An unreadable image may be our server: refuse like a live one (live-client-07).
+    if (who === "unknown") return { state: "alive", contents, unverified: true };
   }
   return { state: "alive", contents };
 }

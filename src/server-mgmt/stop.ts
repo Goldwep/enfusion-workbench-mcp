@@ -28,7 +28,6 @@ import { execFileSync } from "node:child_process";
 import {
   deletePidFile,
   isProcessAlive,
-  isServerProcessAlive,
   processImageName,
   readPidFile,
   SERVER_IMAGE_NAME,
@@ -48,12 +47,16 @@ import {
  *   - "timeout"       → both SIGTERM and the force-kill failed within the
  *                       allotted time. Process may still be alive. Caller
  *                       should surface this loudly.
+ *   - "unverified"    → the PID is alive but its image could not be read
+ *                       (win32 tasklist failed). Nothing signalled, PID
+ *                       file kept (live-client-07).
  */
 export type StopStatus =
   | "not_running"
   | "stopped"
   | "force_killed"
-  | "timeout";
+  | "timeout"
+  | "unverified";
 
 export interface StopResult {
   status: StopStatus;
@@ -168,12 +171,20 @@ export async function stopServer(opts: {
   // Refuse to signal anything that isn't ArmaReforgerServer.exe; treat the
   // PID file as stale and remove it.
   if (deps.imageName) {
-    const ours = isServerProcessAlive(contents.pid, {
-      isAlive: () => true,
-      imageName: deps.imageName,
-    });
-    if (!ours) {
-      const image = deps.imageName(contents.pid) ?? "unknown image";
+    const image = deps.imageName(contents.pid);
+    if (image === null) {
+      // The image could not be read (tasklist failed): it may be our server. Signal nothing,
+      // and keep the PID file, the only handle on it (live-client-07).
+      return {
+        status: "unverified",
+        pid: contents.pid,
+        pidFileContents: contents,
+        detail:
+          `PID ${contents.pid} is alive but its image could not be read, so it may be ${SERVER_IMAGE_NAME}. ` +
+          "Nothing was signalled and the PID file was kept",
+      };
+    }
+    if (image.toLowerCase() !== SERVER_IMAGE_NAME.toLowerCase()) {
       deletePidFile(opts.pidFilePath);
       return {
         status: "not_running",

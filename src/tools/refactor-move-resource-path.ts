@@ -39,16 +39,18 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type Database from "better-sqlite3";
-import { readFileSync, existsSync, renameSync, mkdirSync } from "node:fs";
+import { readFileSync, existsSync, renameSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { resolve, dirname, basename, relative, sep } from "node:path";
 import { z } from "zod";
 import { ProjectIndex } from "../project-index/project-index.js";
 import { extractMetaGuid, readMetaGuid } from "../project-index/meta-guid.js";
 import {
   atomicCommit,
+  checkGitState,
   decodeUtf8Strict,
   type PendingEdit,
 } from "../refactor/byte-edit.js";
+import { backUp } from "../utils/backup.js";
 import { readTextFile, walkTextCandidates } from "../refactor/text-walk.js";
 import { loadConfig, type Config } from "../config.js";
 import { assertInsideAnyRoot, assertInsideRoot } from "../utils/path-guard.js";
@@ -93,6 +95,12 @@ interface PerFilePlan {
   newContent: string;
   /** Found by the disk walk: a text file the index does not parse. */
   unindexed?: boolean;
+  /**
+   * mtime and size taken before the file was read for the plan (refactor-index-10): the commit's
+   * M15 check refuses a file that changed since (src/refactor/byte-edit.ts PendingEdit).
+   */
+  mtimeMs?: number;
+  size?: number;
 }
 
 interface MovePlan {
@@ -199,7 +207,13 @@ export function buildPlan(
     oldAbsPath.toLowerCase(),
     oldMetaAbsPath.toLowerCase(),
   ]);
-  const addEdit = (absPath: string, relPath: string, content: string, unindexed: boolean): void => {
+  const addEdit = (
+    absPath: string,
+    relPath: string,
+    content: string,
+    unindexed: boolean,
+    stat: { mtimeMs: number; size: number } | null,
+  ): void => {
     const key = absPath.toLowerCase();
     if (planned.has(key)) return;
     planned.add(key);
@@ -209,7 +223,14 @@ export function buildPlan(
       return `{${guid}}${newPath}`;
     });
     if (matches > 0) {
-      plan.refEdits.push({ absPath, relPath, matches, newContent, ...(unindexed ? { unindexed } : {}) });
+      plan.refEdits.push({
+        absPath,
+        relPath,
+        matches,
+        newContent,
+        ...(unindexed ? { unindexed } : {}),
+        ...(stat ? { mtimeMs: stat.mtimeMs, size: stat.size } : {}),
+      });
       plan.totalRefMatches += matches;
     }
   };
@@ -219,12 +240,14 @@ export function buildPlan(
     if (r.source === "workshop" && resolve(r.root_path) !== projectRoot) continue;
     const absPath = resolve(r.root_path, r.source_file);
     let content: string;
+    // Stat BEFORE the read: a write after the stat moves the mtime, so the commit refuses.
+    const stat = statOrNull(absPath);
     try {
       content = readFileSync(absPath, "utf-8");
     } catch {
       continue;
     }
-    addEdit(absPath, r.source_file, content, false);
+    addEdit(absPath, r.source_file, content, false, stat);
   }
 
   // Audit refactor-index-07: the index parses only some text formats, so
@@ -237,13 +260,38 @@ export function buildPlan(
   for (const walkRoot of editableRoots(db, projectRoot)) {
     for (const abs of walkTextCandidates(walkRoot)) {
       if (planned.has(resolve(abs).toLowerCase())) continue;
+      const stat = statOrNull(abs);
       const text = readTextFile(abs);
       if (text === null) continue;
       if (!text.toLowerCase().includes(needle)) continue;
-      addEdit(resolve(abs), relative(walkRoot, abs).split(sep).join("/"), text, true);
+      addEdit(resolve(abs), relative(walkRoot, abs).split(sep).join("/"), text, true, stat);
     }
   }
   return plan;
+}
+
+/** mtime and size of a file, or null when it cannot be read. */
+function statOrNull(abs: string): { mtimeMs: number; size: number } | null {
+  try {
+    const st = statSync(abs);
+    return { mtimeMs: st.mtimeMs, size: st.size };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The moved resource and its sidecar with uncommitted git changes (refactor-index-10): the
+ * git-clean refusal covers what the move renames and rewrites, not only the referencing files.
+ */
+export function dirtyMovedFiles(plan: Pick<MovePlan, "oldAbsPath" | "oldMetaAbsPath" | "metaExists">): string[] {
+  const files = plan.metaExists ? [plan.oldAbsPath, plan.oldMetaAbsPath] : [plan.oldAbsPath];
+  const dirty: string[] = [];
+  for (const f of files) {
+    const state = checkGitState(f);
+    if (state.kind === "dirty") dirty.push(f);
+  }
+  return dirty;
 }
 
 /**
@@ -424,6 +472,25 @@ export function registerRefactorMoveResourcePath(
           return { content: [{ type: "text" as const, text: formatPlan(plan, "dry-run") }] };
         }
 
+        // The git-clean refusal covers the moved resource and its sidecar too, also when no
+        // file refers to it (refactor-index-10); `force` skips it, as for the ref files.
+        if (!force) {
+          const dirty = dirtyMovedFiles(plan);
+          if (dirty.length > 0) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text:
+                    `REFUSED: nothing was moved or rewritten. Uncommitted git changes in ${dirty.join(", ")}; ` +
+                    "commit them first or pass `force: true`.",
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+
         // Phase 1 (RBE-5): rename FIRST. If this throws (EPERM, locked
         // file, cross-device) nothing else has been touched.
         mkdirSync(dirname(plan.newAbsPath), { recursive: true });
@@ -433,6 +500,7 @@ export function registerRefactorMoveResourcePath(
         // up half-moved.
         const undo: (() => void)[] = [() => renameSync(plan.newAbsPath, plan.oldAbsPath)];
         let metaMoved = false;
+        let metaBackup: string | null = null;
         try {
           // Phase 2: the sidecar follows the file, then its Name line.
           if (plan.metaExists) {
@@ -441,6 +509,14 @@ export function registerRefactorMoveResourcePath(
             undo.push(() => renameSync(plan.newMetaAbsPath, plan.oldMetaAbsPath));
             if (plan.newMetaContent !== undefined && plan.oldMetaContent !== undefined) {
               const originalMeta = plan.oldMetaContent;
+              // The Name rewrite replaces the sidecar: its original bytes are kept as a numbered
+              // backup beside it, as the ref files keep theirs (refactor-index-10).
+              const bak = backUp(plan.newMetaAbsPath, (m) => {
+                throw new Error(m);
+              });
+              metaBackup = bak;
+              // Undone with the move: no backup is left beside a path the resource is not at.
+              undo.push(() => rmSync(bak, { force: true }));
               // Both writes replace the moved sidecar, so each goes through write-then-rename
               // (write-safety audit gap 19): a failed write leaves the moved bytes whole.
               undo.push(() => writeFileAtomic(plan.newMetaAbsPath, originalMeta));
@@ -453,6 +529,8 @@ export function registerRefactorMoveResourcePath(
           const edits: PendingEdit[] = plan.refEdits.map((f) => ({
             filePath: f.absPath,
             newContent: f.newContent,
+            ...(f.mtimeMs !== undefined ? { expectedMtimeMs: f.mtimeMs } : {}),
+            ...(f.size !== undefined ? { expectedSize: f.size } : {}),
           }));
           if (edits.length > 0) atomicCommit(edits, { force, keepBackup: true });
         } catch (commitErr) {
@@ -473,8 +551,16 @@ export function registerRefactorMoveResourcePath(
           }
           throw commitErr;
         }
+        const committed = formatPlan(plan, "committed");
         return {
-          content: [{ type: "text" as const, text: formatPlan(plan, "committed") }],
+          content: [
+            {
+              type: "text" as const,
+              text: metaBackup
+                ? `${committed}\nSidecar backup (before the Name rewrite): ${metaBackup}`
+                : committed,
+            },
+          ],
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);

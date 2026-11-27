@@ -41,13 +41,14 @@ import { spawn } from "node:child_process";
 import { encodeRequest, decodeResponse } from "./protocol.js";
 import { logger } from "../utils/logger.js";
 import type { Config } from "../config.js";
-import { runningWorkbenchPids, tailLines } from "./cli-runner.js";
+import { killProcessTree, runningWorkbenchPids, tailLines } from "./cli-runner.js";
 import {
   LeaseError,
   acquireLease,
   checkLease,
   heartbeatLease,
   isNoAutolaunch,
+  leaseBlocker,
   releaseLease as releaseLeaseFile,
   resolveLeasePath,
   resolveNoAutolaunchPath,
@@ -1442,6 +1443,27 @@ export class WorkbenchClient {
     }
   }
 
+  /**
+   * Why wb_cleanup must not remove the handlers from `modDir` (live-client-08), or null.
+   * Another session's lease (held or orphaned) blocks when it names this project's .gproj or no
+   * project at all (it may be driving this one); a corrupt lease file blocks too, as it does for
+   * every live action. A free or stale lease, our own, or one naming another project does not.
+   * A client without a Config does not take part in the lease and never blocks.
+   */
+  cleanupLeaseBlocker(modDir: string): string | null {
+    if (!this.config) return null;
+    const path = resolveLeasePath(this.config);
+    const check = checkLease(path, this.leaseDeps);
+    const blocker = leaseBlocker(check, LEASE_SESSION);
+    if (blocker === null) return null;
+    if (check.state === "corrupt") return `${blocker} (lease file ${path})`;
+    const project = "lease" in check ? check.lease.project : null;
+    if (project !== null && resolve(dirname(project)).toLowerCase() !== resolve(modDir).toLowerCase()) {
+      return null;
+    }
+    return `${blocker} (lease file ${path})`;
+  }
+
   /** True when a lease check names this server process as the holder. */
   holdsLease(check: LeaseCheck): boolean {
     return "lease" in check && check.lease.session === LEASE_SESSION;
@@ -1765,11 +1787,10 @@ export class WorkbenchClient {
       if (tracker) {
         const stuck = await tracker.check({ pid: proc.pid });
         if (stuck === "stuck:launcher-picker" || stuck === "stuck:missing-deps") {
-          try {
-            if (proc.pid) process.kill(proc.pid, "SIGKILL");
-          } catch (e) {
-            logger.debug(`Failed to kill stuck Workbench: ${e}`);
-          }
+          // The whole tree (taskkill /T /F on win32), as cli-runner does: the spawned pid alone
+          // may be the launcher stub, which leaves the real Workbench running (live-client-09).
+          // killProcessTree never throws.
+          if (proc.pid) await killProcessTree(proc.pid);
           throw new WorkbenchError(
             buildStuckReport(stuck, {
               toolLabel: "wb_launch",

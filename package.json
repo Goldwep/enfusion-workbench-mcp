@@ -1,6 +1,6 @@
 {
   "name": "enfusion-workbench-mcp",
-  "version": "2.0.0-rc.1",
+  "version": "2.0.0-rc.2",
   "type": "module",
   "description": "MCP server for Arma Reforger / Enfusion Workbench modding — project-wide GUID/resource indexing, refactoring, script analysis, scenario tooling, and live Workbench control. Derived from steffenbk/enfusion-mcp-BK (MIT).",
   "author": "goldwep",

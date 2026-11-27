@@ -212,7 +212,7 @@ Control a running Workbench over its NET API (TCP). Handler scripts are installe
 
 ## 2.0
 
-The current version is **2.0.0-rc.1**, a release candidate: the 2.0 tools are in, and a few release
+The current version is **2.0.0-rc.2**, a release candidate: the 2.0 tools are in, and a few release
 checks are still open (deny lists not yet signed off, terrain writes gated, some minor audit findings).
 The list is at the top of the release notes; 2.0.0 final follows when those are done.
 

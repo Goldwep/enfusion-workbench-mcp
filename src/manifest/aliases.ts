@@ -87,7 +87,17 @@ export const ALIAS_ROUTES: Readonly<Record<string, Mapper>> = Object.freeze({
       },
     };
   },
-  wb_validate_scripts: (args) => ({ tool: "wb_scripts", args: { ...args, action: "validate" } }),
+  // The 1.x headless-spawn keys have no equivalent: wb_scripts validate compiles the project open
+  // in the running Workbench (live-tools-b-6).
+  wb_validate_scripts: (args) => {
+    const extra = present(args, ["gproj_path", "timeout_seconds", "launcher_nudge"]);
+    if (extra.length > 0) {
+      refuse(
+        `${extra.join(", ")} has no equivalent: wb_scripts validate compiles the project open in the running Workbench; open the one to check (wb_launch) and omit ${extra.length > 1 ? "them" : "it"}`,
+      );
+    }
+    return { tool: "wb_scripts", args: { ...args, action: "validate" } };
+  },
   // 1.x `target` (scripts|plugins|both) is not the Phase 3 `target`; it moves to `scope`.
   wb_reload: (args) => {
     const { target, ...rest } = args;

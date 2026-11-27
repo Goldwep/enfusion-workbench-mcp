@@ -387,6 +387,19 @@ export function registerWbLaunch(server: McpServer, config: Config, client: Work
         };
       }
 
+      // Another session may be driving this project live on these handlers (live-client-08).
+      const blocker = client.cleanupLeaseBlocker(resolvedModDir);
+      if (blocker) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `**Cleanup Refused — LEASE_HELD**\n\nAnother session holds the Workbench lease and may be using the handlers in this mod: ${blocker}. Nothing was removed; run wb_cleanup once that session is done.${formatConnectionStatus(client)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
       const removed = client.cleanupHandlerScripts(resolvedModDir);
       if (removed) {
         return {

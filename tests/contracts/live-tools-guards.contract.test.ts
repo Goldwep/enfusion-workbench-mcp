@@ -83,6 +83,22 @@ describe("EMCP_WB_CreateEntity answers the placed entity, not the request (live-
   });
 });
 
+describe("EMCP_WB_CreateEntity says the entity stands when the rename fails (live-tools-a-04)", () => {
+  it("declares created, sets it after CreateEntity returned a source and before the rename error", () => {
+    const body = code(read("EMCP_WB_CreateEntity.c"));
+    expect(body).toMatch(/bool created;/);
+    expect(body).toMatch(/RegV\("created"\);/);
+    const nullCheck = body.indexOf("if (!entSrc)");
+    const set = body.indexOf("resp.created = true;");
+    const renameErr = body.indexOf("if (renameFailed)");
+    expect(nullCheck).toBeGreaterThanOrEqual(0);
+    expect(set).toBeGreaterThan(nullCheck);
+    expect(renameErr).toBeGreaterThan(set);
+    // Set once, never on the early-return error paths.
+    expect(body.split("resp.created = true;").length).toBe(2);
+  });
+});
+
 describe("EMCP_WB_Module action refuses a dialog label before ExecuteAction (live-tools-b-1)", () => {
   it("MODAL_HAZARD on a trailing ellipsis comes before the allow-list and ExecuteAction", () => {
     const body = code(read("EMCP_WB_Module.c"));

@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   fbxToXob,
+  writeReplacing,
   generateDestructionComponent,
   generateSlotBoneMappingObject,
   generateBaseSlotComponent,
@@ -268,6 +272,30 @@ describe("building-setup", () => {
       const result = generateBuildingPrefab(manifest, [], "Mod/", new Map());
 
       expect(result).toContain('Object "Mod/TestHouse_01.xob"');
+    });
+  });
+
+  describe("writeReplacing (offline-writers-06)", () => {
+    it("keeps a backup of an existing prefab it replaces; a new file gets none", () => {
+      const dir = mkdtempSync(join(tmpdir(), "bsetup-"));
+      try {
+        const f = join(dir, "House.et");
+        expect(writeReplacing(f, "new", false)).toBeNull();
+        expect(existsSync(`${f}.bak`)).toBe(false);
+        writeFileSync(f, "user prefab");
+        expect(writeReplacing(f, "other", true)).toMatch(/would be replaced, a backup kept/);
+        expect(readFileSync(f, "utf8")).toBe("user prefab");
+        expect(existsSync(`${f}.bak`)).toBe(false);
+        expect(writeReplacing(f, "generated", false)).toMatch(/backup: .*House\.et\.bak$/);
+        expect(readFileSync(f, "utf8")).toBe("generated");
+        expect(readFileSync(`${f}.bak`, "utf8")).toBe("user prefab");
+        // A second replace never overwrites the first backup.
+        writeReplacing(f, "again", false);
+        expect(readFileSync(`${f}.bak`, "utf8")).toBe("user prefab");
+        expect(readFileSync(`${f}.bak2`, "utf8")).toBe("generated");
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 });
