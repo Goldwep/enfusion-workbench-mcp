@@ -60,7 +60,12 @@ import { LaunchWatchdog } from "./launch-watchdog.js";
 import { pruneStaleHandlers } from "./handler-prune.js";
 import { inspectProcessWindows, nudgeEnfusionLauncher } from "./launcher-nudge.js";
 import { WorkbenchLaunchTracker, snapshotSessionDirs } from "./launch-tracker.js";
-import { buildPreflightNote, buildStuckReport, buildTimeoutDiagnostics } from "./launch-reports.js";
+import {
+  buildPreflightNote,
+  buildStuckReport,
+  buildTimeoutDiagnostics,
+  scriptCompileFailure,
+} from "./launch-reports.js";
 import { checkWorkbenchVisibleDeps, type WbDepsCheck } from "./wb-deps.js";
 
 const DEFAULT_CLIENT_ID = "EnfusionMCP";
@@ -1781,6 +1786,21 @@ export class WorkbenchClient {
         if (err instanceof WorkbenchError) {
           lastErrorCode = err.code;
           logger.debug(`Workbench poll (${err.code}): ${err.message}`);
+          // The NET API answers but has no handlers, and the log says a script module failed
+          // to compile: the handlers cannot load, so stop pinging. Workbench stays open for the fix.
+          if (tracker && err.code === "API_ERROR" && err.message.includes(NO_HANDLERS_ERROR)) {
+            const errors = scriptCompileFailure(tracker.readConsoleLog());
+            if (errors) {
+              throw new WorkbenchError(
+                "Workbench is running, but its scripts failed to compile, so the EnfusionMCP " +
+                  "handlers cannot load (the error may be in a dependency addon):\n" +
+                  errors.map((e) => `- ${e}`).join("\n") +
+                  "\n\nFix the script error, then reload scripts (wb_reload, or Plugins > Reload " +
+                  `Scripts). Workbench was left open.${tracker.sessionDir ? ` Log session: ${tracker.sessionDir}` : ""}`,
+                "LAUNCH_FAILED",
+              );
+            }
+          }
         }
       }
       if (remaining() <= 0) break;

@@ -3,6 +3,13 @@
 All notable changes to this project. Dates are YYYY-MM-DD. Full notes for 2.0 are in
 [docs/RELEASE-NOTES-2.0.md](docs/RELEASE-NOTES-2.0.md).
 
+## Unreleased
+
+### Fixed
+
+- `wb_launch` no longer pings for its full 90 s wait when the Workbench log shows a script module failed to
+  compile. It stops at once, returns the script errors and leaves Workbench open. Not yet run live.
+
 ## 2.0.0-rc.2 (2026-11-26)
 
 Fixes since rc.1. They pass the offline test suite; the live batteries have not been rerun on them yet. Arma

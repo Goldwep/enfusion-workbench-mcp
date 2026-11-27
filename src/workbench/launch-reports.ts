@@ -76,6 +76,20 @@ function depSection(input: StuckReportInput): string[] {
   return lines;
 }
 
+/**
+ * The script errors of a console.log in which a script module failed to compile, or null when
+ * none did. After `Can't compile "Game" script module!` no WorkbenchGame handler can load until
+ * the scripts are fixed and reloaded, so a launch that keeps pinging only fills the log.
+ */
+export function scriptCompileFailure(consoleLog: string): string[] | null {
+  if (!/Can't compile "[^"]*" script module/.test(consoleLog)) return null;
+  const errors = consoleLog
+    .split(/\r?\n/)
+    .filter((l) => /SCRIPT\s+\(E\):/.test(l))
+    .map((l) => l.replace(/^[\d:.\s]*SCRIPT\s+\(E\):\s*/, "").trim());
+  return [...new Set(errors)].slice(0, 20);
+}
+
 export function buildStuckReport(
   kind: "stuck:launcher-picker" | "stuck:missing-deps",
   input: StuckReportInput,
